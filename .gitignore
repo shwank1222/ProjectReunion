@@ -1,0 +1,126 @@
+# ==========================================
+# Visual Studio
+# ==========================================
+.vs/
+*.VC.db
+*.VC.opendb
+*.suo
+*.user
+*.userprefs
+*.sln.docstates
+
+# ==========================================
+# Visual Studio Code
+# ==========================================
+.vscode/
+
+# ==========================================
+# JetBrains Rider
+# ==========================================
+.idea/
+*.DotSettings.user
+
+# ==========================================
+# Unreal Engine Generated Folders
+# ==========================================
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+
+# ==========================================
+# Generated Project Files
+# ==========================================
+*.sln
+*.opensdf
+*.sdf
+*.ipch
+*.xcodeproj
+*.xcworkspace
+
+# ==========================================
+# Logs / Dumps
+# ==========================================
+*.log
+*.dmp
+
+# ==========================================
+# Temporary Files
+# ==========================================
+*.tmp
+*.temp
+
+# ==========================================
+# Packaged / Compiled Files
+# ==========================================
+*.obj
+*.o
+*.so
+*.dll
+*.lib
+*.exp
+*.exe
+*.app
+*.ipa
+*.pak
+*.sig
+
+# ==========================================
+# Platform Files
+# ==========================================
+.DS_Store
+*~
+
+# ==========================================
+# RiderLink Plugin
+# ==========================================
+Plugins/Developer/RiderLink/
+
+# ==========================================
+# Plugin Generated Files
+# ==========================================
+Plugins/*/Binaries/
+Plugins/*/Intermediate/
+
+# Keep plugin source/config/content
+!Plugins/*/Source/
+!Plugins/*/Content/
+!Plugins/*/Config/
+
+# ==========================================
+# Local Environment
+# ==========================================
+.env
+
+# ==========================================
+# Profiling / Debugging
+# ==========================================
+*.psess
+*.vsp
+*.vspx
+*.sap
+
+# ==========================================
+# Generated Lighting Data
+# ==========================================
+*_BuiltData.uasset
+
+# ==========================================
+# Test Results
+# ==========================================
+TestResults/
+
+# ==========================================
+# Keep Core Project Folders
+# ==========================================
+!Source/
+!Config/
+!Content/
+!Plugins/
+
+# ==========================================
+# Git LFS (Optional)
+# Configure these in .gitattributes if used.
+# ==========================================
+# *.uasset filter=lfs diff=lfs merge=lfs -text
+# *.umap   filter=lfs diff=lfs merge=lfs -text
