@@ -22,8 +22,28 @@ class OSMK_API AOSMKGameState : public AGameState
 public:
 	UFUNCTION(BlueprintCallable)
 	void EndScoutingPhase();
+
+	UFUNCTION(BlueprintCallable)
+	void SetEnemyCount(int32 Count);
+
+	UFUNCTION(BlueprintCallable)
+	void NotifyEnemyKilled();
+
+	UFUNCTION(BlueprintCallable)
+	void NotifyProjectileDestroyed();
+	
+private:
+	void CheckStageResult();
 	
 public:
+	static constexpr int32 MaxBulletSlots = 6;
+
 	UPROPERTY(BlueprintReadOnly)
 	EOSMKStageState CurrentStageState = EOSMKStageState::Scouting;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 EnemyCount = 0;
+
+private:
+	int32 DestroyedProjectileCount = 0;
 };

@@ -22,6 +22,10 @@ void UScoutingWidget::NativeConstruct()
 	{
 		Btn_Confirm->OnClicked.AddDynamic(this, &UScoutingWidget::OnConfirmClicked);
 	}
+	if (Btn_DebugClose)
+    {
+           Btn_DebugClose->OnClicked.AddDynamic(this, &UScoutingWidget::OnDebugCloseClicked);
+    }
 }
 
 void UScoutingWidget::InitSlots()
@@ -143,4 +147,16 @@ void UScoutingWidget::OnConfirmClicked()
 	{
 		GS->EndScoutingPhase();
 	}
+
+	RemoveFromParent();
+}
+
+void UScoutingWidget::OnDebugCloseClicked()
+{
+	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
+	{
+		GS->EndScoutingPhase();
+	}
+
+	RemoveFromParent();
 }
