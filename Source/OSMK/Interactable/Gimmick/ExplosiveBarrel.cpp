@@ -5,6 +5,7 @@
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
 #include "Engine/OverlapResult.h"
+#include "Character/OSMKCharacterBase.h"
 #include "DrawDebugHelpers.h"
 
 AExplosiveBarrel::AExplosiveBarrel()
@@ -127,24 +128,21 @@ void AExplosiveBarrel::ScanExplosionRadius()
 {
 	TArray<FOverlapResult> OverlapResults;
 
-	FCollisionShape Sphere =
+	const FCollisionShape Sphere =
 		FCollisionShape::MakeSphere(ExplosionRadius);
-
 
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
 
-
-	bool bHit = GetWorld()->OverlapMultiByChannel(
+	const bool bHit = GetWorld()->OverlapMultiByChannel(
 		OverlapResults,
 		GetActorLocation(),
 		FQuat::Identity,
 		ECC_Pawn,
 		Sphere,
-		QueryParams
-	);
+		QueryParams);
 
-
+#if WITH_EDITOR
 	if (bShowExplosionDebug)
 	{
 		DrawDebugSphere(
@@ -154,19 +152,63 @@ void AExplosiveBarrel::ScanExplosionRadius()
 			32,
 			FColor::Red,
 			false,
-			3.f,
+			1.f,
 			0,
-			3.f
-		);
+			3.f);
 	}
-	
+#endif
+
 	if (!bHit)
 	{
 		GIMMICK_LOG(
 			Log,
-			TEXT("No actors detected in explosion radius")
-		);
+			TEXT("No actors detected in explosion radius"));
 
 		return;
 	}
+
+	for (const FOverlapResult& Result : OverlapResults)
+	{
+		AOSMKCharacterBase* Character =
+			Cast<AOSMKCharacterBase>(Result.GetActor());
+
+		if (!Character)
+		{
+			continue;
+		}
+		HandleCharacterHit(Character);
+	}
 }
+
+void AExplosiveBarrel::HandleCharacterHit(AOSMKCharacterBase* Character)
+{
+	if (!Character)
+	{
+		return;
+	}
+
+	GIMMICK_LOG(
+		Log,
+		TEXT("Character hit: %s"),
+		*GetNameSafe(Character));
+	
+	Character->EnableRagdoll();
+	
+	// Apply impulse to ragdoll
+	if (USkeletalMeshComponent* Mesh = Character->GetMesh())
+	{
+		Mesh->AddRadialImpulse(
+			GetActorLocation(),
+			ExplosionRadius,
+			ExplosionImpulse,
+			ERadialImpulseFalloff::RIF_Linear,
+			true                    // Velocity Change
+		);
+	}
+	
+	
+	///////////////////////////
+	// TODO : Kill character//
+	//////////////////////////
+}
+

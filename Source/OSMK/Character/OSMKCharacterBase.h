@@ -13,4 +13,6 @@ class OSMK_API AOSMKCharacterBase : public ACharacter
 
 public:
 	AOSMKCharacterBase();
+	
+	void EnableRagdoll();
 };

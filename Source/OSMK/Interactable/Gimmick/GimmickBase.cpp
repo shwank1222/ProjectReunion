@@ -24,6 +24,7 @@ bool AGimmickBase::CanTrigger() const
 	return !bTriggered;
 }
 
+
 void AGimmickBase::BeginPlay()
 {
 	Super::BeginPlay();
