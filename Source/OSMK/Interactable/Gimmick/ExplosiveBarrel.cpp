@@ -3,7 +3,9 @@
 #include "Components/StaticMeshComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 #include "Engine/OverlapResult.h"
+#include "Character/OSMKCharacterBase.h"
 #include "DrawDebugHelpers.h"
 
 AExplosiveBarrel::AExplosiveBarrel()
@@ -14,7 +16,9 @@ AExplosiveBarrel::AExplosiveBarrel()
 	GeometryCollection = CreateDefaultSubobject<UGeometryCollectionComponent>(TEXT("GeometryCollection"));
 	GeometryCollection->SetupAttachment(RootComponent);
 
-
+	IgnitionPoint = CreateDefaultSubobject<USceneComponent>(TEXT("IgnitionPoint"));
+	IgnitionPoint->SetupAttachment(BarrelMesh);
+	
 	// Hidden until explosion
 	GeometryCollection->SetHiddenInGame(true);
 	GeometryCollection->SetVisibility(false);
@@ -25,6 +29,22 @@ AExplosiveBarrel::AExplosiveBarrel()
 void AExplosiveBarrel::OnTriggered()
 {
 	GIMMICK_LOG(Log, "Triggered");
+	// Spawn ignition effect
+	
+	if (IgnitionEffect)
+	{
+		IgnitionComponent =
+			UNiagaraFunctionLibrary::SpawnSystemAttached(
+				IgnitionEffect,
+				IgnitionPoint,
+				NAME_None,
+				FVector::ZeroVector,
+				FRotator::ZeroRotator,
+				EAttachLocation::SnapToTarget,
+				true);
+		
+		IgnitionComponent->SetRelativeScale3D(FVector(0.15f));
+	}
 	
 	GetWorldTimerManager().SetTimer(
 		ExplosionTimerHandle,
@@ -38,6 +58,12 @@ void AExplosiveBarrel::Explode()
 {
 	GIMMICK_LOG(Log, "Exploded");
 
+	if (IgnitionComponent)
+	{
+		IgnitionComponent->Deactivate();
+		IgnitionComponent = nullptr;
+	}
+	
 	// Swap Static Mesh -> Geometry Collection
 	BarrelMesh->SetHiddenInGame(true);
 	BarrelMesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
@@ -49,8 +75,25 @@ void AExplosiveBarrel::Explode()
 
 
 	// TODO : Apply explosion impulse to fractured pieces
+	// Break Cluster
+	GeometryCollection->ApplyExternalStrain(
+		0,
+		GetActorLocation(),
+		ExplosionRadius,
+		1,
+		1.0f,
+		ExplosionStrain
+	);
 
-
+	//Push Pieces
+	GeometryCollection->AddRadialImpulse(
+		GetActorLocation(),
+		ExplosionRadius,
+		ExplosionImpulse,
+		ERadialImpulseFalloff::RIF_Linear,
+		true
+	);
+	
 	// Spawn Niagara explosion effect
 	if (ExplosionEffect)
 	{
@@ -85,24 +128,21 @@ void AExplosiveBarrel::ScanExplosionRadius()
 {
 	TArray<FOverlapResult> OverlapResults;
 
-	FCollisionShape Sphere =
+	const FCollisionShape Sphere =
 		FCollisionShape::MakeSphere(ExplosionRadius);
-
 
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
 
-
-	bool bHit = GetWorld()->OverlapMultiByChannel(
+	const bool bHit = GetWorld()->OverlapMultiByChannel(
 		OverlapResults,
 		GetActorLocation(),
 		FQuat::Identity,
 		ECC_Pawn,
 		Sphere,
-		QueryParams
-	);
+		QueryParams);
 
-
+#if WITH_EDITOR
 	if (bShowExplosionDebug)
 	{
 		DrawDebugSphere(
@@ -112,27 +152,63 @@ void AExplosiveBarrel::ScanExplosionRadius()
 			32,
 			FColor::Red,
 			false,
-			3.f,
+			1.f,
 			0,
-			3.f
-		);
+			3.f);
 	}
-
-
-	GIMMICK_LOG(
-		Log,
-		TEXT("Explosion scan started. Radius: %.1f"),
-		ExplosionRadius
-	);
-
+#endif
 
 	if (!bHit)
 	{
 		GIMMICK_LOG(
 			Log,
-			TEXT("No actors detected in explosion radius")
-		);
+			TEXT("No actors detected in explosion radius"));
 
 		return;
 	}
+
+	for (const FOverlapResult& Result : OverlapResults)
+	{
+		AOSMKCharacterBase* Character =
+			Cast<AOSMKCharacterBase>(Result.GetActor());
+
+		if (!Character)
+		{
+			continue;
+		}
+		HandleCharacterHit(Character);
+	}
 }
+
+void AExplosiveBarrel::HandleCharacterHit(AOSMKCharacterBase* Character)
+{
+	if (!Character)
+	{
+		return;
+	}
+
+	GIMMICK_LOG(
+		Log,
+		TEXT("Character hit: %s"),
+		*GetNameSafe(Character));
+	
+	Character->EnableRagdoll();
+	
+	// Apply impulse to ragdoll
+	if (USkeletalMeshComponent* Mesh = Character->GetMesh())
+	{
+		Mesh->AddRadialImpulse(
+			GetActorLocation(),
+			ExplosionRadius,
+			ExplosionImpulse,
+			ERadialImpulseFalloff::RIF_Linear,
+			true                    // Velocity Change
+		);
+	}
+	
+	
+	///////////////////////////
+	// TODO : Kill character//
+	//////////////////////////
+}
+
