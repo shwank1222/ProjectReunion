@@ -17,6 +17,9 @@ struct FStageStaticMeshItem
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "StageData")
 	FName CollisionProfileName = FName("NoCollision");
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "StageData")
+	TArray<TSoftObjectPtr<UMaterialInterface>> Materials;
 };
 
 USTRUCT(BlueprintType)

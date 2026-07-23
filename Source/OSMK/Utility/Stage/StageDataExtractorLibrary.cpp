@@ -53,6 +53,13 @@ void UStageDataExtractorLibrary::ExtractStaticMeshFromLevels(UDataTable* TargetD
 			ItemData.Transform = SMActor->GetActorTransform();
 			ItemData.CollisionProfileName = SMComp->GetCollisionProfileName();
 
+			int32 MatCount = SMComp->GetNumMaterials();
+			for (int32 i = 0; i < MatCount; i++)
+			{
+				UMaterialInterface* Mat = SMComp->GetMaterial(i);
+				ItemData.Materials.Add(TSoftObjectPtr<UMaterialInterface>(Mat));
+			}
+
 			NewStageData.MeshList.Add(ItemData);
 		}
 

@@ -12,7 +12,13 @@ class OSMK_API AOSMKInGameGameMode : public AGameMode
 public:
 	UFUNCTION(BlueprintCallable)
 	void SpawnEnemies(int32 StageIndex);
-	
+
+	UFUNCTION(BlueprintCallable)
+	void SpawnStage(int32 StageIndex);
+
+	UFUNCTION(BlueprintCallable)
+	void ClearStage();
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -25,4 +31,10 @@ protected:
 private:
 	UPROPERTY()
 	class UScoutingWidget* ScoutingWidget = nullptr;
+
+	UPROPERTY()
+	TArray<AActor*> SpawnedMeshActors;
+
+	UPROPERTY()
+	TArray<AActor*> SpawnedEnemyActors;
 };

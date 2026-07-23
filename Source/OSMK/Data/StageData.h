@@ -33,6 +33,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy")
 	TSoftClassPtr<AActor> EnemyClass = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<FStageLevelData> Stages;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
+	TSoftObjectPtr<UWorld> InGameLevel = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
+	TObjectPtr<UDataTable> StageStaticMeshData = nullptr;
 };

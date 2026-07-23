@@ -21,7 +21,8 @@ public class OSMKEditor : ModuleRules
 			"UMG",
 			"Slate",
 			"SlateCore",
-			"ScriptableEditorWidgets"
+			"ScriptableEditorWidgets",
+			"DeveloperSettings"
 		});
 	}
 }
