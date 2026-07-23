@@ -4,6 +4,7 @@
 #include "Blueprint/UserWidget.h"
 #include "TitleWidget.generated.h"
 
+class UStageData;
 class UButton;
 
 UCLASS()
@@ -35,4 +36,7 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* Btn_Quit = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stage")
+	UStageData* StageDataAsset = nullptr;
 };

@@ -1,5 +1,7 @@
 #include "UI/Title/TitleWidget.h"
 #include "Components/Button.h"
+#include "Data/StageData.h"
+#include "Kismet/GameplayStatics.h"
 
 void UTitleWidget::NativeConstruct()
 {
@@ -21,6 +23,21 @@ void UTitleWidget::NativeConstruct()
 
 void UTitleWidget::OnClickGameStart()
 {
+	if (StageDataAsset)
+	{
+		if (StageDataAsset->StageLevels.IsValidIndex(0))
+		{
+			UGameplayStatics::OpenLevelBySoftObjectPtr(this, StageDataAsset->StageLevels[0]);
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[StageData] Null StageLevel"));
+		}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[TitleWidget] Null StageData"));
+	}
 }
 
 void UTitleWidget::OnClickSettings()
