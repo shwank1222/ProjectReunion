@@ -1,12 +1,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
+#include "GameFramework/GameMode.h"
 #include "OSMKTitleGameMode.generated.h"
 
 
 UCLASS()
-class OSMK_API AOSMKTitleGameMode : public AGameModeBase
+class OSMK_API AOSMKTitleGameMode : public AGameMode
 {
 	GENERATED_BODY()
 	
