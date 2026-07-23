@@ -19,5 +19,7 @@ void ARicochetBullet::OnBulletHit(UPrimitiveComponent* HitComponent, AActor* Oth
 	{
 		UE_LOG(LogBullet, Warning, TEXT("Hit Actor: %s"), *OtherActor->GetName());
 	}
+	
+	TriggerGimmick(OtherActor);
 }
 

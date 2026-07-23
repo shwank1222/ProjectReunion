@@ -4,6 +4,7 @@
 #include "BulletBase.h"
 
 #include "GameFramework/ProjectileMovementComponent.h"
+#include "Interactable/Gimmick/GimmickBase.h"
 
 DEFINE_LOG_CATEGORY(LogBullet);
 
@@ -27,5 +28,13 @@ void ABulletBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
+}
+
+void ABulletBase::TriggerGimmick(AActor* OtherActor)
+{
+	if (AGimmickBase* Gimmick = Cast<AGimmickBase>(OtherActor))
+	{
+		Gimmick->Trigger();
+	}
 }
 

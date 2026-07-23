@@ -3,6 +3,8 @@
 
 #include "BasicBullet.h"
 
+#include "Interactable/Gimmick/GimmickBase.h"
+
 
 ABasicBullet::ABasicBullet()
 {
@@ -19,6 +21,8 @@ void ABasicBullet::OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherA
 	{
 		UE_LOG(LogBullet, Warning, TEXT("Hit Actor: %s"), *OtherActor->GetName());
 	}
+	
+	TriggerGimmick(OtherActor);
 	
 	Destroy();
 }

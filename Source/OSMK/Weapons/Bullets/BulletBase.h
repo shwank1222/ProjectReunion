@@ -20,6 +20,8 @@ public:
 
 protected:
 	virtual void BeginPlay() override;
+
+	static void TriggerGimmick(AActor* OtherActor);
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UMeshComponent> MeshComponent;

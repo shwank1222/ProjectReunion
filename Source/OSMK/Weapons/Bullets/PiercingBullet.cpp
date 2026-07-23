@@ -26,6 +26,8 @@ void APiercingBullet::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, A
 		UE_LOG(LogBullet, Warning, TEXT("Overlap Actor: %s"), *OtherActor->GetName());
 	}
 	
+	TriggerGimmick(OtherActor);
+	
 	RemainingPiercingCount--;
 	
 	UE_LOG(LogBullet, Warning, TEXT("Remaining Piercing Count: %d"), RemainingPiercingCount);
