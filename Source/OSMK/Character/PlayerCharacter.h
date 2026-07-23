@@ -35,16 +35,23 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent> ThirdPersonPistol;
 	
+private:
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UAnimMontage> FireAnimMontage;
+	
 #pragma region Input
 	
 private:
 	void MoveInput(const FInputActionValue& Value);
 	void LookInput(const FInputActionValue& Value);
+	void Fire();
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> LookAction;
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> FireAction;
 	
 #pragma endregion
 };
