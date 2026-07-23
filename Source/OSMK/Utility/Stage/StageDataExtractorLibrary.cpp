@@ -3,6 +3,8 @@
 #include "Engine/StaticMeshActor.h"
 #include "Components/StaticMeshComponent.h"
 #include "Data/Stage/StageStaticMeshData.h"
+#include "Data/Stage/StageEnemyData.h"
+#include "Character/AI/EnemyCharacter.h"
 
 #if WITH_EDITOR
 #include "EngineUtils.h"
@@ -64,6 +66,53 @@ void UStageDataExtractorLibrary::ExtractStaticMeshFromLevels(UDataTable* TargetD
 		}
 
 		TargetDataTable->AddRow(RowName, NewStageData);
+	}
+
+	TargetDataTable->MarkPackageDirty();
+#endif
+}
+
+void UStageDataExtractorLibrary::ExtractEnemyFromLevels(UDataTable* TargetDataTable, TArray<TSoftObjectPtr<UWorld>> TargetLevels)
+{
+#if WITH_EDITOR
+	if (!TargetDataTable)
+	{
+		return;
+	}
+
+	TargetDataTable->EmptyTable();
+
+	for (const TSoftObjectPtr<UWorld>& SoftWorld : TargetLevels)
+	{
+		if (SoftWorld.IsNull())
+		{
+			continue;
+		}
+
+		UWorld* LoadedWorld = SoftWorld.LoadSynchronous();
+		if (!LoadedWorld)
+		{
+			continue;
+		}
+
+		FName RowName = FName(*LoadedWorld->GetName());
+		FStageEnemyData NewEnemyData;
+
+		for (TActorIterator<AEnemyCharacter> It(LoadedWorld); It; ++It)
+		{
+			AEnemyCharacter* Enemy = *It;
+			if (!Enemy)
+			{
+				continue;
+			}
+
+			FStageEnemyItem Item;
+			Item.Location = Enemy->GetActorLocation();
+			Item.Rotation = Enemy->GetActorRotation();
+			NewEnemyData.EnemyList.Add(Item);
+		}
+
+		TargetDataTable->AddRow(RowName, NewEnemyData);
 	}
 
 	TargetDataTable->MarkPackageDirty();

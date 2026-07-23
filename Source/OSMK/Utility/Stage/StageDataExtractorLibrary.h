@@ -12,4 +12,7 @@ class OSMK_API UStageDataExtractorLibrary : public UBlueprintFunctionLibrary
 public:
 	UFUNCTION(BlueprintCallable)
 	static void ExtractStaticMeshFromLevels(class UDataTable* TargetDataTable, TArray<TSoftObjectPtr<UWorld>> TargetLevels);
+
+	UFUNCTION(BlueprintCallable)
+	static void ExtractEnemyFromLevels(class UDataTable* TargetDataTable, TArray<TSoftObjectPtr<UWorld>> TargetLevels);
 };

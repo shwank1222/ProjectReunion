@@ -11,13 +11,22 @@ class OSMK_API AOSMKInGameGameMode : public AGameMode
 
 public:
 	UFUNCTION(BlueprintCallable)
-	void SpawnEnemies(int32 StageIndex);
-
-	UFUNCTION(BlueprintCallable)
 	void SpawnStage(int32 StageIndex);
+	
+	UFUNCTION(BlueprintCallable)
+	void SpawnEnemies(int32 StageIndex);
+	
+	UFUNCTION(BlueprintCallable)
+	void SpawnStaticMesh(int32 StageIndex);
 
 	UFUNCTION(BlueprintCallable)
 	void ClearStage();
+	
+	UFUNCTION(BlueprintCallable)
+	void ClearStaticMesh();
+	
+	UFUNCTION(BlueprintCallable)
+	void ClearEnemies();
 
 protected:
 	virtual void BeginPlay() override;

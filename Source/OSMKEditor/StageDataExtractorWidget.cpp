@@ -39,4 +39,9 @@ void UStageDataExtractorWidget::OnExtractButtonClicked()
 	{
 		UStageDataExtractorLibrary::ExtractStaticMeshFromLevels(StaticMeshDataTable, TargetLevels);
 	}
+
+	if (TargetLevels.Num() > 0 && EnemyDataTable)
+	{
+		UStageDataExtractorLibrary::ExtractEnemyFromLevels(EnemyDataTable, TargetLevels);
+	}
 }

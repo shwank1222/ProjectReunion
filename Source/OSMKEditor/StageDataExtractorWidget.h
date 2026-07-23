@@ -26,8 +26,11 @@ protected:
 	class UDetailsView* LevelDetailsView = nullptr;
 
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stage Data Extractor")
 	UDataTable* StaticMeshDataTable = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stage Data Extractor")
+	UDataTable* EnemyDataTable = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stage Data Extractor")
 	TArray<TSoftObjectPtr<UWorld>> TargetLevels;

@@ -38,4 +38,7 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
 	TObjectPtr<UDataTable> StageStaticMeshData = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy")
+	TObjectPtr<UDataTable> StageEnemyData = nullptr;
 };
