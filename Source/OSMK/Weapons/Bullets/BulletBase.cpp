@@ -5,6 +5,8 @@
 
 #include "GameFramework/ProjectileMovementComponent.h"
 
+DEFINE_LOG_CATEGORY(LogBullet);
+
 ABulletBase::ABulletBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
@@ -16,6 +18,7 @@ ABulletBase::ABulletBase()
 	ProjectileMovement->InitialSpeed = 3000.0f;
 	ProjectileMovement->MaxSpeed = 3500.0f;
 	ProjectileMovement->ProjectileGravityScale = 0.0f;
+	ProjectileMovement->bShouldBounce = false;
 	
 	InitialLifeSpan = Lifespan;
 }

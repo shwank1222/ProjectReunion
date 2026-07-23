@@ -8,7 +8,9 @@
 
 class UProjectileMovementComponent;
 
-UCLASS()
+DECLARE_LOG_CATEGORY_EXTERN(LogBullet, Log, All);
+
+UCLASS(Abstract)
 class OSMK_API ABulletBase : public AActor
 {
 	GENERATED_BODY()
