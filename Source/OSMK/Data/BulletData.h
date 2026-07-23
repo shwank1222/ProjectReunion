@@ -4,6 +4,8 @@
 #include "Engine/DataTable.h"
 #include "BulletData.generated.h"
 
+class ABulletBase;
+
 USTRUCT(BlueprintType)
 struct OSMK_API FBulletData : public FTableRowBase
 {
@@ -14,5 +16,5 @@ public:
 	TSoftObjectPtr<UTexture2D> BulletIcon = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bullet")
-	TSoftClassPtr<AActor> BulletBlueprint = nullptr;
+	TSoftClassPtr<ABulletBase> BulletBlueprint = nullptr;
 };

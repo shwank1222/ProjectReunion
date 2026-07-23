@@ -16,7 +16,7 @@ void AOSMKPlayerController::BeginPlay()
 	
 	if (IsValid(PlayerCameraManager))
 	{
-		PlayerCameraManager->ViewPitchMin = - 70.0f;
+		PlayerCameraManager->ViewPitchMin = -60.0f;
 		PlayerCameraManager->ViewPitchMax = 80.0f;
 	}
 }
