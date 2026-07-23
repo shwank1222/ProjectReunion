@@ -25,12 +25,6 @@ public class OSMK : ModuleRules
 
 		PublicIncludePaths.AddRange(new string[] {
 			"OSMK",
-			"OSMK/Variant_Horror",
-			"OSMK/Variant_Horror/UI",
-			"OSMK/Variant_Shooter",
-			"OSMK/Variant_Shooter/AI",
-			"OSMK/Variant_Shooter/UI",
-			"OSMK/Variant_Shooter/Weapons"
 		});
 
 		// Uncomment if you are using Slate UI
