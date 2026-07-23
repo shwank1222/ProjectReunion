@@ -7,6 +7,7 @@
 #include "Character/AI/EnemyCharacter.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/StaticMeshComponent.h"
+#include "Data/Stage/StageGimmickData.h"
 #include "Engine/StaticMeshActor.h"
 
 void AOSMKInGameGameMode::BeginPlay()
@@ -36,6 +37,7 @@ void AOSMKInGameGameMode::SpawnStage(int32 StageIndex)
 
 	SpawnStaticMesh(StageIndex);
 	SpawnEnemies(StageIndex);
+	SpawnGimmicks(StageIndex);
 }
 
 void AOSMKInGameGameMode::SpawnStaticMesh(int32 StageIndex)
@@ -95,37 +97,6 @@ void AOSMKInGameGameMode::SpawnStaticMesh(int32 StageIndex)
 	UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] Spawned %d static meshes for stage %d"), SpawnedMeshActors.Num(), StageIndex);
 }
 
-void AOSMKInGameGameMode::ClearStage()
-{
-	ClearStaticMesh();
-	ClearEnemies();
-	UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] Stage cleared"));
-}
-
-void AOSMKInGameGameMode::ClearStaticMesh()
-{
-	for (AActor* Actor : SpawnedMeshActors)
-	{
-		if (IsValid(Actor))
-		{
-			Actor->Destroy();
-		}
-	}
-	SpawnedMeshActors.Empty();
-}
-
-void AOSMKInGameGameMode::ClearEnemies()
-{
-	for (AActor* Actor : SpawnedEnemyActors)
-	{
-		if (IsValid(Actor))
-		{
-			Actor->Destroy();
-		}
-	}
-	SpawnedEnemyActors.Empty();
-}
-
 void AOSMKInGameGameMode::SpawnEnemies(int32 StageIndex)
 {
 	if (!StageData || !StageData->StageEnemyData)
@@ -176,4 +147,93 @@ void AOSMKInGameGameMode::SpawnEnemies(int32 StageIndex)
 	}
 
 	UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] Spawned %d enemies for stage %d"), SpawnedEnemyActors.Num(), StageIndex);
+}
+
+void AOSMKInGameGameMode::SpawnGimmicks(int32 StageIndex)
+{
+	if (!StageData || !StageData->StageGimmickData)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[InGameGameMode] SpawnGimmicks: StageData or StageGimmickData is null"));
+		return;
+	}
+
+	TArray<FName> RowNames = StageData->StageGimmickData->GetRowNames();
+	if (!RowNames.IsValidIndex(StageIndex))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[InGameGameMode] SpawnGimmicks: invalid StageIndex %d"), StageIndex);
+		return;
+	}
+
+	FStageGimmickData* Row = StageData->StageGimmickData->FindRow<FStageGimmickData>(RowNames[StageIndex], TEXT(""));
+	if (!Row)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[InGameGameMode] SpawnGimmicks: row not found"));
+		return;
+	}
+
+	UWorld* World = GetWorld();
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	for (const FStageGimmickItem& Item : Row->GimmickList)
+	{
+		UClass* GimmickClass = Item.GimmickClass.LoadSynchronous();
+		if (!GimmickClass)
+		{
+			continue;
+		}
+
+		AActor* SpawnedActor = World->SpawnActor<AActor>(GimmickClass, Item.Transform, SpawnParams);
+		if (SpawnedActor)
+		{
+			SpawnedGimmickActors.Add(SpawnedActor);
+		}
+	}
+
+	UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] Spawned %d gimmicks for stage %d"), SpawnedGimmickActors.Num(), StageIndex);
+}
+
+void AOSMKInGameGameMode::ClearStage()
+{
+	ClearStaticMesh();
+	ClearEnemies();
+	ClearGimmicks();
+	UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] Stage cleared"));
+}
+
+void AOSMKInGameGameMode::ClearStaticMesh()
+{
+	for (AActor* Actor : SpawnedMeshActors)
+	{
+		if (IsValid(Actor))
+		{
+			Actor->Destroy();
+		}
+	}
+	SpawnedMeshActors.Empty();
+}
+
+void AOSMKInGameGameMode::ClearEnemies()
+{
+	for (AActor* Actor : SpawnedEnemyActors)
+	{
+		if (IsValid(Actor))
+		{
+			Actor->Destroy();
+		}
+	}
+	SpawnedEnemyActors.Empty();
+}
+
+void AOSMKInGameGameMode::ClearGimmicks()
+{
+	for (AActor* Actor : SpawnedGimmickActors)
+	{
+		if (IsValid(Actor))
+		{
+			Actor->Destroy();
+		}
+	}
+	SpawnedGimmickActors.Empty();
 }

@@ -15,4 +15,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	static void ExtractEnemyFromLevels(class UDataTable* TargetDataTable, TArray<TSoftObjectPtr<UWorld>> TargetLevels);
+
+	UFUNCTION(BlueprintCallable)
+	static void ExtractGimmickFromLevels(class UDataTable* TargetDataTable, TArray<TSoftObjectPtr<UWorld>> TargetLevels);
 };

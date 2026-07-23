@@ -41,4 +41,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy")
 	TObjectPtr<UDataTable> StageEnemyData = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy")
+	TObjectPtr<UDataTable> StageGimmickData = nullptr;
 };

@@ -18,6 +18,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void SpawnStaticMesh(int32 StageIndex);
+	
+	UFUNCTION(BlueprintCallable)
+	void SpawnGimmicks(int32 StageIndex);
 
 	UFUNCTION(BlueprintCallable)
 	void ClearStage();
@@ -27,6 +30,9 @@ public:
 	
 	UFUNCTION(BlueprintCallable)
 	void ClearEnemies();
+	
+	UFUNCTION(BlueprintCallable)
+	void ClearGimmicks();
 
 protected:
 	virtual void BeginPlay() override;
@@ -46,4 +52,7 @@ private:
 
 	UPROPERTY()
 	TArray<AActor*> SpawnedEnemyActors;
+	
+	UPROPERTY()
+	TArray<AActor*> SpawnedGimmickActors;
 };

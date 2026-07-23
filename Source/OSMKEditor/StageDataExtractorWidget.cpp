@@ -44,4 +44,9 @@ void UStageDataExtractorWidget::OnExtractButtonClicked()
 	{
 		UStageDataExtractorLibrary::ExtractEnemyFromLevels(EnemyDataTable, TargetLevels);
 	}
+
+	if (TargetLevels.Num() > 0 && GimmickDataTable)
+	{
+		UStageDataExtractorLibrary::ExtractGimmickFromLevels(GimmickDataTable, TargetLevels);
+	}
 }

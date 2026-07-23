@@ -5,6 +5,8 @@
 #include "Data/Stage/StageStaticMeshData.h"
 #include "Data/Stage/StageEnemyData.h"
 #include "Character/AI/EnemyCharacter.h"
+#include "Data/Stage/StageGimmickData.h"
+#include "Interactable/Gimmick/GimmickBase.h"
 
 #if WITH_EDITOR
 #include "EngineUtils.h"
@@ -113,6 +115,53 @@ void UStageDataExtractorLibrary::ExtractEnemyFromLevels(UDataTable* TargetDataTa
 		}
 
 		TargetDataTable->AddRow(RowName, NewEnemyData);
+	}
+
+	TargetDataTable->MarkPackageDirty();
+#endif
+}
+
+void UStageDataExtractorLibrary::ExtractGimmickFromLevels(UDataTable* TargetDataTable, TArray<TSoftObjectPtr<UWorld>> TargetLevels)
+{
+#if WITH_EDITOR
+	if (!TargetDataTable)
+	{
+		return;
+	}
+
+	TargetDataTable->EmptyTable();
+
+	for (const TSoftObjectPtr<UWorld>& SoftWorld : TargetLevels)
+	{
+		if (SoftWorld.IsNull())
+		{
+			continue;
+		}
+
+		UWorld* LoadedWorld = SoftWorld.LoadSynchronous();
+		if (!LoadedWorld)
+		{
+			continue;
+		}
+
+		FName RowName = FName(*LoadedWorld->GetName());
+		FStageGimmickData NewGimmickData;
+
+		for (TActorIterator<AGimmickBase> It(LoadedWorld); It; ++It)
+		{
+			AGimmickBase* Gimmick = *It;
+			if (!Gimmick)
+			{
+				continue;
+			}
+
+			FStageGimmickItem Item;
+			Item.GimmickClass = TSoftClassPtr<AGimmickBase>(Gimmick->GetClass());
+			Item.Transform = Gimmick->GetActorTransform();
+			NewGimmickData.GimmickList.Add(Item);
+		}
+
+		TargetDataTable->AddRow(RowName, NewGimmickData);
 	}
 
 	TargetDataTable->MarkPackageDirty();
