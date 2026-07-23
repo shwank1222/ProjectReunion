@@ -16,6 +16,9 @@ struct FStageLevelData
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	FGameplayTagContainer UnlockedBullets = FGameplayTagContainer();
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy")
+	TArray<FVector> EnemySpawnLocations;
 };
 
 UCLASS()
@@ -26,6 +29,9 @@ class OSMK_API UStageData : public UDataAsset
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet")
 	UDataTable* BulletDataTable = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy")
+	TSoftClassPtr<AActor> EnemyClass = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
 	TArray<FStageLevelData> Stages;
