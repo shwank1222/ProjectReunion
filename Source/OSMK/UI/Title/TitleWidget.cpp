@@ -25,9 +25,9 @@ void UTitleWidget::OnClickGameStart()
 {
 	if (StageDataAsset)
 	{
-		if (StageDataAsset->StageLevels.IsValidIndex(0))
+		if (StageDataAsset->Stages.IsValidIndex(0))
 		{
-			UGameplayStatics::OpenLevelBySoftObjectPtr(this, StageDataAsset->StageLevels[0]);
+			UGameplayStatics::OpenLevelBySoftObjectPtr(this, StageDataAsset->Stages[0].Level);
 		}
 		else
 		{
