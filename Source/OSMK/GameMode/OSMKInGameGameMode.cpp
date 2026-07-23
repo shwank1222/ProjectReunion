@@ -1,11 +1,14 @@
 #include "GameMode/OSMKInGameGameMode.h"
 #include "UI/Scouting/ScoutingWidget.h"
+#include "Core/OSMKGameState.h"
 #include "Data/StageData.h"
 #include "Blueprint/UserWidget.h"
 
 void AOSMKInGameGameMode::BeginPlay()
 {
 	Super::BeginPlay();
+
+	SpawnEnemies(0);
 
 	if (!ScoutingWidgetClass)
 	{
@@ -48,5 +51,8 @@ void AOSMKInGameGameMode::SpawnEnemies(int32 StageIndex)
 		World->SpawnActor<AActor>(EnemyClass, Location, FRotator::ZeroRotator);
 	}
 
-	UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] Spawned %d enemies"), SpawnLocations.Num());
+	if (AOSMKGameState* GS = GetGameState<AOSMKGameState>())
+	{
+		GS->SetEnemyCount(SpawnLocations.Num());
+	}
 }

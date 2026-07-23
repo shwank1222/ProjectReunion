@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "Core/OSMKGameState.h"
 #include "ScoutingWidget.generated.h"
 
 UCLASS()
@@ -23,7 +24,7 @@ private:
 	void RefreshConfirmButton();
 	
 public:
-	static constexpr int32 MaxBulletSlots = 6;
+	static constexpr int32 MaxBulletSlots = AOSMKGameState::MaxBulletSlots;
 	
 protected:
 	UPROPERTY(meta = (BindWidget))
@@ -47,4 +48,15 @@ protected:
 private:
 	TArray<FName> SlotBullets;
 	TArray<class UBulletSlotWidget*> SlotWidgets;
+	
+	
+	// Debug
+protected:
+	UPROPERTY(meta = (BindWidget))
+	class UButton* Btn_DebugClose;
+
+	// Debug
+private:
+	UFUNCTION()
+	void OnDebugCloseClicked();
 };
