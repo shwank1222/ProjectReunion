@@ -6,7 +6,6 @@
 #include "EnhancedInputComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
 
 
 APlayerCharacter::APlayerCharacter()
@@ -34,8 +33,15 @@ APlayerCharacter::APlayerCharacter()
 
 	GetCapsuleComponent()->SetCapsuleSize(34.0f, 96.0f);
 	
-	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
-	GetCharacterMovement()->AirControl = 0.5f;
+	FirstPersonPistol = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FP Pistol"));
+	FirstPersonPistol->SetupAttachment(FirstPersonMesh, FName("HandGrip_R"));
+	FirstPersonPistol->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
+	FirstPersonPistol->bOnlyOwnerSee = true;
+	
+	ThirdPersonPistol = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("TP Pistol"));
+	ThirdPersonPistol->SetupAttachment(GetMesh(), FName("HandGrip_R"));
+	ThirdPersonPistol->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::WorldSpaceRepresentation;
+	ThirdPersonPistol->bOwnerNoSee = true;
 }
 
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
