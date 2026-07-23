@@ -19,7 +19,10 @@ public class OSMK : ModuleRules
 			"GameplayStateTreeModule",
 			"UMG",
 			"Slate",
-			"GameplayTags"
+			"GameplayTags",
+			"Niagara",
+			"GeometryCollectionEngine",
+			"FieldSystemEngine"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
