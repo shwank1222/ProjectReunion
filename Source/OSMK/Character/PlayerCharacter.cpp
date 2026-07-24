@@ -70,6 +70,7 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &ThisClass::CancelFiring);
 	}
 }
+
 void APlayerCharacter::Die()
 {
 	Super::Die();
@@ -130,6 +131,7 @@ void APlayerCharacter::OnHoldTriggered()
 	if (UOSMKSlowMotionSubsystem* Subsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
 	{
 		Subsystem->ApplySlowMotion(0.2f, 10000.0f);
+		Subsystem->ApplyGimmickHighlight();
 		bIsFirring = true;
 	}
 }
@@ -170,6 +172,7 @@ void APlayerCharacter::StopSlowMotion() const
 	if (UOSMKSlowMotionSubsystem* Subsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
 	{
 		Subsystem->RestoreTimeDilation();
+		Subsystem->RestoreGimmickHighlight();
 	}
 }
 
