@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
-#include "Core/OSMKGameState.h"
 #include "ScoutingWidget.generated.h"
 
 UCLASS()
@@ -12,51 +11,20 @@ class OSMK_API UScoutingWidget : public UUserWidget
 
 protected:
 	virtual void NativeConstruct() override;
-	
-private:
+
 	UFUNCTION()
-	void OnConfirmClicked();
-	
-	void PopulateBulletList();
-	void InitSlots();
-	void AddBulletToSlot(FName RowName);
-	void RemoveBulletFromSlot(int32 SlotIndex);
-	void RefreshConfirmButton();
-	
-public:
-	static constexpr int32 MaxBulletSlots = AOSMKGameState::MaxBulletSlots;
-	
+	void OnBulletPrepClicked();
+
+	UFUNCTION()
+	void OnScoutClicked();
+
 protected:
 	UPROPERTY(meta = (BindWidget))
-	class UScrollBox* List_Bullets = nullptr;
+	class UBulletSelectionWidget* BulletSelectionWidget = nullptr;
 
 	UPROPERTY(meta = (BindWidget))
-	class UHorizontalBox* Box_Slots = nullptr;
+	class UButton* Btn_BulletPrep = nullptr;
 
 	UPROPERTY(meta = (BindWidget))
-	class UButton* Btn_Confirm = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Scouting")
-	class UDataTable* BulletDataTable = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Scouting")
-	TSubclassOf<class UBulletListItemWidget> BulletItemWidgetClass = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Scouting")
-	TSubclassOf<class UBulletSlotWidget> SlotWidgetClass = nullptr;
-
-private:
-	TArray<FName> SlotBullets;
-	TArray<class UBulletSlotWidget*> SlotWidgets;
-	
-	
-	// Debug
-protected:
-	UPROPERTY(meta = (BindWidget))
-	class UButton* Btn_DebugClose;
-
-	// Debug
-private:
-	UFUNCTION()
-	void OnDebugCloseClicked();
+	class UButton* Btn_Scout = nullptr;
 };

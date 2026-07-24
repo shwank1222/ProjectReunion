@@ -49,4 +49,14 @@ void UStageDataExtractorWidget::OnExtractButtonClicked()
 	{
 		UStageDataExtractorLibrary::ExtractGimmickFromLevels(GimmickDataTable, TargetLevels);
 	}
+
+	if (TargetLevels.Num() > 0 && ActorDataTable)
+	{
+		UStageDataExtractorLibrary::ExtractActorDataFromLevels(ActorDataTable, TargetLevels);
+	}
+
+	if (TargetLevels.Num() > 0 && ScoutCameraDataTable)
+	{
+		UStageDataExtractorLibrary::ExtractScoutCameraDataFromLevels(ScoutCameraDataTable, TargetLevels);
+	}
 }

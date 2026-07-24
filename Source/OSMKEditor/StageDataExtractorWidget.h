@@ -35,6 +35,12 @@ public:
 	UPROPERTY(EditDefaultsOnly, Category = "Config")
 	UDataTable* GimmickDataTable = nullptr;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Config")
+	UDataTable* ActorDataTable = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Config")
+	UDataTable* ScoutCameraDataTable = nullptr;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stage Data Extractor")
 	TArray<TSoftObjectPtr<UWorld>> TargetLevels;
 };

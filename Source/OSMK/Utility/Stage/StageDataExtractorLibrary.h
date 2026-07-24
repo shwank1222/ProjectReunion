@@ -18,4 +18,10 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	static void ExtractGimmickFromLevels(class UDataTable* TargetDataTable, TArray<TSoftObjectPtr<UWorld>> TargetLevels);
+
+	UFUNCTION(BlueprintCallable)
+	static void ExtractActorDataFromLevels(class UDataTable* TargetDataTable, TArray<TSoftObjectPtr<UWorld>> TargetLevels);
+
+	UFUNCTION(BlueprintCallable)
+	static void ExtractScoutCameraDataFromLevels(class UDataTable* TargetDataTable, TArray<TSoftObjectPtr<UWorld>> TargetLevels);
 };

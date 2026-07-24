@@ -1,162 +1,56 @@
 #include "UI/Scouting/ScoutingWidget.h"
-#include "UI/Scouting/BulletListItemWidget.h"
-#include "UI/Scouting/BulletSlotWidget.h"
-#include "Core/OSMKGameState.h"
-#include "Data/BulletData.h"
+#include "UI/Scouting/BulletSelectionWidget.h"
 #include "Components/Button.h"
-#include "Components/ScrollBox.h"
-#include "Components/HorizontalBox.h"
-#include "Engine/DataTable.h"
 
 void UScoutingWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	SlotBullets.Init(NAME_None, MaxBulletSlots);
-
-	InitSlots();
-	PopulateBulletList();
-	RefreshConfirmButton();
-
-	if (Btn_Confirm)
+	if (BulletSelectionWidget)
 	{
-		Btn_Confirm->OnClicked.AddDynamic(this, &UScoutingWidget::OnConfirmClicked);
-	}
-	if (Btn_DebugClose)
-    {
-           Btn_DebugClose->OnClicked.AddDynamic(this, &UScoutingWidget::OnDebugCloseClicked);
-    }
-}
-
-void UScoutingWidget::InitSlots()
-{
-	if (!Box_Slots || !SlotWidgetClass)
-	{
-		return;
+		BulletSelectionWidget->SetVisibility(ESlateVisibility::Collapsed);
 	}
 
-	Box_Slots->ClearChildren();
-	SlotWidgets.Empty();
-
-	for (int32 i = 0; i < MaxBulletSlots; i++)
+	if (Btn_BulletPrep)
 	{
-		UBulletSlotWidget* SlotWidget = CreateWidget<UBulletSlotWidget>(this, SlotWidgetClass);
-		if (!SlotWidget)
-		{
-			continue;
-		}
+		Btn_BulletPrep->OnClicked.AddDynamic(this, &UScoutingWidget::OnBulletPrepClicked);
+	}
 
-		SlotWidget->Init(i);
-		SlotWidget->OnSlotClicked.BindUObject(this, &UScoutingWidget::RemoveBulletFromSlot);
-		Box_Slots->AddChild(SlotWidget);
-		SlotWidgets.Add(SlotWidget);
+	if (Btn_Scout)
+	{
+		Btn_Scout->SetVisibility(ESlateVisibility::Collapsed);
+		Btn_Scout->OnClicked.AddDynamic(this, &UScoutingWidget::OnScoutClicked);
 	}
 }
 
-void UScoutingWidget::PopulateBulletList()
+void UScoutingWidget::OnBulletPrepClicked()
 {
-	if (!List_Bullets)
+	if (BulletSelectionWidget)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[ScoutingWidget] List_Bullets is null"));
-		return;
+		BulletSelectionWidget->SetVisibility(ESlateVisibility::Visible);
 	}
-	if (!BulletDataTable)
+	if (Btn_BulletPrep)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[ScoutingWidget] BulletDataTable is null"));
-		return;
+		Btn_BulletPrep->SetVisibility(ESlateVisibility::Collapsed);
 	}
-	if (!BulletItemWidgetClass)
+	if (Btn_Scout)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[ScoutingWidget] BulletItemWidgetClass is null"));
-		return;
-	}
-
-	List_Bullets->ClearChildren();
-
-	TArray<FName> RowNames = BulletDataTable->GetRowNames();
-
-	for (const FName& RowName : RowNames)
-	{
-		FBulletData* Row = BulletDataTable->FindRow<FBulletData>(RowName, TEXT(""));
-		if (!Row)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[ScoutingWidget] Row not found: %s"), *RowName.ToString());
-			continue;
-		}
-
-		UBulletListItemWidget* Item = CreateWidget<UBulletListItemWidget>(this, BulletItemWidgetClass);
-		if (!Item)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("[ScoutingWidget] Failed to create item widget for: %s"), *RowName.ToString());
-			continue;
-		}
-
-		Item->Init(RowName, Row->BulletIcon.LoadSynchronous());
-		Item->OnBulletItemClicked.BindUObject(this, &UScoutingWidget::AddBulletToSlot);
-		List_Bullets->AddChild(Item);
-		UE_LOG(LogTemp, Log, TEXT("[ScoutingWidget] Added bullet item: %s"), *RowName.ToString());
+		Btn_Scout->SetVisibility(ESlateVisibility::Visible);
 	}
 }
 
-void UScoutingWidget::AddBulletToSlot(FName RowName)
+void UScoutingWidget::OnScoutClicked()
 {
-	for (int32 i = 0; i < MaxBulletSlots; i++)
+	if (BulletSelectionWidget)
 	{
-		if (SlotBullets[i].IsNone())
-		{
-			FBulletData* Row = BulletDataTable->FindRow<FBulletData>(RowName, TEXT(""));
-			if (!Row)
-			{
-				return;
-			}
-
-			SlotBullets[i] = RowName;
-			SlotWidgets[i]->SetBullet(RowName, Row->BulletIcon.LoadSynchronous());
-			RefreshConfirmButton();
-			return;
-		}
+		BulletSelectionWidget->SetVisibility(ESlateVisibility::Collapsed);
 	}
-}
-
-void UScoutingWidget::RemoveBulletFromSlot(int32 SlotIndex)
-{
-	if (!SlotBullets.IsValidIndex(SlotIndex))
+	if (Btn_Scout)
 	{
-		return;
+		Btn_Scout->SetVisibility(ESlateVisibility::Collapsed);
 	}
-
-	SlotBullets[SlotIndex] = NAME_None;
-	SlotWidgets[SlotIndex]->ClearSlot();
-	RefreshConfirmButton();
-}
-
-void UScoutingWidget::RefreshConfirmButton()
-{
-	if (!Btn_Confirm)
+	if (Btn_BulletPrep)
 	{
-		return;
+		Btn_BulletPrep->SetVisibility(ESlateVisibility::Visible);
 	}
-
-	bool bAllFilled = !SlotBullets.Contains(NAME_None);
-	Btn_Confirm->SetIsEnabled(bAllFilled);
-}
-
-void UScoutingWidget::OnConfirmClicked()
-{
-	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
-	{
-		GS->EndScoutingPhase();
-	}
-
-	RemoveFromParent();
-}
-
-void UScoutingWidget::OnDebugCloseClicked()
-{
-	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
-	{
-		GS->EndScoutingPhase();
-	}
-
-	RemoveFromParent();
 }

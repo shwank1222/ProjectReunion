@@ -1,13 +1,17 @@
 #include "GameMode/OSMKInGameGameMode.h"
+#include "GameFramework/Pawn.h"
 #include "UI/Scouting/ScoutingWidget.h"
 #include "Core/OSMKGameState.h"
 #include "Data/StageData.h"
 #include "Data/Stage/StageStaticMeshData.h"
 #include "Data/Stage/StageEnemyData.h"
+#include "Data/Stage/StageGimmickData.h"
+#include "Data/Stage/StageActorData.h"
+#include "Data/Stage/StageScoutCameraData.h"
 #include "Character/AI/EnemyCharacter.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/StaticMeshComponent.h"
-#include "Data/Stage/StageGimmickData.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Engine/StaticMeshActor.h"
 
 void AOSMKInGameGameMode::BeginPlay()
@@ -38,6 +42,9 @@ void AOSMKInGameGameMode::SpawnStage(int32 StageIndex)
 	SpawnStaticMesh(StageIndex);
 	SpawnEnemies(StageIndex);
 	SpawnGimmicks(StageIndex);
+	SpawnActors(StageIndex);
+	SpawnScoutCamera(StageIndex);
+	SpawnPlayerCharacter();
 }
 
 void AOSMKInGameGameMode::SpawnStaticMesh(int32 StageIndex)
@@ -199,6 +206,8 @@ void AOSMKInGameGameMode::ClearStage()
 	ClearStaticMesh();
 	ClearEnemies();
 	ClearGimmicks();
+	ClearActors();
+	ClearScoutCamera();
 	UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] Stage cleared"));
 }
 
@@ -236,4 +245,154 @@ void AOSMKInGameGameMode::ClearGimmicks()
 		}
 	}
 	SpawnedGimmickActors.Empty();
+}
+
+void AOSMKInGameGameMode::SpawnActors(int32 StageIndex)
+{
+	if (!StageData || !StageData->StageActorData)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[InGameGameMode] SpawnActors: StageData or StageActorData is null"));
+		return;
+	}
+
+	TArray<FName> RowNames = StageData->StageActorData->GetRowNames();
+	if (!RowNames.IsValidIndex(StageIndex))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[InGameGameMode] SpawnActors: invalid StageIndex %d"), StageIndex);
+		return;
+	}
+
+	FStageActorData* Row = StageData->StageActorData->FindRow<FStageActorData>(RowNames[StageIndex], TEXT(""));
+	if (!Row)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[InGameGameMode] SpawnActors: row not found"));
+		return;
+	}
+
+	PlayerStartTransform = Row->PlayerStartTransform;
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	for (const FStageActorItem& Item : Row->TriggerList)
+	{
+		UClass* TriggerClass = Item.ActorClass.LoadSynchronous();
+		if (!TriggerClass)
+		{
+			continue;
+		}
+
+		AActor* Spawned = GetWorld()->SpawnActor<AActor>(TriggerClass, Item.Transform, SpawnParams);
+		if (Spawned)
+		{
+			SpawnedTriggerActors.Add(Spawned);
+		}
+	}
+}
+
+void AOSMKInGameGameMode::SpawnScoutCamera(int32 StageIndex)
+{
+	if (!StageData || !StageData->StageScoutCameraData)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[InGameGameMode] SpawnScoutCamera: StageData or StageScoutCameraData is null"));
+		return;
+	}
+
+	UClass* CameraClass = StageData->ScoutCameraClass.LoadSynchronous();
+	if (!CameraClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[InGameGameMode] SpawnScoutCamera: ScoutCameraClass is null"));
+		return;
+	}
+
+	TArray<FName> RowNames = StageData->StageScoutCameraData->GetRowNames();
+	if (!RowNames.IsValidIndex(StageIndex))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[InGameGameMode] SpawnScoutCamera: invalid StageIndex %d"), StageIndex);
+		return;
+	}
+
+	FStageScoutCameraData* Row = StageData->StageScoutCameraData->FindRow<FStageScoutCameraData>(RowNames[StageIndex], TEXT(""));
+	if (!Row)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[InGameGameMode] SpawnScoutCamera: row not found"));
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	SpawnedScoutCameraActor = GetWorld()->SpawnActor<AActor>(CameraClass, Row->CameraTransform, SpawnParams);
+	if (SpawnedScoutCameraActor)
+	{
+		if (USpringArmComponent* SpringArm = SpawnedScoutCameraActor->FindComponentByClass<USpringArmComponent>())
+		{
+			SpringArm->TargetArmLength = Row->SpringArmLength;
+			SpringArm->SocketOffset = Row->SpringArmSocketOffset;
+		}
+
+		APlayerController* PC = GetWorld()->GetFirstPlayerController();
+		if (PC)
+		{
+			PC->SetViewTarget(SpawnedScoutCameraActor);
+		}
+	}
+}
+
+void AOSMKInGameGameMode::ClearActors()
+{
+	for (AActor* Actor : SpawnedTriggerActors)
+	{
+		if (IsValid(Actor))
+		{
+			Actor->Destroy();
+		}
+	}
+	SpawnedTriggerActors.Empty();
+}
+
+void AOSMKInGameGameMode::ClearScoutCamera()
+{
+	if (IsValid(SpawnedScoutCameraActor))
+	{
+		SpawnedScoutCameraActor->Destroy();
+		SpawnedScoutCameraActor = nullptr;
+	}
+}
+
+void AOSMKInGameGameMode::SpawnPlayerCharacter()
+{
+	if (!PlayerCharacterClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[InGameGameMode] SpawnPlayerCharacter: PlayerCharacterClass is null"));
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	SpawnedPlayerCharacter = GetWorld()->SpawnActor<APawn>(PlayerCharacterClass, PlayerStartTransform, SpawnParams);
+}
+
+void AOSMKInGameGameMode::PossessPlayerCharacter()
+{
+	if (!SpawnedPlayerCharacter)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[InGameGameMode] PossessPlayerCharacter: SpawnedPlayerCharacter is null"));
+		return;
+	}
+
+	APlayerController* PC = GetWorld()->GetFirstPlayerController();
+	if (!PC)
+	{
+		return;
+	}
+
+	PC->Possess(SpawnedPlayerCharacter);
+
+	if (ScoutingWidget)
+	{
+		ScoutingWidget->RemoveFromParent();
+		ScoutingWidget = nullptr;
+	}
 }

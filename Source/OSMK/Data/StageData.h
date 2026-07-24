@@ -55,15 +55,24 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
 	TSoftObjectPtr<UWorld> InGameLevel = nullptr;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
 	TObjectPtr<UDataTable> StageStaticMeshData = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
 	TObjectPtr<UDataTable> StageEnemyData = nullptr;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
 	TObjectPtr<UDataTable> StageGimmickData = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
+	TObjectPtr<UDataTable> StageActorData = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
+	TObjectPtr<UDataTable> StageScoutCameraData = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Scout Camera")
+	TSoftClassPtr<AActor> ScoutCameraClass = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stage")
 	TArray<FStageLevelConfig> StageConfigs;
