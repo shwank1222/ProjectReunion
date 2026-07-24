@@ -20,7 +20,6 @@ public:
 	void DeactivateLogic(const FString& Reason) const;
 
 protected:
-	virtual void BeginPlay() override;
 	virtual void OnPossess(APawn* InPawn) override;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)

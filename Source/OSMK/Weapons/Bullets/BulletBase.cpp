@@ -4,6 +4,7 @@
 #include "BulletBase.h"
 
 #include "Character/AI/EnemyCharacter.h"
+#include "Core/OSMKGameState.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Interactable/Gimmick/GimmickBase.h"
 
@@ -19,7 +20,7 @@ ABulletBase::ABulletBase()
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
 	ProjectileMovement->InitialSpeed = 3000.0f;
 	ProjectileMovement->MaxSpeed = 3500.0f;
-	ProjectileMovement->ProjectileGravityScale = 0.0f;
+	ProjectileMovement->ProjectileGravityScale = 0.2f;
 	ProjectileMovement->bShouldBounce = false;
 	
 	InitialLifeSpan = Lifespan;
@@ -34,8 +35,18 @@ void ABulletBase::BeginPlay()
 	
 }
 
+void ABulletBase::Destroyed()
+{
+	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
+	{
+		GS->NotifyProjectileDestroyed();
+	}
+	
+	Super::Destroyed();
+}
+
 void ABulletBase::OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse,
-	const FHitResult& Hit)
+                              const FHitResult& Hit)
 {
 	UE_LOG(LogBullet, Warning, TEXT("[%s] Hit"), *GetName());
 	

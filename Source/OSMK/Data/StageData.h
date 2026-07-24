@@ -21,11 +21,31 @@ struct FStageLevelData
 	TArray<FVector> EnemySpawnLocations;
 };
 
+USTRUCT(BlueprintType)
+struct FStageLevelConfig
+{
+	GENERATED_BODY()
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stage")
+	FName StageRowName = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet")
+	TArray<FName> UnlockedBulletRowNames;
+};
+
 UCLASS()
 class OSMK_API UStageData : public UDataAsset
 {
 	GENERATED_BODY()
+	
+public:
+	virtual void PostLoad() override;
 
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
+	void RefreshStageConfigs();
+#endif
+	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet")
 	UDataTable* BulletDataTable = nullptr;
@@ -33,6 +53,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy")
 	TSoftClassPtr<AActor> EnemyClass = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	TArray<FStageLevelData> Stages;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
+	TSoftObjectPtr<UWorld> InGameLevel = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
+	TObjectPtr<UDataTable> StageStaticMeshData = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
+	TObjectPtr<UDataTable> StageEnemyData = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
+	TObjectPtr<UDataTable> StageGimmickData = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stage")
+	TArray<FStageLevelConfig> StageConfigs;
 };
