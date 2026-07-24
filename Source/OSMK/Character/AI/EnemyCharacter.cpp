@@ -25,8 +25,11 @@ void AEnemyCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	PlayerCharacter = UGameplayStatics::GetPlayerCharacter(this, 0);
-	
-	ActivateEnemy();
+
+	if (bAutoActivate)
+	{
+		ActivateEnemy();
+	}
 }
 
 void AEnemyCharacter::Fire() const
@@ -45,7 +48,7 @@ void AEnemyCharacter::Fire() const
 	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
 	{
 		UE_LOG(LogEnemy, Warning, TEXT("Hit: %s"), *Hit.GetActor()->GetName());
-		
+
 		if (APlayerCharacter* Player = Cast<APlayerCharacter>(Hit.GetActor()))
 		{
 			Player->ApplyDamage();
@@ -64,12 +67,12 @@ void AEnemyCharacter::ActivateEnemy() const
 void AEnemyCharacter::Die()
 {
 	Super::Die();
-	
+
 	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
 	{
 		GS->NotifyEnemyKilled();
 	}
-	
+
 	FTimerHandle TimerHandle;
 	GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::DestroyCharacter, 2.0f, false);
 }
@@ -80,6 +83,6 @@ void AEnemyCharacter::DestroyCharacter()
 	{
 		AIController->DeactivateLogic(TEXT("Enemy Dead"));
 	}
-	
+
 	Destroy();
 }
