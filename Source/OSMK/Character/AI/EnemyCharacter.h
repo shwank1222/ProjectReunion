@@ -18,6 +18,8 @@ public:
 	
 	void Fire() const;
 	
+	void ActivateEnemy() const;
+	
 protected:
 	virtual void Die() override;
 	
@@ -39,7 +41,4 @@ protected:
 
 private:
 	void DestroyCharacter();
-	
-	FRotator DefaultRotationRate = FRotator::ZeroRotator;
-	
 };

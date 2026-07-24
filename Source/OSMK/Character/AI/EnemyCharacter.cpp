@@ -6,7 +6,7 @@
 #include "OSMKAIController.h"
 #include "Character/PlayerCharacter.h"
 #include "Components/ArrowComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
+#include "Core/OSMKGameState.h"
 #include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogEnemy, Log, All);
@@ -24,9 +24,9 @@ void AEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	DefaultRotationRate = GetCharacterMovement()->RotationRate;
-
 	PlayerCharacter = UGameplayStatics::GetPlayerCharacter(this, 0);
+	
+	ActivateEnemy();
 }
 
 void AEnemyCharacter::Fire() const
@@ -53,9 +53,22 @@ void AEnemyCharacter::Fire() const
 	}
 }
 
+void AEnemyCharacter::ActivateEnemy() const
+{
+	if (AOSMKAIController* AIController = Cast<AOSMKAIController>(GetController()))
+	{
+		AIController->ActivateLogic();
+	}
+}
+
 void AEnemyCharacter::Die()
 {
 	Super::Die();
+	
+	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
+	{
+		GS->NotifyEnemyKilled();
+	}
 	
 	FTimerHandle TimerHandle;
 	GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::DestroyCharacter, 2.0f, false);
