@@ -16,7 +16,9 @@ class OSMK_API AOSMKAIController : public AAIController
 public:
 	AOSMKAIController();
 	
-	void ActivateLogic() const;
+	virtual void BeginPlay() override;
+	
+	void ActivateLogic();
 	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)

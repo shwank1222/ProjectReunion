@@ -7,6 +7,20 @@
 #include "StateTreeExecutionContext.h"
 #include "Kismet/GameplayStatics.h"
 
+EStateTreeRunStatus FStateTreeShootAtTargetTask::EnterState(FStateTreeExecutionContext& Context,
+                                                            const FStateTreeTransitionResult& Transition) const
+{
+	auto [Character] = Context.GetInstanceData(*this);
+	if (!IsValid(Character))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+	
+	Character->Fire();
+	
+	return EStateTreeRunStatus::Succeeded;
+}
+
 EStateTreeRunStatus FStateTreeGetPlayerInfoTask::EnterState(FStateTreeExecutionContext& Context,
                                                             const FStateTreeTransitionResult& Transition) const
 {

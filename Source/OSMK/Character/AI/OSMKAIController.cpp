@@ -4,6 +4,8 @@
 #include "OSMKAIController.h"
 
 #include "Components/StateTreeAIComponent.h"
+#include "GameFramework/Character.h"
+#include "Kismet/GameplayStatics.h"
 
 AOSMKAIController::AOSMKAIController()
 {
@@ -13,7 +15,19 @@ AOSMKAIController::AOSMKAIController()
 	StateTreeAIComponent->SetStartLogicAutomatically(false);
 }
 
-void AOSMKAIController::ActivateLogic() const
+void AOSMKAIController::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	ActivateLogic();
+}
+
+void AOSMKAIController::ActivateLogic()
 {
 	StateTreeAIComponent->StartLogic();
+	
+	if (ACharacter* Player = UGameplayStatics::GetPlayerCharacter(this, 0))
+	{
+		SetFocus(Player);
+	}
 }

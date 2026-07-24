@@ -6,8 +6,29 @@
 #include "StateTreeTaskBase.h"
 #include "OSMKStateTreeUtility.generated.h"
 
+class AAIController;
 class AOSMKAIController;
 class AEnemyCharacter;
+
+USTRUCT()
+struct FStateTreeShootAtTargetInstanceData
+{
+	GENERATED_BODY()
+	
+	UPROPERTY(EditAnywhere, Category = Context)
+	TObjectPtr<AEnemyCharacter> Character;
+};
+
+USTRUCT(meta = (DisplayName = "Shoot At Target"))
+struct FStateTreeShootAtTargetTask : public FStateTreeTaskCommonBase
+{
+	GENERATED_BODY()
+	
+	using FInstanceDataType = FStateTreeShootAtTargetInstanceData;
+	virtual const UStruct* GetInstanceDataType() const override { return FInstanceDataType::StaticStruct(); }
+	
+	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+};
 
 USTRUCT()
 struct FStateTreeGetPlayerInfoInstanceData
