@@ -49,9 +49,13 @@ protected:
 private:
 	void MoveInput(const FInputActionValue& Value);
 	void LookInput(const FInputActionValue& Value);
+	
+	void StartFiring();
+	void OnHoldTriggered();
+	void CancelFiring();
 	void Fire();
-	void StartAim();
-	void StopAim();
+	
+	void StopSlowMotion() const;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
@@ -59,9 +63,17 @@ private:
 	TObjectPtr<UInputAction> LookAction;
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> FireAction;
-	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> AimAction;
-
+	
+	UPROPERTY(EditDefaultsOnly)
+	float AutoFireDuration = 0.5f;
+	UPROPERTY(EditDefaultsOnly)
+	float PostAutoFireDelay = 0.5f;
+	
+	FTimerHandle AutoFireTimerHandle;
+	FTimerHandle RestoreTimerHandle;
+	
+	uint8 bIsFirring : 1 = false;
+	
 #pragma endregion
 
 #pragma region Weapon
@@ -69,6 +81,9 @@ private:
 public:
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void AddAmmo(const FName RowName);
+	
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void RestoreAmmo();
 	
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void ResetAmmo();
@@ -111,20 +126,6 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
 	TArray<FBulletData> LoadedAmmo;
-	
-#pragma region Aim
-	
-private:
-	void StartAutoFireTimer();
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Aim")
-	float AutoFireInterval = 0.5f;
-	
-	FTimerHandle AutoFireTimer;
-	
-	uint8 bIsAiming : 1 = false;
-	
-#pragma endregion
 
 #pragma endregion
 };

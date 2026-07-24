@@ -21,6 +21,10 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+public:
+	virtual void Destroyed() override;
+	
+protected:
 	UFUNCTION()
 	virtual void OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse,
 	                         const FHitResult& Hit);

@@ -4,6 +4,7 @@
 #include "BulletBase.h"
 
 #include "Character/AI/EnemyCharacter.h"
+#include "Core/OSMKGameState.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Interactable/Gimmick/GimmickBase.h"
 
@@ -34,8 +35,18 @@ void ABulletBase::BeginPlay()
 	
 }
 
+void ABulletBase::Destroyed()
+{
+	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
+	{
+		GS->NotifyProjectileDestroyed();
+	}
+	
+	Super::Destroyed();
+}
+
 void ABulletBase::OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse,
-	const FHitResult& Hit)
+                              const FHitResult& Hit)
 {
 	UE_LOG(LogBullet, Warning, TEXT("[%s] Hit"), *GetName());
 	

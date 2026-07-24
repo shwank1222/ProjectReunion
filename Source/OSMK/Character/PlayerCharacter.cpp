@@ -64,11 +64,10 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ThisClass::LookInput);
 
-		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &ThisClass::Fire);
-		
-		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &ThisClass::StartAim);
-		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Canceled, this, &ThisClass::StopAim);
-		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &ThisClass::StopAim);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &ThisClass::StartFiring);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Triggered, this, &ThisClass::OnHoldTriggered);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Canceled, this, &ThisClass::CancelFiring);
+		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &ThisClass::CancelFiring);
 	}
 }
 void APlayerCharacter::Die()
@@ -76,11 +75,6 @@ void APlayerCharacter::Die()
 	Super::Die();
 
 	DisableInput(Cast<APlayerController>(GetController()));
-	
-	if (bIsAiming)
-	{
-		StopAim();
-	}
 }
 
 void APlayerCharacter::EnableRagdoll()
@@ -119,6 +113,35 @@ void APlayerCharacter::LookInput(const FInputActionValue& Value)
 	AddControllerPitchInput(LookVector.Y);
 }
 
+void APlayerCharacter::StartFiring()
+{
+	bIsFirring = false;
+	GetWorldTimerManager().SetTimer(AutoFireTimerHandle, this, &ThisClass::Fire, AutoFireDuration, false);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void APlayerCharacter::OnHoldTriggered()
+{
+	if (bIsFirring)
+	{
+		return;
+	}
+	
+	if (UOSMKSlowMotionSubsystem* Subsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
+	{
+		Subsystem->ApplySlowMotion(0.2f, 10000.0f);
+		bIsFirring = true;
+	}
+}
+
+void APlayerCharacter::CancelFiring()
+{
+	if (GetWorldTimerManager().IsTimerActive(AutoFireTimerHandle))
+	{
+		Fire();		
+	}
+}
+
 void APlayerCharacter::Fire()
 {
 	if (LoadedAmmo.IsEmpty())
@@ -133,37 +156,21 @@ void APlayerCharacter::Fire()
 	PlayFireSound();
 	
 	FireProjectile(BulletClassSoft.LoadSynchronous());
+	
+	GetWorldTimerManager().ClearTimer(AutoFireTimerHandle);
+	bIsFirring = false;
+	
+	GetWorldTimerManager().SetTimer(RestoreTimerHandle, this, &ThisClass::StopSlowMotion, PostAutoFireDelay, false);
 
 	UE_LOG(LogTemp, Warning, TEXT("Fired!"));
-	
-	if (bIsAiming)
-	{
-		StartAutoFireTimer();
-	}
 }
 
-void APlayerCharacter::StartAim()
-{
-	if (UOSMKSlowMotionSubsystem* Subsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
-	{
-		Subsystem->ApplySlowMotion(0.2f, 10000.0f);
-	}
-	
-	bIsAiming = true;
-	
-	StartAutoFireTimer();
-}
-
-void APlayerCharacter::StopAim()
+void APlayerCharacter::StopSlowMotion() const
 {
 	if (UOSMKSlowMotionSubsystem* Subsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
 	{
 		Subsystem->RestoreTimeDilation();
 	}
-	
-	GetWorldTimerManager().ClearTimer(AutoFireTimer);
-	
-	bIsAiming = false;
 }
 
 void APlayerCharacter::AddAmmo(const FName RowName)
@@ -185,6 +192,19 @@ void APlayerCharacter::AddAmmo(const FName RowName)
 
 	UE_LOG(LogCharacter, Warning, TEXT("[%s] Loaded"), *BulletData->BulletName.ToString());
 
+	OnLoadedAmmoChanged.Broadcast();
+}
+
+void APlayerCharacter::RestoreAmmo()
+{
+	if (LoadedAmmo.IsEmpty())
+	{
+		UE_LOG(LogCharacter, Warning, TEXT("No Loaded Ammo"));
+		return;
+	}
+	
+	LoadedAmmo.RemoveAt(LoadedAmmo.Num() - 1);
+	
 	OnLoadedAmmoChanged.Broadcast();
 }
 
@@ -270,9 +290,4 @@ FBulletData* APlayerCharacter::GetBulletData(const FName RowName) const
 	}
 
 	return BulletDataTable->FindRow<FBulletData>(RowName, TEXT("BulletData"));
-}
-
-void APlayerCharacter::StartAutoFireTimer()
-{
-	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &ThisClass::Fire, AutoFireInterval, false);
 }
