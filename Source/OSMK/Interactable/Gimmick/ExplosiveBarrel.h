@@ -7,7 +7,7 @@ class UStaticMeshComponent;
 class UNiagaraSystem;
 class USoundBase;
 class UNiagaraComponent;
-class AOSMKCharacterBase;
+
 
 UCLASS()
 class OSMK_API AExplosiveBarrel : public AGimmickBase
@@ -31,12 +31,7 @@ protected:
 	TObjectPtr<UNiagaraComponent> IgnitionComponent;
 	
 	virtual void OnTriggered() override;
-	
-	void Explode();
 
-	void ScanExplosionRadius();
-	
-	void HandleCharacterHit(AOSMKCharacterBase* Character);
 	
 protected:
 	UPROPERTY(EditDefaultsOnly, Category="Explosion")
@@ -68,5 +63,8 @@ protected:
 private:
 	FTimerHandle ExplosionTimerHandle;
 	
+	void Explode();
+
+	void ScanExplosionRadius();
 	
 };
