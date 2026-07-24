@@ -34,6 +34,29 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ClearGimmicks();
 
+	UFUNCTION(BlueprintCallable)
+	void SpawnActors(int32 StageIndex);
+
+	UFUNCTION(BlueprintCallable)
+	void SpawnScoutCamera(int32 StageIndex);
+
+	UFUNCTION(BlueprintCallable)
+	void ClearActors();
+
+	UFUNCTION(BlueprintCallable)
+	void ClearScoutCamera();
+
+	FTransform GetPlayerStartTransform() const { return PlayerStartTransform; }
+
+	UFUNCTION(BlueprintCallable)
+	void SpawnPlayerCharacter();
+
+	UFUNCTION(BlueprintCallable)
+	void PossessPlayerCharacter();
+
+	UFUNCTION(BlueprintCallable)
+	void ActivateEnemies();
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -43,9 +66,13 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Stage")
 	class UStageData* StageData = nullptr;
 
+
 private:
 	UPROPERTY()
 	class UScoutingWidget* ScoutingWidget = nullptr;
+
+	UPROPERTY()
+	APawn* SpawnedPlayerCharacter = nullptr;
 
 	UPROPERTY()
 	TArray<AActor*> SpawnedMeshActors;
@@ -55,4 +82,12 @@ private:
 	
 	UPROPERTY()
 	TArray<AActor*> SpawnedGimmickActors;
+
+	UPROPERTY()
+	TArray<AActor*> SpawnedTriggerActors;
+
+	UPROPERTY()
+	AActor* SpawnedScoutCameraActor = nullptr;
+
+	FTransform PlayerStartTransform;
 };

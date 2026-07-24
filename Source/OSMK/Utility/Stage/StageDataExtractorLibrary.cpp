@@ -7,6 +7,15 @@
 #include "Character/AI/EnemyCharacter.h"
 #include "Data/Stage/StageGimmickData.h"
 #include "Interactable/Gimmick/GimmickBase.h"
+#include "Data/Stage/StageActorData.h"
+#include "Data/Stage/StageScoutCameraData.h"
+#include "GameFramework/PlayerStart.h"
+#include "GameFramework/SpringArmComponent.h"
+#include "Engine/TriggerBox.h"
+#include "Engine/TriggerCapsule.h"
+#include "Engine/TriggerSphere.h"
+#include "Engine/TriggerVolume.h"
+#include "NavMesh/NavMeshBoundsVolume.h"
 
 #if WITH_EDITOR
 #include "EngineUtils.h"
@@ -162,6 +171,126 @@ void UStageDataExtractorLibrary::ExtractGimmickFromLevels(UDataTable* TargetData
 		}
 
 		TargetDataTable->AddRow(RowName, NewGimmickData);
+	}
+
+	TargetDataTable->MarkPackageDirty();
+#endif
+}
+
+void UStageDataExtractorLibrary::ExtractActorDataFromLevels(UDataTable* TargetDataTable, TArray<TSoftObjectPtr<UWorld>> TargetLevels)
+{
+#if WITH_EDITOR
+	if (!TargetDataTable)
+	{
+		return;
+	}
+
+	TargetDataTable->EmptyTable();
+
+	for (const TSoftObjectPtr<UWorld>& SoftWorld : TargetLevels)
+	{
+		if (SoftWorld.IsNull())
+		{
+			continue;
+		}
+
+		UWorld* LoadedWorld = SoftWorld.LoadSynchronous();
+		if (!LoadedWorld)
+		{
+			continue;
+		}
+
+		FName RowName = FName(*LoadedWorld->GetName());
+		FStageActorData NewActorData;
+
+		for (TActorIterator<AActor> It(LoadedWorld); It; ++It)
+		{
+			AActor* Actor = *It;
+			if (!Actor)
+			{
+				continue;
+			}
+
+			if (Cast<ATriggerBox>(Actor) || Cast<ATriggerCapsule>(Actor) ||
+				Cast<ATriggerSphere>(Actor) || Cast<ATriggerVolume>(Actor))
+			{
+				FStageActorItem Item;
+				Item.ActorClass = TSoftClassPtr<AActor>(Actor->GetClass());
+				Item.Transform = Actor->GetActorTransform();
+				NewActorData.TriggerList.Add(Item);
+				continue;
+			}
+
+			if (Cast<APlayerStart>(Actor))
+			{
+				NewActorData.PlayerStartTransform = Actor->GetActorTransform();
+			}
+		}
+
+		for (TActorIterator<ANavMeshBoundsVolume> It(LoadedWorld); It; ++It)
+		{
+			ANavMeshBoundsVolume* NavMeshVol = *It;
+			if (!NavMeshVol)
+			{
+				continue;
+			}
+
+			FStageNavMeshItem NavItem;
+			NavItem.Transform = NavMeshVol->GetActorTransform();
+			NewActorData.NavMeshList.Add(NavItem);
+		}
+
+		TargetDataTable->AddRow(RowName, NewActorData);
+	}
+
+	TargetDataTable->MarkPackageDirty();
+#endif
+}
+
+void UStageDataExtractorLibrary::ExtractScoutCameraDataFromLevels(UDataTable* TargetDataTable, TArray<TSoftObjectPtr<UWorld>> TargetLevels)
+{
+#if WITH_EDITOR
+	if (!TargetDataTable)
+	{
+		return;
+	}
+
+	TargetDataTable->EmptyTable();
+
+	for (const TSoftObjectPtr<UWorld>& SoftWorld : TargetLevels)
+	{
+		if (SoftWorld.IsNull())
+		{
+			continue;
+		}
+
+		UWorld* LoadedWorld = SoftWorld.LoadSynchronous();
+		if (!LoadedWorld)
+		{
+			continue;
+		}
+
+		FName RowName = FName(*LoadedWorld->GetName());
+		FStageScoutCameraData NewCameraData;
+
+		for (TActorIterator<AActor> It(LoadedWorld); It; ++It)
+		{
+			AActor* Actor = *It;
+			if (!Actor)
+			{
+				continue;
+			}
+
+			if (USpringArmComponent* SpringArm = Actor->FindComponentByClass<USpringArmComponent>())
+			{
+				NewCameraData.CameraTransform = Actor->GetActorTransform();
+				NewCameraData.SpringArmLength = SpringArm->TargetArmLength;
+				NewCameraData.SpringArmSocketOffset = SpringArm->SocketOffset;
+				break;
+			}
+		}
+
+		TargetDataTable->AddRow(RowName, NewCameraData);
 	}
 
 	TargetDataTable->MarkPackageDirty();
