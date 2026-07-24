@@ -1,5 +1,6 @@
 #include "GameMode/OSMKInGameGameMode.h"
 #include "GameFramework/Pawn.h"
+#include "Character/OSMKPlayerController.h"
 #include "UI/Scouting/ScoutingWidget.h"
 #include "Core/OSMKGameState.h"
 #include "Data/StageData.h"
@@ -331,10 +332,10 @@ void AOSMKInGameGameMode::SpawnScoutCamera(int32 StageIndex)
 			SpringArm->SocketOffset = Row->SpringArmSocketOffset;
 		}
 
-		APlayerController* PC = GetWorld()->GetFirstPlayerController();
-		if (PC)
+		if (AOSMKPlayerController* PC = Cast<AOSMKPlayerController>(GetWorld()->GetFirstPlayerController()))
 		{
 			PC->SetViewTarget(SpawnedScoutCameraActor);
+			PC->EnterScoutingMode(SpawnedScoutCameraActor);
 		}
 	}
 }
@@ -382,12 +383,13 @@ void AOSMKInGameGameMode::PossessPlayerCharacter()
 		return;
 	}
 
-	APlayerController* PC = GetWorld()->GetFirstPlayerController();
+	AOSMKPlayerController* PC = Cast<AOSMKPlayerController>(GetWorld()->GetFirstPlayerController());
 	if (!PC)
 	{
 		return;
 	}
 
+	PC->ExitScoutingMode();
 	PC->Possess(SpawnedPlayerCharacter);
 
 	if (ScoutingWidget)
