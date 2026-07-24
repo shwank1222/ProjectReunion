@@ -31,7 +31,10 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void NotifyProjectileDestroyed();
-	
+
+	UFUNCTION(BlueprintCallable)
+	void ResetStageState();
+
 private:
 	void CheckStageResult();
 	
