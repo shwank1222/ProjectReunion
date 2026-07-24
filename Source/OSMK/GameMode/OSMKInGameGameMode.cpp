@@ -49,6 +49,14 @@ void AOSMKInGameGameMode::SpawnStage(int32 StageIndex)
 	SpawnActors(StageIndex);
 	SpawnScoutCamera(StageIndex);
 	SpawnPlayerCharacter();
+
+	GetWorldTimerManager().SetTimerForNextTick([this]()
+	{
+		if (UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+		{
+			NavSys->Build();
+		}
+	});
 }
 
 void AOSMKInGameGameMode::SpawnStaticMesh(int32 StageIndex)
@@ -293,19 +301,14 @@ void AOSMKInGameGameMode::SpawnActors(int32 StageIndex)
 		}
 	}
 	
-	for (const FStageNavMeshItem& Item : Row->NavMeshList)
-	{
-		ANavMeshBoundsVolume* NavMeshVol = GetWorld()->SpawnActor<ANavMeshBoundsVolume>(ANavMeshBoundsVolume::StaticClass(), Item.Transform, SpawnParams);
-		if (NavMeshVol)
-		{
-			SpawnedTriggerActors.Add(NavMeshVol);
-		}
-	}
-
-	if (UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
-	{
-		NavSys->Build();
-	}
+	// for (const FStageNavMeshItem& Item : Row->NavMeshList)
+	// {
+	// 	ANavMeshBoundsVolume* NavMeshVol = GetWorld()->SpawnActor<ANavMeshBoundsVolume>(ANavMeshBoundsVolume::StaticClass(), Item.Transform, SpawnParams);
+	// 	if (NavMeshVol)
+	// 	{
+	// 		SpawnedTriggerActors.Add(NavMeshVol);
+	// 	}
+	// }
 }
 
 void AOSMKInGameGameMode::SpawnScoutCamera(int32 StageIndex)
