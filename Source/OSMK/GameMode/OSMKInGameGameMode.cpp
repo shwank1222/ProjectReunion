@@ -1,4 +1,6 @@
 #include "GameMode/OSMKInGameGameMode.h"
+
+#include "NavigationSystem.h"
 #include "GameFramework/Pawn.h"
 #include "Character/OSMKPlayerController.h"
 #include "UI/Scouting/ScoutingWidget.h"
@@ -14,6 +16,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/StaticMeshActor.h"
+#include "NavMesh/NavMeshBoundsVolume.h"
 
 void AOSMKInGameGameMode::BeginPlay()
 {
@@ -288,6 +291,20 @@ void AOSMKInGameGameMode::SpawnActors(int32 StageIndex)
 		{
 			SpawnedTriggerActors.Add(Spawned);
 		}
+	}
+	
+	for (const FStageNavMeshItem& Item : Row->NavMeshList)
+	{
+		ANavMeshBoundsVolume* NavMeshVol = GetWorld()->SpawnActor<ANavMeshBoundsVolume>(ANavMeshBoundsVolume::StaticClass(), Item.Transform, SpawnParams);
+		if (NavMeshVol)
+		{
+			SpawnedTriggerActors.Add(NavMeshVol);
+		}
+	}
+
+	if (UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+	{
+		NavSys->Build();
 	}
 }
 
