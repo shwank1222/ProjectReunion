@@ -6,6 +6,7 @@
 #include "NiagaraComponent.h"
 #include "Engine/OverlapResult.h"
 #include "Character/OSMKCharacterBase.h"
+
 #include "DrawDebugHelpers.h"
 
 AExplosiveBarrel::AExplosiveBarrel()
@@ -177,38 +178,19 @@ void AExplosiveBarrel::ScanExplosionRadius()
 			continue;
 		}
 		HandleCharacterHit(Character);
+		
+		// Apply impulse to ragdoll
+		if (USkeletalMeshComponent* Mesh = Character->GetMesh())
+		{
+			Mesh->AddRadialImpulse(
+				GetActorLocation(),
+				ExplosionRadius,
+				ExplosionImpulse,
+				ERadialImpulseFalloff::RIF_Linear,
+				true                    // Velocity Change
+			);
+		}
 	}
 }
 
-void AExplosiveBarrel::HandleCharacterHit(AOSMKCharacterBase* Character)
-{
-	if (!Character)
-	{
-		return;
-	}
-
-	GIMMICK_LOG(
-		Log,
-		TEXT("Character hit: %s"),
-		*GetNameSafe(Character));
-	
-	Character->ApplyDamage();
-	
-	// Apply impulse to ragdoll
-	if (USkeletalMeshComponent* Mesh = Character->GetMesh())
-	{
-		Mesh->AddRadialImpulse(
-			GetActorLocation(),
-			ExplosionRadius,
-			ExplosionImpulse,
-			ERadialImpulseFalloff::RIF_Linear,
-			true                    // Velocity Change
-		);
-	}
-	
-	
-	///////////////////////////
-	// TODO : Kill character//
-	//////////////////////////
-}
 
