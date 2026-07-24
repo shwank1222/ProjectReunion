@@ -8,6 +8,8 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterDeath);
 
+DECLARE_LOG_CATEGORY_EXTERN(LogCharacter, Log, All);
+
 UCLASS()
 class OSMK_API AOSMKCharacterBase : public ACharacter
 {

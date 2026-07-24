@@ -5,6 +5,8 @@
 
 #include "GameFramework/CharacterMovementComponent.h"
 
+DEFINE_LOG_CATEGORY(LogCharacter);
+
 AOSMKCharacterBase::AOSMKCharacterBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
