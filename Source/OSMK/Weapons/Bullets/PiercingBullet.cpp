@@ -6,7 +6,6 @@
 
 APiercingBullet::APiercingBullet()
 {
-	MeshComponent->OnComponentBeginOverlap.AddUniqueDynamic(this, &APiercingBullet::OnBeginOverlap);
 }
 
 void APiercingBullet::BeginPlay()
@@ -19,14 +18,7 @@ void APiercingBullet::BeginPlay()
 void APiercingBullet::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
                                      UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	UE_LOG(LogBullet, Warning, TEXT("Piercing Bullet Overlap!"));
-	
-	if (IsValid(OtherActor))
-	{
-		UE_LOG(LogBullet, Warning, TEXT("Overlap Actor: %s"), *OtherActor->GetName());
-	}
-	
-	TriggerGimmick(OtherActor);
+	Super::OnBeginOverlap(OverlappedComponent, OtherActor, OtherComp, OtherBodyIndex, bFromSweep, SweepResult);
 	
 	RemainingPiercingCount--;
 	
