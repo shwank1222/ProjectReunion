@@ -16,13 +16,6 @@ AOSMKAIController::AOSMKAIController()
 	StateTreeAIComponent->SetStartLogicAutomatically(false);
 }
 
-void AOSMKAIController::BeginPlay()
-{
-	Super::BeginPlay();
-	
-	ActivateLogic();
-}
-
 void AOSMKAIController::ActivateLogic()
 {
 	StateTreeAIComponent->StartLogic();

@@ -18,6 +18,8 @@ public:
 	
 	void Fire() const;
 	
+	void ActivateEnemy() const;
+	
 protected:
 	virtual void Die() override;
 	
@@ -29,6 +31,9 @@ protected:
 	UPROPERTY()
 	TObjectPtr<ACharacter> PlayerCharacter;
 	
+	UPROPERTY(EditAnywhere)
+	uint8 bAutoActivate : 1 = false;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
 	FName MuzzleName = FName("Muzzle");
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
@@ -39,7 +44,4 @@ protected:
 
 private:
 	void DestroyCharacter();
-	
-	FRotator DefaultRotationRate = FRotator::ZeroRotator;
-	
 };
