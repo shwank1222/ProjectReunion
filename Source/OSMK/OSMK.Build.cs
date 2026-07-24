@@ -22,7 +22,8 @@ public class OSMK : ModuleRules
 			"GameplayTags",
 			"Niagara",
 			"GeometryCollectionEngine",
-			"FieldSystemEngine"
+			"FieldSystemEngine",
+			"CableComponent"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });
