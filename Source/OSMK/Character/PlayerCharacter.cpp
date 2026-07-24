@@ -52,7 +52,7 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	RemainingBulletNames = DefaultBulletNames;
+	ResetAmmo();
 }
 
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -65,6 +65,19 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &ThisClass::Fire);
 	}
+}
+
+float APlayerCharacter::PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName)
+{
+	if (IsValid(AnimMontage))
+	{
+		if (UAnimInstance* FirstPersonAnimInstance = FirstPersonMesh->GetAnimInstance())
+		{
+			FirstPersonAnimInstance->Montage_Play(AnimMontage);
+		}
+	}
+	
+	return 0.0f;
 }
 
 void APlayerCharacter::Die()
@@ -112,44 +125,57 @@ void APlayerCharacter::LookInput(const FInputActionValue& Value)
 
 void APlayerCharacter::Fire()
 {
-	if (RemainingBulletNames.IsEmpty())
+	if (LoadedAmmo.IsEmpty())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No Remaining Bullets"));
+		UE_LOG(LogTemp, Warning, TEXT("No Loaded Ammo"));
+		
+		PlayAnimMontage(DryFireAnimMontage);
+		
 		return;
 	}
 	
-	FBulletData* BulletData = GetBulletData(RemainingBulletNames[0]);
-	if (!BulletData)
-	{
-		UE_LOG(LogTemp, Warning, TEXT("Invalid bullet data"));
-		return;
-	}
-
-	const TSoftClassPtr<ABulletBase> BulletClassSoft = BulletData->BulletBlueprint; 
+	const TSoftClassPtr<ABulletBase> BulletClassSoft = LoadedAmmo[0].BulletBlueprint; 
 	
 	FireProjectile(BulletClassSoft.LoadSynchronous());
 	
 	UE_LOG(LogTemp, Warning, TEXT("Fired!"));
 
-	PlayFireAnimation();
+	PlayAnimMontage(FireAnimMontage);
 }
 
-void APlayerCharacter::PlayFireAnimation() const
+void APlayerCharacter::AddAmmo(const FName RowName)
 {
-	if (IsValid(FireAnimMontage))
+	if (LoadedAmmo.Num() >= MaxAmmoCount)
 	{
-		if (UAnimInstance* FirstPersonAnimInstance = FirstPersonMesh->GetAnimInstance())
-		{
-			FirstPersonAnimInstance->Montage_Play(FireAnimMontage);
-		}
+		UE_LOG(LogCharacter, Warning, TEXT("Loaded Ammo Is Full"));
+		return;
 	}
+	
+	const FBulletData* BulletData = GetBulletData(RowName);
+	if (!BulletData)
+	{
+		UE_LOG(LogCharacter, Warning, TEXT("Invalid BulletData [RowName: %s]"), *RowName.ToString());
+		return;
+	}
+	
+	LoadedAmmo.Add(*BulletData);
+	
+	UE_LOG(LogCharacter, Warning, TEXT("[%s] Loaded"), *BulletData->BulletName.ToString());
+	
+	OnLoadedAmmoChanged.Broadcast();
+}
+
+void APlayerCharacter::ResetAmmo()
+{
+	LoadedAmmo.Empty();
+	
+	OnLoadedAmmoChanged.Broadcast();
 }
 
 void APlayerCharacter::FireProjectile(const TSubclassOf<ABulletBase> BulletClass)
 {
 	const FTransform ProjectileTransform = CalculateProjectileSpawnTransform(GetWeaponTargetLocation());
 	
-	// spawn the projectile
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	SpawnParams.TransformScaleMethod = ESpawnActorScaleMethod::OverrideRootScale;
@@ -157,9 +183,10 @@ void APlayerCharacter::FireProjectile(const TSubclassOf<ABulletBase> BulletClass
 	SpawnParams.Instigator = GetInstigator();
 
 	GetWorld()->SpawnActor<ABulletBase>(BulletClass, ProjectileTransform, SpawnParams);
-
-	// consume bullets
-	RemainingBulletNames.RemoveAt(0);
+	
+	LoadedAmmo.RemoveAt(0);
+	
+	OnLoadedAmmoChanged.Broadcast();
 }
 
 FVector APlayerCharacter::GetWeaponTargetLocation() const

@@ -12,6 +12,8 @@ struct FInputActionValue;
 class UInputAction;
 class UCameraComponent;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLoadedAmmoChanged);
+
 UCLASS()
 class OSMK_API APlayerCharacter : public AOSMKCharacterBase
 {
@@ -19,19 +21,22 @@ class OSMK_API APlayerCharacter : public AOSMKCharacterBase
 
 public:
 	APlayerCharacter();
-	
+
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	
+
 	UFUNCTION(Blueprintpure)
 	FORCEINLINE USkeletalMeshComponent* GetFirstPersonMesh() const { return FirstPersonMesh; }
+
 	UFUNCTION(Blueprintpure)
 	FORCEINLINE UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
-	
+
 protected:
+	virtual float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 1, FName StartSectionName = NAME_None) override;
+	
 	virtual void Die() override;
 	virtual void EnableRagdoll() override;
-	
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent> FirstPersonMesh;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -40,54 +45,67 @@ protected:
 	TObjectPtr<USkeletalMeshComponent> FirstPersonPistol;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent> ThirdPersonPistol;
-	
-private:
-	UPROPERTY(EditDefaultsOnly)
-	TObjectPtr<UAnimMontage> FireAnimMontage;
-	
+
 #pragma region Input
-	
+
 private:
 	void MoveInput(const FInputActionValue& Value);
 	void LookInput(const FInputActionValue& Value);
 	void Fire();
-	
-	void PlayFireAnimation() const;
-	
+
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> LookAction;
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> FireAction;
-	
+
 #pragma endregion
-	
+
 #pragma region Weapon
+
+public:
+	UFUNCTION(Exec, BlueprintCallable, Category = "Weapon")
+	void AddAmmo(const FName RowName);
+	
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void ResetAmmo();
+	
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	FORCEINLINE TArray<FBulletData> GetLoadedAmmo() const { return LoadedAmmo; }
+
+	UPROPERTY(BlueprintAssignable)
+	FOnLoadedAmmoChanged OnLoadedAmmoChanged;
 	
 private:
 	void FireProjectile(const TSubclassOf<ABulletBase> BulletClass);
 	FVector GetWeaponTargetLocation() const;
 	FTransform CalculateProjectileSpawnTransform(const FVector& TargetLocation) const;
-	
+
 	FBulletData* GetBulletData(const FName RowName) const;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	TObjectPtr<UAnimMontage> FireAnimMontage;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	TObjectPtr<UAnimMontage> DryFireAnimMontage;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	float MinFireRate = 0.5f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	FName MuzzleSocketName;
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	float MuzzleOffset = 10.0f;
-	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	float MaxAimDistance = 10000.0f;
 	
+	int32 MaxAmmoCount = 6;
+	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TObjectPtr<UDataTable> BulletDataTable;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	TArray<FName> DefaultBulletNames;
-	
+
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
-	TArray<FName> RemainingBulletNames;
-	
+	TArray<FBulletData> LoadedAmmo;
+
 #pragma endregion
 };
