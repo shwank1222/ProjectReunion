@@ -6,7 +6,6 @@
 #include "NiagaraComponent.h"
 #include "Engine/OverlapResult.h"
 #include "Character/OSMKCharacterBase.h"
-
 #include "DrawDebugHelpers.h"
 
 AExplosiveBarrel::AExplosiveBarrel()
