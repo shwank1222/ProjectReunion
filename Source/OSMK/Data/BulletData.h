@@ -17,6 +17,9 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bullet")
 	TSoftObjectPtr<UTexture2D> BulletIcon = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bullet")
+	TSoftObjectPtr<UTexture2D> CylinderIcon = nullptr;      
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bullet")
 	TSoftClassPtr<ABulletBase> BulletBlueprint = nullptr;
