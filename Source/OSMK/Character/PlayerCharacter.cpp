@@ -6,6 +6,7 @@
 #include "EnhancedInputComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Core/OSMKSlowMotionSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Weapons/Bullets/BulletBase.h"
@@ -64,6 +65,10 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ThisClass::LookInput);
 
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &ThisClass::Fire);
+		
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Started, this, &ThisClass::StartAim);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Canceled, this, &ThisClass::StopAim);
+		EnhancedInputComponent->BindAction(AimAction, ETriggerEvent::Completed, this, &ThisClass::StopAim);
 	}
 }
 void APlayerCharacter::Die()
@@ -71,6 +76,11 @@ void APlayerCharacter::Die()
 	Super::Die();
 
 	DisableInput(Cast<APlayerController>(GetController()));
+	
+	if (bIsAiming)
+	{
+		StopAim();
+	}
 }
 
 void APlayerCharacter::EnableRagdoll()
@@ -125,6 +135,35 @@ void APlayerCharacter::Fire()
 	FireProjectile(BulletClassSoft.LoadSynchronous());
 
 	UE_LOG(LogTemp, Warning, TEXT("Fired!"));
+	
+	if (bIsAiming)
+	{
+		StartAutoFireTimer();
+	}
+}
+
+void APlayerCharacter::StartAim()
+{
+	if (UOSMKSlowMotionSubsystem* Subsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
+	{
+		Subsystem->ApplySlowMotion(0.2f, 10000.0f);
+	}
+	
+	bIsAiming = true;
+	
+	StartAutoFireTimer();
+}
+
+void APlayerCharacter::StopAim()
+{
+	if (UOSMKSlowMotionSubsystem* Subsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
+	{
+		Subsystem->RestoreTimeDilation();
+	}
+	
+	GetWorldTimerManager().ClearTimer(AutoFireTimer);
+	
+	bIsAiming = false;
 }
 
 void APlayerCharacter::AddAmmo(const FName RowName)
@@ -231,4 +270,9 @@ FBulletData* APlayerCharacter::GetBulletData(const FName RowName) const
 	}
 
 	return BulletDataTable->FindRow<FBulletData>(RowName, TEXT("BulletData"));
+}
+
+void APlayerCharacter::StartAutoFireTimer()
+{
+	GetWorldTimerManager().SetTimer(AutoFireTimer, this, &ThisClass::Fire, AutoFireInterval, false);
 }

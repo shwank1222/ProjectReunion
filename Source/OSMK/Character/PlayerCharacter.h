@@ -50,6 +50,8 @@ private:
 	void MoveInput(const FInputActionValue& Value);
 	void LookInput(const FInputActionValue& Value);
 	void Fire();
+	void StartAim();
+	void StopAim();
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
@@ -57,13 +59,15 @@ private:
 	TObjectPtr<UInputAction> LookAction;
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> FireAction;
+	UPROPERTY(EditDefaultsOnly, Category = "Input")
+	TObjectPtr<UInputAction> AimAction;
 
 #pragma endregion
 
 #pragma region Weapon
 
 public:
-	UFUNCTION(Exec, BlueprintCallable, Category = "Weapon")
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	void AddAmmo(const FName RowName);
 	
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
@@ -107,6 +111,20 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
 	TArray<FBulletData> LoadedAmmo;
+	
+#pragma region Aim
+	
+private:
+	void StartAutoFireTimer();
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Aim")
+	float AutoFireInterval = 0.5f;
+	
+	FTimerHandle AutoFireTimer;
+	
+	uint8 bIsAiming : 1 = false;
+	
+#pragma endregion
 
 #pragma endregion
 };
