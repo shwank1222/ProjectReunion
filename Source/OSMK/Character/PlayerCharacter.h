@@ -103,6 +103,8 @@ private:
 	
 	void PlayFireMontage() const;
 	void PlayFireSound() const;
+	void PlayHeartPulseSound();
+	void StopHeartPulseSound() const;
 
 	FBulletData* GetBulletData(const FName RowName) const;
 
@@ -111,6 +113,8 @@ private:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TObjectPtr<USoundBase> FireSound;
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	TObjectPtr<USoundBase> HeartPulseSound;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	FName MuzzleSocketName;
@@ -126,6 +130,9 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
 	TArray<FBulletData> LoadedAmmo;
+	
+	UPROPERTY()
+	TObjectPtr<UAudioComponent> HeartPulseSoundComponent;
 
 #pragma endregion
 };
