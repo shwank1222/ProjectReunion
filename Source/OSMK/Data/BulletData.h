@@ -7,7 +7,7 @@
 class ABulletBase;
 
 USTRUCT(BlueprintType)
-struct OSMK_API FBulletData : public FTableRowBase
+struct OSMK_API FBulletData : public FDataTableRowHandle
 {
 	GENERATED_BODY()
 
