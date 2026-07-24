@@ -6,7 +6,7 @@
 #include "EnhancedInputComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
-#include "Data/BulletData.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Weapons/Bullets/BulletBase.h"
 
@@ -51,7 +51,7 @@ APlayerCharacter::APlayerCharacter()
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
 	ResetAmmo();
 }
 
@@ -66,34 +66,20 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Started, this, &ThisClass::Fire);
 	}
 }
-
-float APlayerCharacter::PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate, FName StartSectionName)
-{
-	if (IsValid(AnimMontage))
-	{
-		if (UAnimInstance* FirstPersonAnimInstance = FirstPersonMesh->GetAnimInstance())
-		{
-			FirstPersonAnimInstance->Montage_Play(AnimMontage);
-		}
-	}
-	
-	return 0.0f;
-}
-
 void APlayerCharacter::Die()
 {
 	Super::Die();
-	
+
 	DisableInput(Cast<APlayerController>(GetController()));
 }
 
 void APlayerCharacter::EnableRagdoll()
 {
 	Super::EnableRagdoll();
-	
+
 	FirstPersonMesh->SetCollisionProfileName(TEXT("Ragdoll"));
 	FirstPersonMesh->SetSimulatePhysics(true);
-	
+
 	FirstPersonMesh->WakeAllRigidBodies();
 }
 
@@ -128,19 +114,17 @@ void APlayerCharacter::Fire()
 	if (LoadedAmmo.IsEmpty())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("No Loaded Ammo"));
-		
-		PlayAnimMontage(DryFireAnimMontage);
-		
 		return;
 	}
-	
-	const TSoftClassPtr<ABulletBase> BulletClassSoft = LoadedAmmo[0].BulletBlueprint; 
+
+	const TSoftClassPtr<ABulletBase> BulletClassSoft = LoadedAmmo[0].BulletBlueprint;
+
+	PlayFireMontage();
+	PlayFireSound();
 	
 	FireProjectile(BulletClassSoft.LoadSynchronous());
-	
-	UE_LOG(LogTemp, Warning, TEXT("Fired!"));
 
-	PlayAnimMontage(FireAnimMontage);
+	UE_LOG(LogTemp, Warning, TEXT("Fired!"));
 }
 
 void APlayerCharacter::AddAmmo(const FName RowName)
@@ -150,32 +134,32 @@ void APlayerCharacter::AddAmmo(const FName RowName)
 		UE_LOG(LogCharacter, Warning, TEXT("Loaded Ammo Is Full"));
 		return;
 	}
-	
+
 	const FBulletData* BulletData = GetBulletData(RowName);
 	if (!BulletData)
 	{
 		UE_LOG(LogCharacter, Warning, TEXT("Invalid BulletData [RowName: %s]"), *RowName.ToString());
 		return;
 	}
-	
+
 	LoadedAmmo.Add(*BulletData);
-	
+
 	UE_LOG(LogCharacter, Warning, TEXT("[%s] Loaded"), *BulletData->BulletName.ToString());
-	
+
 	OnLoadedAmmoChanged.Broadcast();
 }
 
 void APlayerCharacter::ResetAmmo()
 {
 	LoadedAmmo.Empty();
-	
+
 	OnLoadedAmmoChanged.Broadcast();
 }
 
 void APlayerCharacter::FireProjectile(const TSubclassOf<ABulletBase> BulletClass)
 {
 	const FTransform ProjectileTransform = CalculateProjectileSpawnTransform(GetWeaponTargetLocation());
-	
+
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	SpawnParams.TransformScaleMethod = ESpawnActorScaleMethod::OverrideRootScale;
@@ -183,9 +167,9 @@ void APlayerCharacter::FireProjectile(const TSubclassOf<ABulletBase> BulletClass
 	SpawnParams.Instigator = GetInstigator();
 
 	GetWorld()->SpawnActor<ABulletBase>(BulletClass, ProjectileTransform, SpawnParams);
-	
+
 	LoadedAmmo.RemoveAt(0);
-	
+
 	OnLoadedAmmoChanged.Broadcast();
 }
 
@@ -193,26 +177,49 @@ FVector APlayerCharacter::GetWeaponTargetLocation() const
 {
 	const FVector Start = FirstPersonCameraComponent->GetComponentLocation();
 	const FVector End = Start + (FirstPersonCameraComponent->GetForwardVector() * MaxAimDistance);
-	
+
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
 	QueryParams.AddIgnoredComponent(FirstPersonPistol.Get());
-	
+
 	FHitResult Hit;
 	const bool bIsHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, QueryParams);
-	
+
 	return bIsHit ? Hit.ImpactPoint : Hit.TraceEnd;
 }
 
 FTransform APlayerCharacter::CalculateProjectileSpawnTransform(const FVector& TargetLocation) const
 {
 	const FVector MuzzleLoc = FirstPersonPistol->GetSocketLocation(MuzzleSocketName);
-	
+
 	const FVector SpawnLoc = MuzzleLoc + ((TargetLocation - MuzzleLoc).GetSafeNormal() * MuzzleOffset);
-	
+
 	const FRotator AimRot = UKismetMathLibrary::FindLookAtRotation(SpawnLoc, TargetLocation + UKismetMathLibrary::RandomUnitVector());
-	
+
 	return FTransform(AimRot, SpawnLoc, FVector::OneVector * 0.1f);
+}
+
+void APlayerCharacter::PlayFireMontage() const
+{
+	if (IsValid(FireAnimMontage))
+	{
+		if (UAnimInstance* FirstPersonAnimInstance = FirstPersonMesh->GetAnimInstance())
+		{
+			FirstPersonAnimInstance->Montage_Play(FireAnimMontage);
+		}
+	}
+
+}
+
+void APlayerCharacter::PlayFireSound() const
+{
+	if (!IsValid(FireSound))
+	{
+		UE_LOG(LogCharacter, Warning, TEXT("Invalid Fire Sound"));
+		return;
+	}
+
+	UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
 }
 
 FBulletData* APlayerCharacter::GetBulletData(const FName RowName) const
@@ -222,6 +229,6 @@ FBulletData* APlayerCharacter::GetBulletData(const FName RowName) const
 		UE_LOG(LogTemp, Warning, TEXT("Invalid bullet data"));
 		return nullptr;
 	}
-	
+
 	return BulletDataTable->FindRow<FBulletData>(RowName, TEXT("BulletData"));
 }

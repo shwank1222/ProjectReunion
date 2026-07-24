@@ -4,10 +4,10 @@
 
 #include "CoreMinimal.h"
 #include "OSMKCharacterBase.h"
+#include "Data/BulletData.h"
 #include "Weapons/Bullets/BulletBase.h"
 #include "PlayerCharacter.generated.h"
 
-struct FBulletData;
 struct FInputActionValue;
 class UInputAction;
 class UCameraComponent;
@@ -32,8 +32,6 @@ public:
 	FORCEINLINE UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 
 protected:
-	virtual float PlayAnimMontage(class UAnimMontage* AnimMontage, float InPlayRate = 1, FName StartSectionName = NAME_None) override;
-	
 	virtual void Die() override;
 	virtual void EnableRagdoll() override;
 
@@ -73,6 +71,8 @@ public:
 	
 	UFUNCTION(BlueprintPure, Category = "Weapon")
 	FORCEINLINE TArray<FBulletData> GetLoadedAmmo() const { return LoadedAmmo; }
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	FORCEINLINE int32 NumOfLoadedAmmo() const { return LoadedAmmo.Num(); }
 
 	UPROPERTY(BlueprintAssignable)
 	FOnLoadedAmmoChanged OnLoadedAmmoChanged;
@@ -81,16 +81,17 @@ private:
 	void FireProjectile(const TSubclassOf<ABulletBase> BulletClass);
 	FVector GetWeaponTargetLocation() const;
 	FTransform CalculateProjectileSpawnTransform(const FVector& TargetLocation) const;
+	
+	void PlayFireMontage() const;
+	void PlayFireSound() const;
 
 	FBulletData* GetBulletData(const FName RowName) const;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TObjectPtr<UAnimMontage> FireAnimMontage;
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	TObjectPtr<UAnimMontage> DryFireAnimMontage;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	float MinFireRate = 0.5f;
+	TObjectPtr<USoundBase> FireSound;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	FName MuzzleSocketName;

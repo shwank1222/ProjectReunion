@@ -45,6 +45,11 @@ void AEnemyCharacter::Fire() const
 	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
 	{
 		UE_LOG(LogEnemy, Warning, TEXT("Hit: %s"), *Hit.GetActor()->GetName());
+		
+		if (APlayerCharacter* Player = Cast<APlayerCharacter>(Hit.GetActor()))
+		{
+			Player->ApplyDamage();
+		}
 	}
 }
 
