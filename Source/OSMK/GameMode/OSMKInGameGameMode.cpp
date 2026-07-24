@@ -12,6 +12,7 @@
 #include "Data/Stage/StageActorData.h"
 #include "Data/Stage/StageScoutCameraData.h"
 #include "Character/AI/EnemyCharacter.h"
+#include "Character/PlayerCharacter.h"
 #include "Blueprint/UserWidget.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/SpringArmComponent.h"
@@ -22,7 +23,8 @@ void AOSMKInGameGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SpawnStage(0);
+	CurrentStageIndex = 0;
+	SpawnStage(CurrentStageIndex);
 
 	if (!ScoutingWidgetClass)
 	{
@@ -38,10 +40,7 @@ void AOSMKInGameGameMode::BeginPlay()
 
 void AOSMKInGameGameMode::SpawnStage(int32 StageIndex)
 {
-	if (StageIndex > 0)
-	{
-		ClearStage();
-	}
+	ClearStage();
 
 	SpawnStaticMesh(StageIndex);
 	SpawnEnemies(StageIndex);
@@ -220,6 +219,7 @@ void AOSMKInGameGameMode::ClearStage()
 	ClearGimmicks();
 	ClearActors();
 	ClearScoutCamera();
+	ClearPlayerCharacter();
 	UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] Stage cleared"));
 }
 
@@ -352,11 +352,19 @@ void AOSMKInGameGameMode::SpawnScoutCamera(int32 StageIndex)
 			SpringArm->SocketOffset = Row->SpringArmSocketOffset;
 		}
 
-		if (AOSMKPlayerController* PC = Cast<AOSMKPlayerController>(GetWorld()->GetFirstPlayerController()))
+		AActor* CameraActor = SpawnedScoutCameraActor;
+		GetWorldTimerManager().SetTimerForNextTick([this, CameraActor]()
 		{
-			PC->SetViewTarget(SpawnedScoutCameraActor);
-			PC->EnterScoutingMode(SpawnedScoutCameraActor);
-		}
+			if (!IsValid(CameraActor))
+			{
+				return;
+			}
+			if (AOSMKPlayerController* PC = Cast<AOSMKPlayerController>(GetWorld()->GetFirstPlayerController()))
+			{
+				PC->SetViewTarget(CameraActor);
+				PC->EnterScoutingMode(CameraActor);
+			}
+		});
 	}
 }
 
@@ -378,6 +386,19 @@ void AOSMKInGameGameMode::ClearScoutCamera()
 	{
 		SpawnedScoutCameraActor->Destroy();
 		SpawnedScoutCameraActor = nullptr;
+	}
+}
+
+void AOSMKInGameGameMode::ClearPlayerCharacter()
+{
+	if (IsValid(SpawnedPlayerCharacter))
+	{
+		if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+		{
+			PC->UnPossess();
+		}
+		SpawnedPlayerCharacter->Destroy();
+		SpawnedPlayerCharacter = nullptr;
 	}
 }
 
@@ -419,6 +440,11 @@ void AOSMKInGameGameMode::PossessPlayerCharacter()
 	PC->ExitScoutingMode();
 	PC->Possess(SpawnedPlayerCharacter);
 
+	if (APlayerCharacter* PlayerChar = Cast<APlayerCharacter>(SpawnedPlayerCharacter))
+	{
+		PlayerChar->OnCharacterDeath.AddUniqueDynamic(this, &AOSMKInGameGameMode::HandleStageFail);
+	}
+
 	if (ScoutingWidget)
 	{
 		ScoutingWidget->RemoveFromParent();
@@ -436,6 +462,98 @@ void AOSMKInGameGameMode::ActivateEnemies()
 		{
 			Enemy->ActivateEnemy();
 			UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] Activated Enemy: %s"), *Enemy->GetName());
+		}
+	}
+}
+
+void AOSMKInGameGameMode::HandleStageClear()
+{
+	GetWorldTimerManager().SetTimer(StageResultTimerHandle, this, &AOSMKInGameGameMode::ShowStageClearWidget, 1.5f, false);
+}
+
+void AOSMKInGameGameMode::HandleStageFail()
+{
+	AOSMKGameState* GS = GetGameState<AOSMKGameState>();
+	if (GS && GS->CurrentStageState != EOSMKStageState::InProgress)
+	{
+		return;
+	}
+
+	if (GS)
+	{
+		GS->CurrentStageState = EOSMKStageState::Failed;
+	}
+
+	GetWorldTimerManager().SetTimer(StageResultTimerHandle, this, &AOSMKInGameGameMode::ShowStageFailWidget, 1.5f, false);
+}
+
+void AOSMKInGameGameMode::ShowStageClearWidget()
+{
+	if (StageClearWidgetClass)
+	{
+		StageClearWidgetInstance = CreateWidget<UUserWidget>(GetWorld(), StageClearWidgetClass);
+		if (StageClearWidgetInstance)
+		{
+			StageClearWidgetInstance->AddToViewport();
+		}
+	}
+
+	GetWorldTimerManager().SetTimer(StageResultTimerHandle, this, &AOSMKInGameGameMode::ProceedToNextStage, 2.0f, false);
+}
+
+void AOSMKInGameGameMode::ShowStageFailWidget()
+{
+	if (StageFailWidgetClass)
+	{
+		if (UUserWidget* FailWidget = CreateWidget<UUserWidget>(GetWorld(), StageFailWidgetClass))
+		{
+			FailWidget->AddToViewport();
+			
+			if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+			{
+				PC->SetShowMouseCursor(true);
+				PC->SetInputMode(FInputModeUIOnly());
+			}
+		}
+	}
+}
+
+void AOSMKInGameGameMode::ProceedToNextStage()
+{
+	if (IsValid(StageClearWidgetInstance))
+	{
+		StageClearWidgetInstance->RemoveFromParent();
+		StageClearWidgetInstance = nullptr;
+	}
+
+	CurrentStageIndex++;
+	SpawnStage(CurrentStageIndex);
+
+	if (ScoutingWidgetClass)
+	{
+		ScoutingWidget = CreateWidget<UScoutingWidget>(GetWorld(), ScoutingWidgetClass);
+		if (ScoutingWidget)
+		{
+			ScoutingWidget->AddToViewport();
+		}
+	}
+}
+
+void AOSMKInGameGameMode::RetryStage()
+{
+	if (AOSMKGameState* GS = GetGameState<AOSMKGameState>())
+	{
+		GS->ResetStageState();
+	}
+
+	SpawnStage(CurrentStageIndex);
+
+	if (ScoutingWidgetClass)
+	{
+		ScoutingWidget = CreateWidget<UScoutingWidget>(GetWorld(), ScoutingWidgetClass);
+		if (ScoutingWidget)
+		{
+			ScoutingWidget->AddToViewport();
 		}
 	}
 }

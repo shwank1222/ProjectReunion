@@ -46,6 +46,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ClearScoutCamera();
 
+	UFUNCTION(BlueprintCallable)
+	void ClearPlayerCharacter();
+
 	FTransform GetPlayerStartTransform() const { return PlayerStartTransform; }
 
 	UFUNCTION(BlueprintCallable)
@@ -57,11 +60,32 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ActivateEnemies();
 
+	UFUNCTION()
+	void HandleStageClear();
+
+	UFUNCTION()
+	void HandleStageFail();
+
+	UFUNCTION(BlueprintCallable)
+	void RetryStage();
+
 protected:
 	virtual void BeginPlay() override;
 
+private:
+	void ShowStageClearWidget();
+	void ShowStageFailWidget();
+	void ProceedToNextStage();
+	
+protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class UScoutingWidget> ScoutingWidgetClass = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UUserWidget> StageClearWidgetClass = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UUserWidget> StageFailWidgetClass = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Stage")
 	class UStageData* StageData = nullptr;
@@ -71,6 +95,9 @@ private:
 	UPROPERTY()
 	class UScoutingWidget* ScoutingWidget = nullptr;
 
+	UPROPERTY()
+	class UUserWidget* StageClearWidgetInstance = nullptr;
+	
 	UPROPERTY()
 	APawn* SpawnedPlayerCharacter = nullptr;
 
@@ -90,4 +117,6 @@ private:
 	AActor* SpawnedScoutCameraActor = nullptr;
 
 	FTransform PlayerStartTransform;
+	int32 CurrentStageIndex = 0;
+	FTimerHandle StageResultTimerHandle;
 };
