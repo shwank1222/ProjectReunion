@@ -1,4 +1,5 @@
 #include "BulletSelectionWidget.h"
+#include "Character/PlayerCharacter.h"
 #include "UI/Scouting/BulletListItemWidget.h"
 #include "UI/Scouting/BulletSlotWidget.h"
 #include "Core/OSMKGameState.h"
@@ -8,6 +9,7 @@
 #include "Components/ScrollBox.h"
 #include "Components/HorizontalBox.h"
 #include "Engine/DataTable.h"
+#include "Kismet/GameplayStatics.h"
 
 void UBulletSelectionWidget::NativeConstruct()
 {
@@ -153,6 +155,17 @@ void UBulletSelectionWidget::OnConfirmClicked()
 	{
 		GM->PossessPlayerCharacter();
 		GM->ActivateEnemies();
+	}
+	
+	if (APlayerCharacter* Player = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)))
+	{
+		for (const FName& BulletName : SlotBullets)
+		{
+			if (!BulletName.IsNone())
+			{
+				Player->AddAmmo(BulletName);
+			}
+		}
 	}
 
 	if (UUserWidget* ScoutingWidget = Cast<UUserWidget>(GetOuter()))

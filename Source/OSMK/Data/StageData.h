@@ -48,17 +48,20 @@ public:
 #endif
 	
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	UDataTable* BulletDataTable = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	TSoftClassPtr<AActor> EnemyClass = nullptr;
 	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Scout Camera")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	TSoftClassPtr<AActor> ScoutCameraClass = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	TSoftClassPtr<APawn> PlayerCharacterClass = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	TSoftObjectPtr<UWorld> TitleLevel = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
 	TSoftObjectPtr<UWorld> InGameLevel = nullptr;
