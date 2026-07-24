@@ -19,6 +19,8 @@ public:
 	void Fire() const;
 	
 protected:
+	virtual void Die() override;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent> PistolMesh;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -36,6 +38,8 @@ protected:
 	FRotator AimRotationRate = FRotator(0.0f, 180.0f, 0.0f);
 
 private:
+	void DestroyCharacter();
+	
 	FRotator DefaultRotationRate = FRotator::ZeroRotator;
 	
 };

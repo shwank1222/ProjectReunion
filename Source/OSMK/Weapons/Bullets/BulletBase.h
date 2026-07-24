@@ -37,6 +37,8 @@ protected:
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
 
 private:
+	static void EnemyAttack(AActor* OtherActor);
+	
 	UPROPERTY(EditDefaultsOnly)
 	float Lifespan = 3.0f;
 };

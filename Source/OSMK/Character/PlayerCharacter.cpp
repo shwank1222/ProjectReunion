@@ -67,6 +67,23 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	}
 }
 
+void APlayerCharacter::Die()
+{
+	Super::Die();
+	
+	DisableInput(Cast<APlayerController>(GetController()));
+}
+
+void APlayerCharacter::EnableRagdoll()
+{
+	Super::EnableRagdoll();
+	
+	FirstPersonMesh->SetCollisionProfileName(TEXT("Ragdoll"));
+	FirstPersonMesh->SetSimulatePhysics(true);
+	
+	FirstPersonMesh->WakeAllRigidBodies();
+}
+
 void APlayerCharacter::MoveInput(const FInputActionValue& Value)
 {
 	if (!GetController())

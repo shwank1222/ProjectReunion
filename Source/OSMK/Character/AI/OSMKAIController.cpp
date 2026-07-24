@@ -3,6 +3,7 @@
 
 #include "OSMKAIController.h"
 
+#include "EnemyCharacter.h"
 #include "Components/StateTreeAIComponent.h"
 #include "GameFramework/Character.h"
 #include "Kismet/GameplayStatics.h"
@@ -26,8 +27,40 @@ void AOSMKAIController::ActivateLogic()
 {
 	StateTreeAIComponent->StartLogic();
 	
-	if (ACharacter* Player = UGameplayStatics::GetPlayerCharacter(this, 0))
+	if (ACharacter* Target = UGameplayStatics::GetPlayerCharacter(this, 0))
 	{
-		SetFocus(Player);
+		SetFocus(Target);
+		
+		if (AOSMKCharacterBase* Player = Cast<AOSMKCharacterBase>(Target))
+		{
+			Player->OnCharacterDeath.AddUniqueDynamic(this, &ThisClass::AOSMKAIController::HandleTargetDeath);
+		}
 	}
+}
+
+void AOSMKAIController::DeactivateLogic(const FString& Reason) const
+{
+	StateTreeAIComponent->StopLogic(Reason);
+}
+
+void AOSMKAIController::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+	
+	if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(InPawn))
+	{
+		Enemy->OnCharacterDeath.AddUniqueDynamic(this, &ThisClass::HandleCharacterDeath);
+	}
+}
+
+void AOSMKAIController::HandleTargetDeath()
+{
+	ClearFocus(0);
+	
+	DeactivateLogic(TEXT("Player Dead"));
+}
+
+void AOSMKAIController::HandleCharacterDeath()
+{
+	ClearFocus(0);
 }

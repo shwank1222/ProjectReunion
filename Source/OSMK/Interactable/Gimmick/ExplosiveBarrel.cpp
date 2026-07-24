@@ -192,7 +192,7 @@ void AExplosiveBarrel::HandleCharacterHit(AOSMKCharacterBase* Character)
 		TEXT("Character hit: %s"),
 		*GetNameSafe(Character));
 	
-	Character->EnableRagdoll();
+	Character->ApplyDamage();
 	
 	// Apply impulse to ragdoll
 	if (USkeletalMeshComponent* Mesh = Character->GetMesh())

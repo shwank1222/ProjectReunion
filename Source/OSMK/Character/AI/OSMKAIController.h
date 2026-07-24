@@ -16,11 +16,20 @@ class OSMK_API AOSMKAIController : public AAIController
 public:
 	AOSMKAIController();
 	
-	virtual void BeginPlay() override;
-	
 	void ActivateLogic();
-	
+	void DeactivateLogic(const FString& Reason) const;
+
 protected:
+	virtual void BeginPlay() override;
+	virtual void OnPossess(APawn* InPawn) override;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UStateTreeAIComponent> StateTreeAIComponent;
+	
+private:
+	UFUNCTION()
+	void HandleTargetDeath();
+	
+	UFUNCTION()
+	void HandleCharacterDeath();
 };

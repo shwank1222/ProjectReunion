@@ -3,6 +3,7 @@
 
 #include "EnemyCharacter.h"
 
+#include "OSMKAIController.h"
 #include "Character/PlayerCharacter.h"
 #include "Components/ArrowComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
@@ -45,4 +46,22 @@ void AEnemyCharacter::Fire() const
 	{
 		UE_LOG(LogEnemy, Warning, TEXT("Hit: %s"), *Hit.GetActor()->GetName());
 	}
+}
+
+void AEnemyCharacter::Die()
+{
+	Super::Die();
+	
+	FTimerHandle TimerHandle;
+	GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::DestroyCharacter, 2.0f, false);
+}
+
+void AEnemyCharacter::DestroyCharacter()
+{
+	if (const AOSMKAIController* AIController = Cast<AOSMKAIController>(GetController()))
+	{
+		AIController->DeactivateLogic(TEXT("Enemy Dead"));
+	}
+	
+	Destroy();
 }

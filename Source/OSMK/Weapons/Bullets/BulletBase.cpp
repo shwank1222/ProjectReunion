@@ -3,6 +3,7 @@
 
 #include "BulletBase.h"
 
+#include "Character/AI/EnemyCharacter.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Interactable/Gimmick/GimmickBase.h"
 
@@ -44,6 +45,7 @@ void ABulletBase::OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherAc
 	}
 	
 	TriggerGimmick(OtherActor);
+	EnemyAttack(OtherActor);
 }
 
 void ABulletBase::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
@@ -57,6 +59,7 @@ void ABulletBase::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	}
 	
 	TriggerGimmick(OtherActor);
+	EnemyAttack(OtherActor);
 }
 
 void ABulletBase::TriggerGimmick(AActor* OtherActor)
@@ -64,6 +67,14 @@ void ABulletBase::TriggerGimmick(AActor* OtherActor)
 	if (AGimmickBase* Gimmick = Cast<AGimmickBase>(OtherActor))
 	{
 		Gimmick->Trigger();
+	}
+}
+
+void ABulletBase::EnemyAttack(AActor* OtherActor)
+{
+	if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(OtherActor))
+	{
+		Enemy->ApplyDamage();
 	}
 }
 
