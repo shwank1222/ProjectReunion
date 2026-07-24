@@ -29,6 +29,9 @@ public:
 	FORCEINLINE UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 	
 protected:
+	virtual void Die() override;
+	virtual void EnableRagdoll() override;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent> FirstPersonMesh;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
