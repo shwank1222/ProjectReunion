@@ -363,6 +363,13 @@ void AOSMKInGameGameMode::ClearScoutCamera()
 
 void AOSMKInGameGameMode::SpawnPlayerCharacter()
 {
+	if (!StageData)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[InGameGameMode] SpawnPlayerCharacter: StageData is null"));
+		return;
+	}
+
+	UClass* PlayerCharacterClass = StageData->PlayerCharacterClass.LoadSynchronous();
 	if (!PlayerCharacterClass)
 	{
 		UE_LOG(LogTemp, Error, TEXT("[InGameGameMode] SpawnPlayerCharacter: PlayerCharacterClass is null"));
@@ -396,5 +403,19 @@ void AOSMKInGameGameMode::PossessPlayerCharacter()
 	{
 		ScoutingWidget->RemoveFromParent();
 		ScoutingWidget = nullptr;
+	}
+}
+
+void AOSMKInGameGameMode::ActivateEnemies()
+{
+	UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] ActivateEnemies called. Total spawned enemies: %d"), SpawnedEnemyActors.Num());
+
+	for (AActor* Actor : SpawnedEnemyActors)
+	{
+		if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(Actor))
+		{
+			Enemy->ActivateEnemy();
+			UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] Activated Enemy: %s"), *Enemy->GetName());
+		}
 	}
 }

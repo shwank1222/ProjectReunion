@@ -17,6 +17,9 @@ private:
 	UFUNCTION()
 	void OnConfirmClicked();
 	
+	UFUNCTION()
+	void OnResetClicked();
+	
 	void PopulateBulletList();
 	void InitSlots();
 	void AddBulletToSlot(FName RowName);
@@ -35,6 +38,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* Btn_Confirm = nullptr;
+	
+	UPROPERTY(meta = (BindWidget))
+	class UButton* Btn_Reset = nullptr;
 
 	UPROPERTY(EditDefaultsOnly)
 	class UDataTable* BulletDataTable = nullptr;
@@ -48,15 +54,4 @@ protected:
 private:
 	TArray<FName> SlotBullets;
 	TArray<class UBulletSlotWidget*> SlotWidgets;
-	
-	
-	// Debug
-protected:
-	UPROPERTY(meta = (BindWidget))
-	class UButton* Btn_DebugClose;
-
-	// Debug
-private:
-	UFUNCTION()
-	void OnDebugCloseClicked();
 };

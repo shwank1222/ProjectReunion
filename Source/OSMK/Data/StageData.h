@@ -4,6 +4,7 @@
 #include "Engine/DataAsset.h"
 #include "Engine/DataTable.h"
 #include "GameplayTagContainer.h"
+#include "GameFramework/Pawn.h"
 #include "StageData.generated.h"
 
 USTRUCT(BlueprintType)
@@ -52,6 +53,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy")
 	TSoftClassPtr<AActor> EnemyClass = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Scout Camera")
+	TSoftClassPtr<AActor> ScoutCameraClass = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player")
+	TSoftClassPtr<APawn> PlayerCharacterClass = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
 	TSoftObjectPtr<UWorld> InGameLevel = nullptr;
@@ -70,9 +77,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
 	TObjectPtr<UDataTable> StageScoutCameraData = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Scout Camera")
-	TSoftClassPtr<AActor> ScoutCameraClass = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stage")
 	TArray<FStageLevelConfig> StageConfigs;

@@ -23,10 +23,10 @@ void UBulletSelectionWidget::NativeConstruct()
 	{
 		Btn_Confirm->OnClicked.AddDynamic(this, &UBulletSelectionWidget::OnConfirmClicked);
 	}
-	if (Btn_DebugClose)
-    {
-           Btn_DebugClose->OnClicked.AddDynamic(this, &UBulletSelectionWidget::OnDebugCloseClicked);
-    }
+	if (Btn_Reset)
+	{
+		Btn_Reset->OnClicked.AddDynamic(this, &UBulletSelectionWidget::OnResetClicked);
+	}
 }
 
 void UBulletSelectionWidget::InitSlots()
@@ -152,15 +152,32 @@ void UBulletSelectionWidget::OnConfirmClicked()
 	if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(GetWorld()->GetAuthGameMode()))
 	{
 		GM->PossessPlayerCharacter();
+		GM->ActivateEnemies();
+	}
+
+	if (UUserWidget* ScoutingWidget = Cast<UUserWidget>(GetOuter()))
+	{
+		ScoutingWidget->RemoveFromParent();
+	}
+	else if (UUserWidget* ParentWidget = Cast<UUserWidget>(GetParent()))
+	{
+		ParentWidget->RemoveFromParent();
+	}
+	else
+	{
+		RemoveFromParent();
 	}
 }
 
-void UBulletSelectionWidget::OnDebugCloseClicked()
+void UBulletSelectionWidget::OnResetClicked()
 {
-	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
+	for (int32 i = 0; i < MaxBulletSlots; i++)
 	{
-		GS->EndScoutingPhase();
+		SlotBullets[i] = NAME_None;
+		if (SlotWidgets.IsValidIndex(i) && SlotWidgets[i])
+		{
+			SlotWidgets[i]->ClearSlot();
+		}
 	}
-
-	RemoveFromParent();
+	RefreshConfirmButton();
 }

@@ -18,6 +18,8 @@ AEnemyCharacter::AEnemyCharacter()
 
 	AttackArrow = CreateDefaultSubobject<UArrowComponent>(FName("AttackArrow"));
 	AttackArrow->SetupAttachment(RootComponent);
+	
+	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 void AEnemyCharacter::BeginPlay()

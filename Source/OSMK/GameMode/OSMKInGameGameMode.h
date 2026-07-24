@@ -54,6 +54,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void PossessPlayerCharacter();
 
+	UFUNCTION(BlueprintCallable)
+	void ActivateEnemies();
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -63,8 +66,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Stage")
 	class UStageData* StageData = nullptr;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Stage")
-	TSubclassOf<class APawn> PlayerCharacterClass = nullptr;
 
 private:
 	UPROPERTY()

@@ -15,6 +15,7 @@
 #include "Engine/TriggerCapsule.h"
 #include "Engine/TriggerSphere.h"
 #include "Engine/TriggerVolume.h"
+#include "NavMesh/NavMeshBoundsVolume.h"
 
 #if WITH_EDITOR
 #include "EngineUtils.h"
@@ -224,6 +225,19 @@ void UStageDataExtractorLibrary::ExtractActorDataFromLevels(UDataTable* TargetDa
 			{
 				NewActorData.PlayerStartTransform = Actor->GetActorTransform();
 			}
+		}
+
+		for (TActorIterator<ANavMeshBoundsVolume> It(LoadedWorld); It; ++It)
+		{
+			ANavMeshBoundsVolume* NavMeshVol = *It;
+			if (!NavMeshVol)
+			{
+				continue;
+			}
+
+			FStageNavMeshItem NavItem;
+			NavItem.Transform = NavMeshVol->GetActorTransform();
+			NewActorData.NavMeshList.Add(NavItem);
 		}
 
 		TargetDataTable->AddRow(RowName, NewActorData);
