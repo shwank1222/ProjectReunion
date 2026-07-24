@@ -13,6 +13,9 @@ struct OSMK_API FBulletData : public FDataTableRowHandle
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bullet")
+	FText BulletName;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bullet")
 	TSoftObjectPtr<UTexture2D> BulletIcon = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Bullet")

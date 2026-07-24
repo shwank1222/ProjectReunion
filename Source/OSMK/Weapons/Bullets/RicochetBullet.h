@@ -7,14 +7,10 @@
 #include "RicochetBullet.generated.h"
 
 UCLASS()
-class OSMK_API ARicochetBullet : public ABasicBullet
+class OSMK_API ARicochetBullet : public ABulletBase
 {
 	GENERATED_BODY()
 
 public:
 	ARicochetBullet();
-
-protected:
-	virtual void OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
-	                         FVector NormalImpulse, const FHitResult& Hit) override;
 };

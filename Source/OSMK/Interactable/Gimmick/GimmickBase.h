@@ -3,6 +3,8 @@
 #include "GameFramework/Actor.h"
 #include "GimmickBase.generated.h"
 
+class AOSMKCharacterBase;
+
 // Log Macros
 DECLARE_LOG_CATEGORY_EXTERN(LogGimmick, Log, All);
 
@@ -20,15 +22,17 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Trigger();
 	
-	virtual void OnTriggered() PURE_VIRTUAL(AGimmickBase::OnTriggered, );
+
 	
 	bool CanTrigger() const;
 	
 protected:
+	void HandleCharacterHit(AOSMKCharacterBase* Character) const;
+	
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	
-protected:
+	virtual void OnTriggered() PURE_VIRTUAL(AGimmickBase::OnTriggered, );
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gimmick")
 	bool bTriggered = false;
 };

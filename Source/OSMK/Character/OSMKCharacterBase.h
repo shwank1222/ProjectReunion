@@ -6,6 +6,10 @@
 #include "GameFramework/Character.h"
 #include "OSMKCharacterBase.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterDeath);
+
+DECLARE_LOG_CATEGORY_EXTERN(LogCharacter, Log, All);
+
 UCLASS()
 class OSMK_API AOSMKCharacterBase : public ACharacter
 {
@@ -13,4 +17,16 @@ class OSMK_API AOSMKCharacterBase : public ACharacter
 
 public:
 	AOSMKCharacterBase();
+	
+	void ApplyDamage();
+	
+	UPROPERTY(BlueprintAssignable)
+	FOnCharacterDeath OnCharacterDeath;
+	
+protected:
+	virtual void Die();
+	virtual void EnableRagdoll();
+	
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = true))
+	uint8 bIsDead : 1 = false;
 };
