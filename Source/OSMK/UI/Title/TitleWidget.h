@@ -13,6 +13,8 @@ class OSMK_API UTitleWidget : public UUserWidget
 	GENERATED_BODY()
 	
 protected:
+	virtual void NativeConstruct() override;
+	
 	UFUNCTION()
 	void OnClickGameStart();
 
@@ -25,7 +27,8 @@ protected:
 	UFUNCTION()
 	void OnClickQuit();
 	
-	virtual void NativeConstruct() override;
+	UFUNCTION()
+	void OnQuitConfirmed();
 	
 protected:
 	UPROPERTY(meta = (BindWidget))
@@ -33,10 +36,19 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* Btn_Settings = nullptr;
+	
+	UPROPERTY(meta = (BindWidget))
+	UButton* Btn_Credits = nullptr;
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* Btn_Quit = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stage")
 	UStageData* StageDataAsset = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UUserWidget> CreditsWidgetClass = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UPopupConfirmWidget> PopupConfirmWidgetClass = nullptr;
 };
