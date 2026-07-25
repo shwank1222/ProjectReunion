@@ -54,6 +54,8 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	SlowMotionSubsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>();
+	
 	ResetAmmo();
 }
 
@@ -77,16 +79,6 @@ void APlayerCharacter::Die()
 	Super::Die();
 
 	DisableInput(Cast<APlayerController>(GetController()));
-}
-
-void APlayerCharacter::EnableRagdoll()
-{
-	Super::EnableRagdoll();
-
-	FirstPersonMesh->SetCollisionProfileName(TEXT("Ragdoll"));
-	FirstPersonMesh->SetSimulatePhysics(true);
-
-	FirstPersonMesh->WakeAllRigidBodies();
 }
 
 void APlayerCharacter::MoveInput(const FInputActionValue& Value)
@@ -127,7 +119,7 @@ void APlayerCharacter::StartFiring()
 		return;
 	}
 
-	bIsFirring = false;
+	bIsFiring = false;
 	GetWorldTimerManager().SetTimer(AutoFireTimerHandle, this, &ThisClass::Fire, AutoFireDuration, false);
 }
 
@@ -139,20 +131,20 @@ void APlayerCharacter::OnHoldTriggered()
 		return;
 	}
 
-	if (bIsFirring)
+	if (bIsFiring)
 	{
 		return;
 	}
-
-	if (UOSMKSlowMotionSubsystem* Subsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
+	
+	if (IsValid(SlowMotionSubsystem))
 	{
-		Subsystem->ApplySlowMotion(0.2f, 10000.0f);
-		Subsystem->ApplyGimmickHighlight();
-
+		SlowMotionSubsystem->ApplySlowMotion(0.2f, 10000.0f);
+		SlowMotionSubsystem->ApplyGimmickHighlight();
+		
 		PlayHeartPulseSound();
-
-		bIsFirring = true;
 	}
+
+	bIsFiring = true;
 }
 
 void APlayerCharacter::CancelFiring()
@@ -184,7 +176,7 @@ void APlayerCharacter::Fire()
 	FireProjectile(BulletClassSoft.LoadSynchronous());
 
 	bIsFired = true;
-	bIsFirring = false;
+	bIsFiring = false;
 
 	GetWorldTimerManager().ClearTimer(AutoFireTimerHandle);
 
@@ -195,11 +187,11 @@ void APlayerCharacter::Fire()
 
 void APlayerCharacter::StopSlowMotion()
 {
-	if (UOSMKSlowMotionSubsystem* Subsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
+	if (IsValid(SlowMotionSubsystem))
 	{
-		Subsystem->RestoreTimeDilation();
-		Subsystem->RestoreGimmickHighlight();
-
+		SlowMotionSubsystem->RestoreTimeDilation();
+		SlowMotionSubsystem->RestoreGimmickHighlight();
+	
 		StopHeartPulseSound();
 	}
 

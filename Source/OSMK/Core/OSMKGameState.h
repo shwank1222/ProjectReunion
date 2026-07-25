@@ -6,7 +6,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyCountChanged);
 
-class UOSMKCutSceneManager;
+class UOSMKCutsceneManager;
 
 UENUM(BlueprintType)
 enum class EOSMKStageState : uint8
@@ -34,7 +34,7 @@ public:
 	void SetEnemyCount(int32 Count);
 
 	UFUNCTION(BlueprintCallable)
-	void NotifyEnemyKilled(AActor* Enemy);
+	void NotifyEnemyKilled();
 
 	UFUNCTION(BlueprintCallable)
 	void NotifyProjectileDestroyed();
@@ -66,13 +66,10 @@ private:
 	UFUNCTION()
 	void StageFailed();
 	
-	void UnbindCutSceneManagerDelegates() const;
+	void UnbindCutsceneManagerDelegates() const;
 	
 	int32 DestroyedProjectileCount = 0;
 	
 	UPROPERTY()
-	TObjectPtr<UOSMKCutSceneManager> CutSceneManager;
-	
-	UPROPERTY()
-	TObjectPtr<AActor> LastDeadEnemy;
+	TObjectPtr<UOSMKCutsceneManager> CutsceneManager;
 };

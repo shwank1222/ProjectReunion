@@ -4,35 +4,35 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
-#include "OSMKCutSceneManager.generated.h"
+#include "OSMKCutsceneManager.generated.h"
 
 class ULevelSequencePlayer;
-class ACutSceneActor;
+class ACutsceneActor;
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCutSceneFinished);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCutsceneFinished);
 
 UCLASS()
-class OSMK_API UOSMKCutSceneManager : public UWorldSubsystem
+class OSMK_API UOSMKCutsceneManager : public UWorldSubsystem
 {
 	GENERATED_BODY()
 	
 public:
-	static UOSMKCutSceneManager* Get(const UObject* WorldContextObject);
+	static UOSMKCutsceneManager* Get(const UObject* WorldContextObject);
 	
 	virtual bool ShouldCreateSubsystem(UObject* Outer) const override;
 	virtual void OnWorldBeginPlay(UWorld& InWorld) override;
 
-	void PlayCutScene(AActor* SourceActor, const bool bClear) const;
+	void PlayCutscene(const bool bClear) const;
 	
 	UPROPERTY(BlueprintAssignable)
-	FOnCutSceneFinished OnCutSceneFinished;
+	FOnCutsceneFinished OnCutsceneFinished;
 	
 private:
 	UFUNCTION()
-	void HandleCutSceneFinished();
+	void HandleCutsceneFinished();
 	
 	UPROPERTY()
-	TObjectPtr<ACutSceneActor> CutSceneActor;
+	TObjectPtr<ACutsceneActor> CutsceneActor;
 	
 	UPROPERTY()
 	TObjectPtr<ULevelSequencePlayer> LevelSequencePlayer;
