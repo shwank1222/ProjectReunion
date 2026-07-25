@@ -29,6 +29,20 @@ bool AGimmickBase::CanTrigger() const
 void AGimmickBase::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	SetCustomStencil();
+}
+
+void AGimmickBase::SetCustomStencil() const
+{
+	TArray<UMeshComponent*> MeshComponents;
+	GetComponents(UMeshComponent::StaticClass(), MeshComponents);
+	
+	for (UMeshComponent* MeshComponent : MeshComponents)
+	{
+		MeshComponent->SetRenderCustomDepth(true);
+		MeshComponent->SetCustomDepthStencilValue(1);
+	}
 }
 
 void AGimmickBase::HandleCharacterHit(AOSMKCharacterBase* Character) const

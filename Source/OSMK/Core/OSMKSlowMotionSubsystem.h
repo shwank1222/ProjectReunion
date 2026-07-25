@@ -19,8 +19,13 @@ public:
 
 	UFUNCTION(BlueprintPure)
 	bool IsInSlowMotion() const { return bIsActive; }
+	
+	void ApplyGimmickHighlight() const;
+	void RestoreGimmickHighlight() const;
 
 private:
+	APostProcessVolume* GetPostProcessVolume() const;
+	
 	FTimerHandle TimerHandle;
 	bool bIsActive = false;
 };
