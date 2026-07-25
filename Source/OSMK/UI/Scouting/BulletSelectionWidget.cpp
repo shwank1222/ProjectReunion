@@ -1,15 +1,40 @@
 #include "BulletSelectionWidget.h"
 #include "Character/PlayerCharacter.h"
 #include "UI/Scouting/BulletListItemWidget.h"
-#include "UI/Scouting/BulletSlotWidget.h"
 #include "Core/OSMKGameState.h"
 #include "GameMode/OSMKInGameGameMode.h"
 #include "Data/BulletData.h"
 #include "Components/Button.h"
 #include "Components/ScrollBox.h"
-#include "Components/HorizontalBox.h"
+#include "Components/Image.h"
 #include "Engine/DataTable.h"
 #include "Kismet/GameplayStatics.h"
+
+int32 UBulletSelectionWidget::GetAvailableCount(FName RowName) const
+{
+	if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		if (const TMap<FName, int32>* Counts = GM->GetCurrentStageBulletCounts())
+		{
+			const int32* Found = Counts->Find(RowName);
+			return Found ? *Found : 0;
+		}
+	}
+	return 0;
+}
+
+int32 UBulletSelectionWidget::GetSelectedCount(FName RowName) const
+{
+	int32 Count = 0;
+	for (const FName& Name : SlotBullets)
+	{
+		if (Name == RowName)
+		{
+			Count++;
+		}
+	}
+	return Count;
+}
 
 void UBulletSelectionWidget::NativeConstruct()
 {
@@ -17,7 +42,7 @@ void UBulletSelectionWidget::NativeConstruct()
 
 	SlotBullets.Init(NAME_None, MaxBulletSlots);
 
-	InitSlots();
+	UpdateSlotImages();
 	PopulateBulletList();
 	RefreshConfirmButton();
 
@@ -29,108 +54,117 @@ void UBulletSelectionWidget::NativeConstruct()
 	{
 		Btn_Reset->OnClicked.AddDynamic(this, &UBulletSelectionWidget::OnResetClicked);
 	}
+	if (Btn_Pop)
+	{
+		Btn_Pop->OnClicked.AddDynamic(this, &UBulletSelectionWidget::OnPopClicked);
+	}
 }
 
-void UBulletSelectionWidget::InitSlots()
+void UBulletSelectionWidget::UpdateSlotImages()
 {
-	if (!Box_Slots || !SlotWidgetClass)
-	{
-		return;
-	}
-
-	Box_Slots->ClearChildren();
-	SlotWidgets.Empty();
-
+	UImage* SlotArray[MaxBulletSlots] = { BulletSlot_1, BulletSlot_2, BulletSlot_3, BulletSlot_4, BulletSlot_5, BulletSlot_6 };
+	
 	for (int32 i = 0; i < MaxBulletSlots; i++)
 	{
-		UBulletSlotWidget* SlotWidget = CreateWidget<UBulletSlotWidget>(this, SlotWidgetClass);
-		if (!SlotWidget)
+		if (!SlotArray[i])
 		{
 			continue;
 		}
 
-		SlotWidget->Init(i);
-		SlotWidget->OnSlotClicked.BindUObject(this, &UBulletSelectionWidget::RemoveBulletFromSlot);
-		Box_Slots->AddChild(SlotWidget);
-		SlotWidgets.Add(SlotWidget);
+		if (!SlotBullets[i].IsNone())
+		{
+			if (FBulletData* Row = BulletDataTable->FindRow<FBulletData>(SlotBullets[i], TEXT("")))
+			{
+				SlotArray[i]->SetBrushFromTexture(Row->BulletIcon.LoadSynchronous());
+			}
+		}
+		else
+		{
+			SlotArray[i]->SetBrushFromTexture(nullptr);
+		}
 	}
 }
 
 void UBulletSelectionWidget::PopulateBulletList()
 {
-	if (!List_Bullets)
+	if (!List_Bullets || !BulletDataTable || !BulletItemWidgetClass)
 	{
-		UE_LOG(LogTemp, Error, TEXT("[BulletSelectionWidget] List_Bullets is null"));
-		return;
-	}
-	if (!BulletDataTable)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[BulletSelectionWidget] BulletDataTable is null"));
-		return;
-	}
-	if (!BulletItemWidgetClass)
-	{
-		UE_LOG(LogTemp, Error, TEXT("[BulletSelectionWidget] BulletItemWidgetClass is null"));
 		return;
 	}
 
 	List_Bullets->ClearChildren();
+	ListItemWidgets.Empty();
 
-	TArray<FName> RowNames = BulletDataTable->GetRowNames();
-
-	for (const FName& RowName : RowNames)
+	for (const FName& RowName : BulletDataTable->GetRowNames())
 	{
+		const int32 Available = GetAvailableCount(RowName);
+		if (Available <= 0)
+		{
+			continue;
+		}
+
 		FBulletData* Row = BulletDataTable->FindRow<FBulletData>(RowName, TEXT(""));
 		if (!Row)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("[BulletSelectionWidget] Row not found: %s"), *RowName.ToString());
 			continue;
 		}
 
 		UBulletListItemWidget* Item = CreateWidget<UBulletListItemWidget>(this, BulletItemWidgetClass);
 		if (!Item)
 		{
-			UE_LOG(LogTemp, Warning, TEXT("[BulletSelectionWidget] Failed to create item widget for: %s"), *RowName.ToString());
 			continue;
 		}
 
-		Item->Init(RowName, Row->BulletIcon.LoadSynchronous());
+		Item->Init(RowName, Row->BulletIcon.LoadSynchronous(), Row->BulletName, Row->BulletDescription);
+		Item->SetCount(Available);
 		Item->OnBulletItemClicked.BindUObject(this, &UBulletSelectionWidget::AddBulletToSlot);
 		List_Bullets->AddChild(Item);
-		UE_LOG(LogTemp, Log, TEXT("[ScoutingWidget] Added bullet item: %s"), *RowName.ToString());
+		ListItemWidgets.Add(RowName, Item);
+	}
+}
+
+void UBulletSelectionWidget::UpdateListItemCount(FName RowName)
+{
+	if (UBulletListItemWidget** ItemPtr = ListItemWidgets.Find(RowName))
+	{
+		const int32 Remaining = GetAvailableCount(RowName) - GetSelectedCount(RowName);
+		(*ItemPtr)->SetCount(FMath::Max(0, Remaining));
 	}
 }
 
 void UBulletSelectionWidget::AddBulletToSlot(FName RowName)
 {
+	if (GetSelectedCount(RowName) >= GetAvailableCount(RowName))
+	{
+		return;
+	}
+
 	for (int32 i = 0; i < MaxBulletSlots; i++)
 	{
 		if (SlotBullets[i].IsNone())
 		{
-			FBulletData* Row = BulletDataTable->FindRow<FBulletData>(RowName, TEXT(""));
-			if (!Row)
-			{
-				return;
-			}
-
 			SlotBullets[i] = RowName;
-			SlotWidgets[i]->SetBullet(RowName, Row->BulletIcon.LoadSynchronous());
+			UpdateSlotImages();
+			UpdateListItemCount(RowName);
 			RefreshConfirmButton();
 			return;
 		}
 	}
 }
-
-void UBulletSelectionWidget::RemoveBulletFromSlot(int32 SlotIndex)
+void UBulletSelectionWidget::OnPopClicked()
 {
-	if (!SlotBullets.IsValidIndex(SlotIndex))
+	for (int32 i = MaxBulletSlots - 1; i >= 0; i--)
 	{
-		return;
+		if (!SlotBullets[i].IsNone())
+		{
+			const FName RemovedBullet = SlotBullets[i];
+			SlotBullets[i] = NAME_None;
+			UpdateSlotImages();
+			UpdateListItemCount(RemovedBullet);
+			RefreshConfirmButton();
+			return;
+		}
 	}
-
-	SlotBullets[SlotIndex] = NAME_None;
-	SlotWidgets[SlotIndex]->ClearSlot();
-	RefreshConfirmButton();
 }
 
 void UBulletSelectionWidget::RefreshConfirmButton()
@@ -140,8 +174,7 @@ void UBulletSelectionWidget::RefreshConfirmButton()
 		return;
 	}
 
-	bool bAllFilled = !SlotBullets.Contains(NAME_None);
-	Btn_Confirm->SetIsEnabled(bAllFilled);
+	Btn_Confirm->SetIsEnabled(!SlotBullets.Contains(NAME_None));
 }
 
 void UBulletSelectionWidget::OnConfirmClicked()
@@ -156,7 +189,7 @@ void UBulletSelectionWidget::OnConfirmClicked()
 		GM->PossessPlayerCharacter();
 		GM->ActivateEnemies();
 	}
-	
+
 	if (APlayerCharacter* Player = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)))
 	{
 		for (const FName& BulletName : SlotBullets)
@@ -187,10 +220,12 @@ void UBulletSelectionWidget::OnResetClicked()
 	for (int32 i = 0; i < MaxBulletSlots; i++)
 	{
 		SlotBullets[i] = NAME_None;
-		if (SlotWidgets.IsValidIndex(i) && SlotWidgets[i])
-		{
-			SlotWidgets[i]->ClearSlot();
-		}
+	}
+	UpdateSlotImages();
+
+	for (auto& Pair : ListItemWidgets)
+	{
+		Pair.Value->SetCount(GetAvailableCount(Pair.Key));
 	}
 	RefreshConfirmButton();
 }

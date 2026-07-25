@@ -4,6 +4,7 @@
 #include "GameFramework/Pawn.h"
 #include "Character/OSMKPlayerController.h"
 #include "UI/Scouting/ScoutingWidget.h"
+#include "UI/Ingame/OSMKIngameHUD.h"
 #include "Core/OSMKGameState.h"
 #include "Data/StageData.h"
 #include "Data/Stage/StageStaticMeshData.h"
@@ -468,6 +469,17 @@ void AOSMKInGameGameMode::ActivateEnemies()
 
 void AOSMKInGameGameMode::HandleStageClear()
 {
+	AOSMKGameState* GS = GetGameState<AOSMKGameState>();
+	if (GS && GS->CurrentStageState != EOSMKStageState::InProgress)
+	{
+		return;
+	}
+
+	if (GS)
+	{
+		GS->CurrentStageState = EOSMKStageState::Clear;
+	}
+
 	GetWorldTimerManager().SetTimer(StageResultTimerHandle, this, &AOSMKInGameGameMode::ShowStageClearWidget, 1.5f, false);
 }
 
@@ -484,6 +496,11 @@ void AOSMKInGameGameMode::HandleStageFail()
 		GS->CurrentStageState = EOSMKStageState::Failed;
 	}
 
+	if (AOSMKIngameHUD* HUD = Cast<AOSMKIngameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
+	{
+		HUD->SetHUDVisible(false);
+	}
+
 	GetWorldTimerManager().SetTimer(StageResultTimerHandle, this, &AOSMKInGameGameMode::ShowStageFailWidget, 1.5f, false);
 }
 
@@ -496,6 +513,11 @@ void AOSMKInGameGameMode::ShowStageClearWidget()
 		{
 			StageClearWidgetInstance->AddToViewport();
 		}
+	}
+
+	if (AOSMKIngameHUD* HUD = Cast<AOSMKIngameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
+	{
+		HUD->SetHUDVisible(false);
 	}
 
 	GetWorldTimerManager().SetTimer(StageResultTimerHandle, this, &AOSMKInGameGameMode::ProceedToNextStage, 2.0f, false);

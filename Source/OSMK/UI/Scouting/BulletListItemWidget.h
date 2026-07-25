@@ -14,7 +14,8 @@ class OSMK_API UBulletListItemWidget : public UUserWidget
 public:
 	FOnBulletItemClicked OnBulletItemClicked;
 
-	void Init(FName InRowName, UTexture2D* InIcon);
+	void Init(FName InRowName, UTexture2D* InIcon, const FText& InBulletName, const FText& InBulletDescription);
+	void SetCount(int32 Count);
 
 protected:
 	virtual void NativeConstruct() override;
@@ -29,6 +30,15 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	class UImage* Img_Icon = nullptr;
+
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* Text_Count = nullptr;
+	
+	UPROPERTY(meta = (BindWidget))
+	class UTextBlock* Text_Name = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Tooltip")
+	TSubclassOf<class UBulletTooltipWidget> TooltipWidgetClass = nullptr;
 
 private:
 	FName RowName = NAME_None;

@@ -11,6 +11,7 @@ void AOSMKGameState::SetEnemyCount(int32 Count)
 {
 	EnemyCount = Count;
 	DestroyedProjectileCount = 0;
+	OnEnemyCountChanged.Broadcast();
 }
 
 void AOSMKGameState::NotifyEnemyKilled()
@@ -21,6 +22,7 @@ void AOSMKGameState::NotifyEnemyKilled()
 	}
 
 	EnemyCount = FMath::Max(0, EnemyCount - 1);
+	OnEnemyCountChanged.Broadcast();
 	CheckStageResult();
 }
 
@@ -46,9 +48,6 @@ void AOSMKGameState::CheckStageResult()
 {
 	if (EnemyCount <= 0)
 	{
-		CurrentStageState = EOSMKStageState::Clear;
-		UE_LOG(LogTemp, Warning, TEXT("Stage Clear"));
-		
 		if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(GetWorld()->GetAuthGameMode()))
 		{
 			GM->HandleStageClear();
@@ -58,9 +57,6 @@ void AOSMKGameState::CheckStageResult()
 
 	if (DestroyedProjectileCount >= MaxBulletSlots)
 	{
-		CurrentStageState = EOSMKStageState::Failed;
-		UE_LOG(LogTemp, Warning, TEXT("Stage Failed"));
-
 		if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(GetWorld()->GetAuthGameMode()))
 		{
 			GM->HandleStageFail();

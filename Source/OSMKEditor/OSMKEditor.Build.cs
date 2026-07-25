@@ -23,7 +23,8 @@ public class OSMKEditor : ModuleRules
 			"SlateCore",
 			"ScriptableEditorWidgets",
 			"DeveloperSettings",
-			"PropertyEditor"
+			"PropertyEditor",
+			"InputCore"
 		});
 	}
 }

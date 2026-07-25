@@ -4,7 +4,7 @@
 #include "DetailLayoutBuilder.h"
 #include "Engine/DataTable.h"
 #include "Data/StageData.h"
-#include "Widgets/Input/SCheckBox.h"
+#include "Widgets/Input/SNumericEntryBox.h"
 #include "Widgets/Text/STextBlock.h"
 
 TSharedRef<IPropertyTypeCustomization> FStageLevelConfigCustomization::MakeInstance()
@@ -17,11 +17,10 @@ void FStageLevelConfigCustomization::CustomizeHeader(
 	FDetailWidgetRow& HeaderRow,
 	IPropertyTypeCustomizationUtils& StructCustomizationUtils)
 {
+	StructHandle = StructPropertyHandle;
+
 	TSharedPtr<IPropertyHandle> StageRowNameHandle = StructPropertyHandle->GetChildHandle(
 		GET_MEMBER_NAME_CHECKED(FStageLevelConfig, StageRowName));
-
-	UnlockedBulletRowNamesHandle = StructPropertyHandle->GetChildHandle(
-		GET_MEMBER_NAME_CHECKED(FStageLevelConfig, UnlockedBulletRowNames));
 
 	FName RowName = NAME_None;
 	if (StageRowNameHandle.IsValid())
@@ -52,25 +51,30 @@ void FStageLevelConfigCustomization::CustomizeChildren(
 	for (const FName& RowName : BulletDT->GetRowNames())
 	{
 		ChildBuilder.AddCustomRow(FText::FromName(RowName))
-		.NameContent()
-		[
-			SNew(STextBlock)
-			.Text(FText::FromName(RowName))
-			.Font(IDetailLayoutBuilder::GetDetailFont())
-		]
-		.ValueContent()
-		[
-			SNew(SCheckBox)
-			.IsChecked_Raw(this, &FStageLevelConfigCustomization::GetCheckBoxState, RowName)
-			.OnCheckStateChanged_Raw(this, &FStageLevelConfigCustomization::OnCheckBoxChanged, RowName)
-		];
+			.NameContent()
+			[
+				SNew(STextBlock)
+				.Text(FText::FromName(RowName))
+				.Font(IDetailLayoutBuilder::GetDetailFont())
+			]
+			.ValueContent()
+			[
+				SNew(SNumericEntryBox<int32>)
+				.Value(this, &FStageLevelConfigCustomization::GetBulletCount, RowName)
+				.MinValue(0)
+				.MaxValue(6)
+				.MinSliderValue(0)
+				.MaxSliderValue(6)
+				.AllowSpin(true)
+				.OnValueCommitted(this, &FStageLevelConfigCustomization::SetBulletCount, RowName)
+			];
 	}
 }
 
-UDataTable* FStageLevelConfigCustomization::GetBulletDataTable(TSharedRef<IPropertyHandle> StructPropertyHandle) const
+UDataTable* FStageLevelConfigCustomization::GetBulletDataTable(TSharedRef<IPropertyHandle> InStructHandle) const
 {
 	TArray<UObject*> OuterObjects;
-	StructPropertyHandle->GetOuterObjects(OuterObjects);
+	InStructHandle->GetOuterObjects(OuterObjects);
 	for (UObject* Obj : OuterObjects)
 	{
 		if (UStageData* StageData = Cast<UStageData>(Obj))
@@ -81,69 +85,39 @@ UDataTable* FStageLevelConfigCustomization::GetBulletDataTable(TSharedRef<IPrope
 	return nullptr;
 }
 
-TArray<FName> FStageLevelConfigCustomization::GetCurrentUnlockedNames() const
+TOptional<int32> FStageLevelConfigCustomization::GetBulletCount(FName RowName) const
 {
-	TArray<FName> Result;
-	if (!UnlockedBulletRowNamesHandle.IsValid())
+	if (!StructHandle.IsValid())
 	{
-		return Result;
+		return 0;
 	}
 
-	TSharedPtr<IPropertyHandleArray> ArrayHandle = UnlockedBulletRowNamesHandle->AsArray();
-	if (!ArrayHandle.IsValid())
+	void* StructData = nullptr;
+	if (StructHandle->GetValueData(StructData) != FPropertyAccess::Success || !StructData)
 	{
-		return Result;
+		return 0;
 	}
 
-	uint32 NumElements = 0;
-	ArrayHandle->GetNumElements(NumElements);
-	for (uint32 i = 0; i < NumElements; i++)
-	{
-		FName Name;
-		ArrayHandle->GetElement(i)->GetValue(Name);
-		Result.Add(Name);
-	}
-	return Result;
+	FStageLevelConfig* Config = static_cast<FStageLevelConfig*>(StructData);
+	const int32* Found = Config->BulletCounts.Find(RowName);
+	return Found ? *Found : 0;
 }
 
-ECheckBoxState FStageLevelConfigCustomization::GetCheckBoxState(FName RowName) const
+void FStageLevelConfigCustomization::SetBulletCount(int32 NewValue, ETextCommit::Type, FName RowName)
 {
-	return GetCurrentUnlockedNames().Contains(RowName) ? ECheckBoxState::Checked : ECheckBoxState::Unchecked;
-}
-
-void FStageLevelConfigCustomization::OnCheckBoxChanged(ECheckBoxState NewState, FName RowName)
-{
-	if (!UnlockedBulletRowNamesHandle.IsValid())
+	if (!StructHandle.IsValid())
 	{
 		return;
 	}
 
-	TArray<FName> Current = GetCurrentUnlockedNames();
-	if (NewState == ECheckBoxState::Checked)
-	{
-		Current.AddUnique(RowName);
-	}
-	else
-	{
-		Current.Remove(RowName);
-	}
-
-	TSharedPtr<IPropertyHandleArray> ArrayHandle = UnlockedBulletRowNamesHandle->AsArray();
-	if (!ArrayHandle.IsValid())
+	void* StructData = nullptr;
+	if (StructHandle->GetValueData(StructData) != FPropertyAccess::Success || !StructData)
 	{
 		return;
 	}
 
-	UnlockedBulletRowNamesHandle->NotifyPreChange();
-
-	ArrayHandle->EmptyArray();
-	for (const FName& Name : Current)
-	{
-		ArrayHandle->AddItem();
-		uint32 NumElements = 0;
-		ArrayHandle->GetNumElements(NumElements);
-		ArrayHandle->GetElement(NumElements - 1)->SetValue(Name);
-	}
-
-	UnlockedBulletRowNamesHandle->NotifyPostChange(EPropertyChangeType::ValueSet);
+	StructHandle->NotifyPreChange();
+	FStageLevelConfig* Config = static_cast<FStageLevelConfig*>(StructData);
+	Config->BulletCounts.FindOrAdd(RowName) = FMath::Clamp(NewValue, 0, 6);
+	StructHandle->NotifyPostChange(EPropertyChangeType::ValueSet);
 }

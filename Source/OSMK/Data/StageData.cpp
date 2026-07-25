@@ -13,7 +13,9 @@ void UStageData::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEv
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
-	if (PropertyChangedEvent.Property && PropertyChangedEvent.Property->GetFName() == GET_MEMBER_NAME_CHECKED(UStageData, StageStaticMeshData))
+	const FName ChangedProp = PropertyChangedEvent.Property ? PropertyChangedEvent.Property->GetFName() : NAME_None;
+	if (ChangedProp == GET_MEMBER_NAME_CHECKED(UStageData, StageStaticMeshData)
+		|| ChangedProp == GET_MEMBER_NAME_CHECKED(UStageData, BulletDataTable))
 	{
 		RefreshStageConfigs();
 	}
@@ -28,11 +30,11 @@ void UStageData::RefreshStageConfigs()
 	}
 
 	TArray<FName> RowNames = StageStaticMeshData->GetRowNames();
-	
-	TMap<FName, TArray<FName>> ExistingBullets;
-	for (const auto& Config : StageConfigs)
+
+	TMap<FName, TMap<FName, int32>> ExistingCounts;
+	for (const FStageLevelConfig& Config : StageConfigs)
 	{
-		ExistingBullets.Add(Config.StageRowName, Config.UnlockedBulletRowNames);
+		ExistingCounts.Add(Config.StageRowName, Config.BulletCounts);
 	}
 
 	StageConfigs.Empty();
@@ -41,10 +43,10 @@ void UStageData::RefreshStageConfigs()
 	{
 		FStageLevelConfig NewConfig;
 		NewConfig.StageRowName = RowName;
-		
-		if (TArray<FName>* FoundBullets = ExistingBullets.Find(RowName))
+
+		if (TMap<FName, int32>* Found = ExistingCounts.Find(RowName))
 		{
-			NewConfig.UnlockedBulletRowNames = *FoundBullets;
+			NewConfig.BulletCounts = *Found;
 		}
 
 		StageConfigs.Add(NewConfig);

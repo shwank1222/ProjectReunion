@@ -1,6 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Data/StageData.h"
 #include "GameFramework/GameMode.h"
 #include "OSMKInGameGameMode.generated.h"
 
@@ -50,6 +51,15 @@ public:
 	void ClearPlayerCharacter();
 
 	FTransform GetPlayerStartTransform() const { return PlayerStartTransform; }
+
+	const TMap<FName, int32>* GetCurrentStageBulletCounts() const
+	{
+		if (StageData && StageData->StageConfigs.IsValidIndex(CurrentStageIndex))
+		{
+			return &StageData->StageConfigs[CurrentStageIndex].BulletCounts;
+		}
+		return nullptr;
+	}
 
 	UFUNCTION(BlueprintCallable)
 	void SpawnPlayerCharacter();
