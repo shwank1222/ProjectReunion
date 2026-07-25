@@ -36,18 +36,8 @@ void AEnemyCharacter::BeginPlay()
 
 void AEnemyCharacter::Fire() const
 {
-	const FVector Start = AttackArrow->GetComponentLocation();
-	const FVector Direction = AttackArrow->GetForwardVector();
-	const FVector End = Start + Direction * MaxAimDistance;
-
-	DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 5.0f);
-
-	FCollisionQueryParams Params;
-	Params.AddIgnoredActor(this);
-	Params.AddIgnoredComponent(PistolMesh.Get());
-
 	FHitResult Hit;
-	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	if (TrySweep(Hit, 10000.0f))
 	{
 		UE_LOG(LogEnemy, Warning, TEXT("Hit: %s"), *Hit.GetActor()->GetName());
 
@@ -64,6 +54,19 @@ void AEnemyCharacter::ActivateEnemy() const
 	{
 		AIController->ActivateLogic();
 	}
+}
+
+bool AEnemyCharacter::CanAttackTarget(const AActor* TargetActor) const
+{
+	if (!IsValid(TargetActor))
+	{
+		return false;
+	}
+	
+	FHitResult Hit;
+	const bool bHit = TrySweep(Hit, AttackRange);
+	
+	return bHit ? Hit.GetActor() == TargetActor : false;
 }
 
 void AEnemyCharacter::Die()
@@ -87,4 +90,30 @@ void AEnemyCharacter::DestroyCharacter()
 	}
 
 	Destroy();
+}
+
+bool AEnemyCharacter::TrySweep(FHitResult& HitResult, const float Distance) const
+{
+	const FVector Start = AttackArrow->GetComponentLocation();
+	const FVector Direction = AttackArrow->GetForwardVector();
+	const FVector End = Start + Direction * Distance;
+
+	DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 0.0f);
+
+	float ShapeRadius = 10.0f;
+	
+	FCollisionShape Shape;
+	Shape.SetSphere(ShapeRadius);
+	
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+	Params.AddIgnoredComponent(PistolMesh.Get());
+	
+	const bool bHit = GetWorld()->SweepSingleByChannel(HitResult, Start, End, FQuat::Identity, ECC_Visibility, Shape, Params);
+	
+	const FVector HitLocation = bHit ? HitResult.Location : End;
+	
+	DrawDebugSphere(GetWorld(), HitLocation, ShapeRadius, 12, FColor::Green, false, 0.0f);
+	
+	return bHit;
 }
