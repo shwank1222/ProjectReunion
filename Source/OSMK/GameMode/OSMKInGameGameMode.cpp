@@ -15,6 +15,8 @@
 #include "Character/AI/EnemyCharacter.h"
 #include "Character/PlayerCharacter.h"
 #include "Blueprint/UserWidget.h"
+#include "UI/Credits/CreditsWidget.h"
+#include "Kismet/GameplayStatics.h"
 #include "Components/StaticMeshComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Engine/StaticMeshActor.h"
@@ -543,6 +545,33 @@ void AOSMKInGameGameMode::ShowStageFailWidget()
 	}
 }
 
+void AOSMKInGameGameMode::ShowCredits()
+{
+	if (!CreditsWidgetClass)
+	{
+		return;
+	}
+
+	UCreditsWidget* Widget = CreateWidget<UCreditsWidget>(GetWorld(), CreditsWidgetClass);
+	if (!Widget)
+	{
+		return;
+	}
+
+	Widget->bFastForwardOnInput = true;
+	Widget->OnCreditsFinished.AddLambda([this]()
+	{
+		UGameplayStatics::OpenLevel(this, TitleLevelName);
+	});
+	Widget->AddToViewport();
+
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		PC->SetShowMouseCursor(false);
+		PC->SetInputMode(FInputModeUIOnly());
+	}
+}
+
 void AOSMKInGameGameMode::ProceedToNextStage()
 {
 	if (IsValid(StageClearWidgetInstance))
@@ -552,6 +581,13 @@ void AOSMKInGameGameMode::ProceedToNextStage()
 	}
 
 	CurrentStageIndex++;
+
+	if (!StageData || !StageData->StageConfigs.IsValidIndex(CurrentStageIndex))
+	{
+		ShowCredits();
+		return;
+	}
+
 	SpawnStage(CurrentStageIndex);
 
 	if (ScoutingWidgetClass)
