@@ -46,6 +46,8 @@ void AEnemyCharacter::Fire() const
 			Player->ApplyDamage();
 		}
 	}
+	
+	PlayFireSound();
 }
 
 void AEnemyCharacter::ActivateEnemy() const

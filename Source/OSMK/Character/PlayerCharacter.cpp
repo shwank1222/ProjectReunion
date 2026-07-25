@@ -302,17 +302,6 @@ void APlayerCharacter::PlayFireMontage() const
 	}
 }
 
-void APlayerCharacter::PlayFireSound() const
-{
-	if (!IsValid(FireSound))
-	{
-		UE_LOG(LogCharacter, Warning, TEXT("Invalid Fire Sound"));
-		return;
-	}
-
-	UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
-}
-
 void APlayerCharacter::PlayHeartPulseSound()
 {
 	if (!IsValid(HeartPulseSound))

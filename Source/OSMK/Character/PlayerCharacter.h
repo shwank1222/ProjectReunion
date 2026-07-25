@@ -103,7 +103,7 @@ private:
 	FTransform CalculateProjectileSpawnTransform(const FVector& TargetLocation) const;
 	
 	void PlayFireMontage() const;
-	void PlayFireSound() const;
+	
 	void PlayHeartPulseSound();
 	void StopHeartPulseSound() const;
 
@@ -112,8 +112,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TObjectPtr<UAnimMontage> FireAnimMontage;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	TObjectPtr<USoundBase> FireSound;
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TObjectPtr<USoundBase> HeartPulseSound;
 	
