@@ -301,7 +301,7 @@ void AOSMKInGameGameMode::SpawnActors(int32 StageIndex)
 			SpawnedTriggerActors.Add(Spawned);
 		}
 	}
-	
+
 	// for (const FStageNavMeshItem& Item : Row->NavMeshList)
 	// {
 	// 	ANavMeshBoundsVolume* NavMeshVol = GetWorld()->SpawnActor<ANavMeshBoundsVolume>(ANavMeshBoundsVolume::StaticClass(), Item.Transform, SpawnParams);
@@ -443,7 +443,10 @@ void AOSMKInGameGameMode::PossessPlayerCharacter()
 
 	if (APlayerCharacter* PlayerChar = Cast<APlayerCharacter>(SpawnedPlayerCharacter))
 	{
-		PlayerChar->OnCharacterDeath.AddUniqueDynamic(this, &AOSMKInGameGameMode::HandleStageFail);
+		if (AOSMKGameState* GS = GetGameState<AOSMKGameState>())
+		{
+			PlayerChar->OnCharacterDeath.AddUniqueDynamic(GS, &AOSMKGameState::PlayerDeath);
+		}
 	}
 
 	if (ScoutingWidget)
@@ -530,7 +533,7 @@ void AOSMKInGameGameMode::ShowStageFailWidget()
 		if (UUserWidget* FailWidget = CreateWidget<UUserWidget>(GetWorld(), StageFailWidgetClass))
 		{
 			FailWidget->AddToViewport();
-			
+
 			if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
 			{
 				PC->SetShowMouseCursor(true);

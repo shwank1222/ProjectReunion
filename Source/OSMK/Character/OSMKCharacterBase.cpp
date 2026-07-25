@@ -4,6 +4,7 @@
 #include "OSMKCharacterBase.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(LogCharacter);
 
@@ -49,4 +50,15 @@ void AOSMKCharacterBase::EnableRagdoll()
 
 	// Stop CharacterMovement
 	GetCharacterMovement()->DisableMovement();
+}
+
+void AOSMKCharacterBase::PlayFireSound() const
+{
+	if (!IsValid(FireSound))
+	{
+		UE_LOG(LogCharacter, Warning, TEXT("Invalid Fire Sound"));
+		return;
+	}
+
+	UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
 }

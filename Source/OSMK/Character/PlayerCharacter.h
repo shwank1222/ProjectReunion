@@ -8,6 +8,8 @@
 #include "Weapons/Bullets/BulletBase.h"
 #include "PlayerCharacter.generated.h"
 
+class ULevelSequence;
+class ACutSceneActor;
 struct FInputActionValue;
 class UInputAction;
 class UCameraComponent;
@@ -55,7 +57,7 @@ private:
 	void CancelFiring();
 	void Fire();
 	
-	void StopSlowMotion() const;
+	void StopSlowMotion();
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
@@ -73,6 +75,7 @@ private:
 	FTimerHandle RestoreTimerHandle;
 	
 	uint8 bIsFirring : 1 = false;
+	uint8 bIsFired : 1 = false;
 	
 #pragma endregion
 
@@ -102,7 +105,7 @@ private:
 	FTransform CalculateProjectileSpawnTransform(const FVector& TargetLocation) const;
 	
 	void PlayFireMontage() const;
-	void PlayFireSound() const;
+	
 	void PlayHeartPulseSound();
 	void StopHeartPulseSound() const;
 
@@ -111,8 +114,6 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TObjectPtr<UAnimMontage> FireAnimMontage;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	TObjectPtr<USoundBase> FireSound;
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TObjectPtr<USoundBase> HeartPulseSound;
 	

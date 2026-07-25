@@ -25,6 +25,8 @@ public class OSMK : ModuleRules
 			"FieldSystemEngine",
 			"CableComponent",
 			"NavigationSystem",
+			"LevelSequence",
+			"MovieScene"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });

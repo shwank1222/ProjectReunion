@@ -20,6 +20,8 @@ public:
 	
 	void ActivateEnemy() const;
 	
+	bool CanAttackTarget(const AActor* TargetActor) const;
+	
 protected:
 	virtual void Die() override;
 	
@@ -36,12 +38,15 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
 	FName MuzzleName = FName("Muzzle");
-	UPROPERTY(EditDefaultsOnly, Category = "Aim")
-	float MaxAimDistance = 10000.0f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Aim", meta = (AllowPrivateAccess = true))
+	float AttackRange = 500.0f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
 	FRotator AimRotationRate = FRotator(0.0f, 180.0f, 0.0f);
 
 private:
 	void DestroyCharacter();
+	
+	bool TrySweep(FHitResult& HitResult, float Distance) const;
 };

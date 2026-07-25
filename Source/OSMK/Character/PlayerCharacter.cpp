@@ -117,6 +117,16 @@ void APlayerCharacter::LookInput(const FInputActionValue& Value)
 
 void APlayerCharacter::StartFiring()
 {
+	if (LoadedAmmo.IsEmpty())
+	{
+		return;
+	}
+
+	if (bIsFired)
+	{
+		return;
+	}
+
 	bIsFirring = false;
 	GetWorldTimerManager().SetTimer(AutoFireTimerHandle, this, &ThisClass::Fire, AutoFireDuration, false);
 }
@@ -124,6 +134,11 @@ void APlayerCharacter::StartFiring()
 // ReSharper disable once CppMemberFunctionMayBeConst
 void APlayerCharacter::OnHoldTriggered()
 {
+	if (LoadedAmmo.IsEmpty())
+	{
+		return;
+	}
+
 	if (bIsFirring)
 	{
 		return;
@@ -142,7 +157,7 @@ void APlayerCharacter::OnHoldTriggered()
 
 void APlayerCharacter::CancelFiring()
 {
-	if (GetWorldTimerManager().IsTimerActive(AutoFireTimerHandle))
+	if (!bIsFired && GetWorldTimerManager().IsTimerActive(AutoFireTimerHandle))
 	{
 		Fire();
 	}
@@ -150,6 +165,11 @@ void APlayerCharacter::CancelFiring()
 
 void APlayerCharacter::Fire()
 {
+	if (bIsFired)
+	{
+		return;
+	}
+
 	if (LoadedAmmo.IsEmpty())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("No Loaded Ammo"));
@@ -163,15 +183,17 @@ void APlayerCharacter::Fire()
 
 	FireProjectile(BulletClassSoft.LoadSynchronous());
 
-	GetWorldTimerManager().ClearTimer(AutoFireTimerHandle);
+	bIsFired = true;
 	bIsFirring = false;
+
+	GetWorldTimerManager().ClearTimer(AutoFireTimerHandle);
 
 	GetWorldTimerManager().SetTimer(RestoreTimerHandle, this, &ThisClass::StopSlowMotion, PostAutoFireDelay, false);
 
 	UE_LOG(LogTemp, Warning, TEXT("Fired!"));
 }
 
-void APlayerCharacter::StopSlowMotion() const
+void APlayerCharacter::StopSlowMotion()
 {
 	if (UOSMKSlowMotionSubsystem* Subsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
 	{
@@ -180,6 +202,8 @@ void APlayerCharacter::StopSlowMotion() const
 
 		StopHeartPulseSound();
 	}
+
+	bIsFired = false;
 }
 
 void APlayerCharacter::AddAmmo(const FName RowName)
@@ -276,17 +300,6 @@ void APlayerCharacter::PlayFireMontage() const
 			FirstPersonAnimInstance->Montage_Play(FireAnimMontage);
 		}
 	}
-}
-
-void APlayerCharacter::PlayFireSound() const
-{
-	if (!IsValid(FireSound))
-	{
-		UE_LOG(LogCharacter, Warning, TEXT("Invalid Fire Sound"));
-		return;
-	}
-
-	UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
 }
 
 void APlayerCharacter::PlayHeartPulseSound()
