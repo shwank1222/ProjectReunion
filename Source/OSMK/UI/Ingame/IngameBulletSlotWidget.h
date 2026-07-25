@@ -15,6 +15,7 @@ class OSMK_API UIngameBulletSlotWidget : public UUserWidget
 public:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
+	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 
 	UFUNCTION()
 	void UpdateBullets();
@@ -44,6 +45,12 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UImage> BulletSlot_6 = nullptr;
 
+	UPROPERTY(meta = (BindWidget))
+	class UCanvasPanel* CylinderPanel = nullptr;
+	
 private:
 	TWeakObjectPtr<APlayerCharacter> CachedPlayerCharacter = nullptr;
+	float CurrentRotationAngle = 0.0f;
+	float TargetRotationAngle = 0.0f;
+	int32 PreviousAmmoCount = 0;
 };
