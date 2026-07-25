@@ -85,6 +85,7 @@ protected:
 private:
 	void ShowStageClearWidget();
 	void ShowStageFailWidget();
+	void ShowCredits();
 	void ProceedToNextStage();
 	
 protected:
@@ -96,6 +97,12 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class UUserWidget> StageFailWidgetClass = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UCreditsWidget> CreditsWidgetClass = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Stage")
+	FName TitleLevelName = TEXT("L_Title");
 
 	UPROPERTY(EditDefaultsOnly, Category = "Stage")
 	class UStageData* StageData = nullptr;

@@ -33,4 +33,7 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Language")
 	FString CurrentCulture = TEXT("en");
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Graphic")
+	float Brightness = 0.5f;
 };

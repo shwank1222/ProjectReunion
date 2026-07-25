@@ -1,5 +1,6 @@
 #include "OSMKGameInstance.h"
 #include "OSMKSaveGame.h"
+#include "GameFramework/GameUserSettings.h"
 #include "Kismet/GameplayStatics.h"
 #include "Sound/SoundClass.h"
 #include "Sound/SoundMix.h"
@@ -9,6 +10,12 @@ void UOSMKGameInstance::Init()
 	Super::Init();
 
 	LoadGameSettings();
+
+	if (UGameUserSettings* UserSettings = UGameUserSettings::GetGameUserSettings())
+	{
+		UserSettings->LoadSettings();
+		UserSettings->ApplySettings(false);
+	}
 }
 
 void UOSMKGameInstance::LoadGameSettings()
@@ -25,6 +32,7 @@ void UOSMKGameInstance::LoadGameSettings()
 	}
 
 	ApplySoundSettings();
+	ApplyBrightnessSettings();
 }
 
 void UOSMKGameInstance::ApplySoundSettings() const
@@ -52,6 +60,16 @@ void UOSMKGameInstance::ApplySoundClassVolume(USoundClass* SoundClass, float Vol
 
 	UGameplayStatics::PushSoundMixModifier(this, MasterSoundMix);
 	UGameplayStatics::SetSoundMixClassOverride(this, MasterSoundMix, SoundClass, Volume, 1.0f, 0.0f);
+}
+
+void UOSMKGameInstance::ApplyBrightnessSettings() const
+{
+	if (!SettingSaveData || !GEngine)
+	{
+		return;
+	}
+
+	GEngine->DisplayGamma = FMath::Lerp(BrightnessGammaMax, BrightnessGammaMin, SettingSaveData->Brightness);
 }
 
 void UOSMKGameInstance::SaveGameSettings()

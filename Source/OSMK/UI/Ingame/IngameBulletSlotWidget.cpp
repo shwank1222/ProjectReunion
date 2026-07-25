@@ -1,6 +1,7 @@
 #include "IngameBulletSlotWidget.h"
 #include "Components/Image.h"
 #include "Character/PlayerCharacter.h"
+#include "Components/CanvasPanel.h"
 #include "Data/BulletData.h"
 #include "GameFramework/PlayerController.h"
 
@@ -55,6 +56,17 @@ void UIngameBulletSlotWidget::TryBindToPlayerCharacter()
 	UpdateBullets();
 }
 
+void UIngameBulletSlotWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+
+	if (CylinderPanel && !FMath::IsNearlyEqual(CurrentRotationAngle, TargetRotationAngle, 0.1f))
+	{
+		CurrentRotationAngle = FMath::FInterpTo(CurrentRotationAngle, TargetRotationAngle, InDeltaTime, 10.0f);
+		CylinderPanel->SetRenderTransformAngle(CurrentRotationAngle);
+	}
+}
+
 void UIngameBulletSlotWidget::UpdateBullets()
 {
 	if (!CachedPlayerCharacter.IsValid())
@@ -67,6 +79,13 @@ void UIngameBulletSlotWidget::UpdateBullets()
 	}
 
 	const TArray<FBulletData> LoadedAmmo = CachedPlayerCharacter->GetLoadedAmmo();
+	
+	if (PreviousAmmoCount > 0 && LoadedAmmo.Num() < PreviousAmmoCount)
+	{
+		TargetRotationAngle += 60.0f;
+	}
+	PreviousAmmoCount = LoadedAmmo.Num();
+
 	const int32 MaxSlots = 6;
 
 	UImage* SlotArray[MaxSlots] = { BulletSlot_1, BulletSlot_2, BulletSlot_3, BulletSlot_4, BulletSlot_5, BulletSlot_6 };

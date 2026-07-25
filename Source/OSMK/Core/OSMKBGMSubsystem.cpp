@@ -80,15 +80,17 @@ void UOSMKBGMSubsystem::OnWorldChanged(UWorld* World, const UWorld::Initializati
 
 	if (TargetBGM)
 	{
-		World->GetTimerManager().SetTimerForNextTick([this, TargetBGM]()
+		World->GetTimerManager().SetTimerForNextTick([this, GI, TargetBGM]()
 		{
+			GI->ApplySoundSettings();
 			PlayBGM(TargetBGM);
 		});
 	}
 	else
 	{
-		World->GetTimerManager().SetTimerForNextTick([this]()
+		World->GetTimerManager().SetTimerForNextTick([this, GI]()
 		{
+			GI->ApplySoundSettings();
 			StopBGM();
 		});
 	}

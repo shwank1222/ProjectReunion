@@ -15,6 +15,7 @@ public:
 	void LoadGameSettings();
 	void SaveGameSettings();
 	void ApplySoundSettings() const;
+	void ApplyBrightnessSettings() const;
 	void ApplySoundClassVolume(class USoundClass* SoundClass, float Volume) const;
 
 	FORCEINLINE class UOSMKSaveGame* GetSettingSaveGame() const { return SettingSaveData; }
@@ -40,6 +41,12 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Sound")
 	class USoundClass* SC_Voice = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Graphics")
+	float BrightnessGammaMin = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Graphics")
+	float BrightnessGammaMax = 3.0f;
 
 private:
 	UPROPERTY()

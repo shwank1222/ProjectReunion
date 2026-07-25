@@ -51,6 +51,7 @@ private:
 	void UpdateUIFromUserSettings();
 	void ApplyQuality(int32 QualityLevel);
 	void UpdateQualityButtonStyles();
+	void ApplyBrightness(float Value);
 
 protected:
 	UPROPERTY(BlueprintReadWrite, Category = "UI", meta = (BindWidget))
@@ -76,6 +77,7 @@ protected:
 
 	UPROPERTY(BlueprintReadWrite, Category = "UI", meta = (BindWidget))
 	class USliderWidget* BrightnessSlider = nullptr;
+
 
 private:
 	FGraphicBackup BackupSettings;
