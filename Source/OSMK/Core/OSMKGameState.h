@@ -4,6 +4,8 @@
 #include "GameFramework/GameState.h"
 #include "OSMKGameState.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyCountChanged);
+
 class UOSMKCutSceneManager;
 
 UENUM(BlueprintType)
@@ -44,6 +46,8 @@ private:
 	void CheckStageResult();
 	
 public:
+	UPROPERTY(BlueprintAssignable)
+	FOnEnemyCountChanged OnEnemyCountChanged;
 	UFUNCTION()
 	void PlayerDeath();
 	
@@ -51,6 +55,8 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	EOSMKStageState CurrentStageState = EOSMKStageState::Scouting;
+
+	static constexpr int32 MaxBulletSlots = 6;
 
 	UPROPERTY(BlueprintReadOnly)
 	int32 EnemyCount = 0;
