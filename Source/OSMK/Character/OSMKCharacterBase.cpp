@@ -32,24 +32,9 @@ void AOSMKCharacterBase::Die()
 	
 	OnCharacterDeath.Broadcast();
 	
-	EnableRagdoll();
+	GetCharacterMovement()->DisableMovement();
 	
 	bIsDead = true;
-}
-
-void AOSMKCharacterBase::EnableRagdoll()
-{
-	// // Disable capsule collision
-	// GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
-	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
-	GetMesh()->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
-	GetMesh()->SetSimulatePhysics(true);
-	
-	GetMesh()->WakeAllRigidBodies();
-
-	// Stop CharacterMovement
-	GetCharacterMovement()->DisableMovement();
 }
 
 void AOSMKCharacterBase::PlayFireSound() const

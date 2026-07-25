@@ -25,7 +25,6 @@ public:
 	
 protected:
 	virtual void Die();
-	virtual void EnableRagdoll();
 	
 	void PlayFireSound() const;
 	

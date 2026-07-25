@@ -1,18 +1,21 @@
 ﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "CutSceneActor.h"
+#include "CutsceneActor.h"
 
 #include "Camera/CameraComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 
-ACutSceneActor::ACutSceneActor()
+ACutsceneActor::ACutsceneActor()
 {
 	SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("SceneComponent"));
 	SetRootComponent(SceneComponent);
 	
 	SkeletalMeshComponent = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("MeshComponent"));
 	SkeletalMeshComponent->SetupAttachment(SceneComponent);
+	
+	BoxMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BoxMeshComponent"));
+	BoxMeshComponent->SetupAttachment(SceneComponent);
 	
 	SpringArmComponent = CreateDefaultSubobject<USpringArmComponent>(TEXT("SpringArmComponent"));
 	SpringArmComponent->SetupAttachment(SceneComponent);
@@ -21,18 +24,9 @@ ACutSceneActor::ACutSceneActor()
 	CameraComponent->SetupAttachment(SpringArmComponent);
 }
 
-void ACutSceneActor::ShowActor(const FTransform& Transform, const bool bClear)
+void ACutsceneActor::ShowActor(const bool bClear)
 {
-	SetActorTransform(Transform);
-	
 	SkeletalMeshComponent->SetSkeletalMesh(bClear ? EnemySkeletalMesh : PlayerSkeletalMesh);
 	
 	SetActorHiddenInGame(false);
-}
-
-void ACutSceneActor::HideActor()
-{
-	SetActorHiddenInGame(true);
-	
-	SetActorTransform(FTransform::Identity);
 }

@@ -8,8 +8,10 @@
 #include "Weapons/Bullets/BulletBase.h"
 #include "PlayerCharacter.generated.h"
 
+class UOSMKPostProcessManager;
+class UOSMKSlowMotionSubsystem;
 class ULevelSequence;
-class ACutSceneActor;
+class ACutsceneActor;
 struct FInputActionValue;
 class UInputAction;
 class UCameraComponent;
@@ -35,7 +37,6 @@ public:
 
 protected:
 	virtual void Die() override;
-	virtual void EnableRagdoll() override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent> FirstPersonMesh;
@@ -74,7 +75,7 @@ private:
 	FTimerHandle AutoFireTimerHandle;
 	FTimerHandle RestoreTimerHandle;
 	
-	uint8 bIsFirring : 1 = false;
+	uint8 bIsFiring : 1 = false;
 	uint8 bIsFired : 1 = false;
 	
 #pragma endregion
@@ -136,4 +137,8 @@ private:
 	TObjectPtr<UAudioComponent> HeartPulseSoundComponent;
 
 #pragma endregion
+	
+private:
+	UPROPERTY()
+	TObjectPtr<UOSMKSlowMotionSubsystem> SlowMotionSubsystem;
 };

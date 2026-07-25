@@ -74,10 +74,16 @@ bool AEnemyCharacter::CanAttackTarget(const AActor* TargetActor) const
 void AEnemyCharacter::Die()
 {
 	Super::Die();
+	
+	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+	GetMesh()->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
+	GetMesh()->SetSimulatePhysics(true);
+	
+	GetMesh()->WakeAllRigidBodies();
 
 	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
 	{
-		GS->NotifyEnemyKilled(this);
+		GS->NotifyEnemyKilled();
 	}
 
 	FTimerHandle TimerHandle;
