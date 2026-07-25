@@ -4,6 +4,7 @@
 #include "GameFramework/HUD.h"
 #include "OSMKIngameHUD.generated.h"
 
+class UBulletCountdownWidget;
 class UIngameBulletSlotWidget;
 
 UCLASS()
@@ -23,8 +24,14 @@ private:
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UIngameBulletSlotWidget> BulletSlotWidgetClass = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UBulletCountdownWidget> BulletCountdownWidgetClass = nullptr;
 
 private:
 	UPROPERTY()
-	TObjectPtr<UIngameBulletSlotWidget> BulletSlotWidgetInstance;
+	TObjectPtr<UIngameBulletSlotWidget> BulletSlotWidgetInstance = nullptr;
+	
+	UPROPERTY()
+	TObjectPtr<UBulletCountdownWidget> BulletCountdownWidgetInstance = nullptr;
 };
