@@ -121,12 +121,12 @@ void APlayerCharacter::StartFiring()
 	{
 		return;
 	}
-	
+
 	if (bIsFired)
 	{
 		return;
 	}
-	
+
 	bIsFirring = false;
 	GetWorldTimerManager().SetTimer(AutoFireTimerHandle, this, &ThisClass::Fire, AutoFireDuration, false);
 }
@@ -138,7 +138,7 @@ void APlayerCharacter::OnHoldTriggered()
 	{
 		return;
 	}
-	
+
 	if (bIsFirring)
 	{
 		return;
@@ -169,7 +169,7 @@ void APlayerCharacter::Fire()
 	{
 		return;
 	}
-	
+
 	if (LoadedAmmo.IsEmpty())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("No Loaded Ammo"));
@@ -185,7 +185,7 @@ void APlayerCharacter::Fire()
 
 	bIsFired = true;
 	bIsFirring = false;
-	
+
 	GetWorldTimerManager().ClearTimer(AutoFireTimerHandle);
 
 	GetWorldTimerManager().SetTimer(RestoreTimerHandle, this, &ThisClass::StopSlowMotion, PostAutoFireDelay, false);
@@ -202,7 +202,7 @@ void APlayerCharacter::StopSlowMotion()
 
 		StopHeartPulseSound();
 	}
-	
+
 	bIsFired = false;
 }
 

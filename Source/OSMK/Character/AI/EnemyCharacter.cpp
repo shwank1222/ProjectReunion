@@ -77,7 +77,7 @@ void AEnemyCharacter::Die()
 
 	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
 	{
-		GS->NotifyEnemyKilled();
+		GS->NotifyEnemyKilled(this);
 	}
 
 	FTimerHandle TimerHandle;
@@ -91,7 +91,9 @@ void AEnemyCharacter::DestroyCharacter()
 		AIController->DeactivateLogic(TEXT("Enemy Dead"));
 	}
 
-	Destroy();
+	SetActorHiddenInGame(true);
+	
+	// Destroy();
 }
 
 bool AEnemyCharacter::TrySweep(FHitResult& HitResult, const float Distance) const

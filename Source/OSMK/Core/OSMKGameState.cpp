@@ -1,6 +1,16 @@
 #include "Core/OSMKGameState.h"
 
+#include "OSMKCutSceneManager.h"
+#include "GameFramework/Character.h"
 #include "GameMode/OSMKInGameGameMode.h"
+#include "Kismet/GameplayStatics.h"
+
+void AOSMKGameState::BeginPlay()
+{
+	Super::BeginPlay();
+	
+	CutSceneManager = UOSMKCutSceneManager::Get(this);
+}
 
 void AOSMKGameState::EndScoutingPhase()
 {
@@ -13,12 +23,14 @@ void AOSMKGameState::SetEnemyCount(int32 Count)
 	DestroyedProjectileCount = 0;
 }
 
-void AOSMKGameState::NotifyEnemyKilled()
+void AOSMKGameState::NotifyEnemyKilled(AActor* Enemy)
 {
 	if (CurrentStageState != EOSMKStageState::InProgress)
 	{
 		return;
 	}
+	
+	LastDeadEnemy = Enemy;
 
 	EnemyCount = FMath::Max(0, EnemyCount - 1);
 	CheckStageResult();
@@ -46,25 +58,59 @@ void AOSMKGameState::CheckStageResult()
 {
 	if (EnemyCount <= 0)
 	{
-		CurrentStageState = EOSMKStageState::Clear;
-		UE_LOG(LogTemp, Warning, TEXT("Stage Clear"));
-		
-		if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(GetWorld()->GetAuthGameMode()))
+		if (IsValid(CutSceneManager))
 		{
-			GM->HandleStageClear();
+			CutSceneManager->OnCutSceneFinished.AddUniqueDynamic(this, &ThisClass::StageClear);
+			CutSceneManager->PlayCutScene(LastDeadEnemy, true);
 		}
 		return;
 	}
 
 	if (DestroyedProjectileCount >= MaxBulletSlots)
 	{
-		CurrentStageState = EOSMKStageState::Failed;
-		UE_LOG(LogTemp, Warning, TEXT("Stage Failed"));
-
-		if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(GetWorld()->GetAuthGameMode()))
-		{
-			GM->HandleStageFail();
-		}
+		PlayerDeath();
 		return;
+	}
+}
+
+void AOSMKGameState::PlayerDeath()
+{
+	if (IsValid(CutSceneManager))
+	{
+		CutSceneManager->OnCutSceneFinished.AddUniqueDynamic(this, &ThisClass::StageFailed);
+			
+		ACharacter* Player = UGameplayStatics::GetPlayerCharacter(GetWorld(), 0);
+		CutSceneManager->PlayCutScene(Player, false);
+	}
+}
+
+void AOSMKGameState::StageClear()
+{
+	if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		GM->HandleStageClear();
+	}
+	
+	LastDeadEnemy = nullptr;
+	
+	UnbindCutSceneManagerDelegates();
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void AOSMKGameState::StageFailed()
+{
+	if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		GM->HandleStageFail();
+	}
+	
+	UnbindCutSceneManagerDelegates();
+}
+
+void AOSMKGameState::UnbindCutSceneManagerDelegates() const
+{
+	if (IsValid(CutSceneManager))
+	{
+		CutSceneManager->OnCutSceneFinished.RemoveAll(this);
 	}
 }

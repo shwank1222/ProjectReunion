@@ -4,6 +4,8 @@
 #include "GameFramework/GameState.h"
 #include "OSMKGameState.generated.h"
 
+class UOSMKCutSceneManager;
+
 UENUM(BlueprintType)
 enum class EOSMKStageState : uint8
 {
@@ -19,6 +21,9 @@ class OSMK_API AOSMKGameState : public AGameState
 {
 	GENERATED_BODY()
 
+protected:
+	virtual void BeginPlay() override;
+	
 public:
 	UFUNCTION(BlueprintCallable)
 	void EndScoutingPhase();
@@ -27,7 +32,7 @@ public:
 	void SetEnemyCount(int32 Count);
 
 	UFUNCTION(BlueprintCallable)
-	void NotifyEnemyKilled();
+	void NotifyEnemyKilled(AActor* Enemy);
 
 	UFUNCTION(BlueprintCallable)
 	void NotifyProjectileDestroyed();
@@ -39,6 +44,9 @@ private:
 	void CheckStageResult();
 	
 public:
+	UFUNCTION()
+	void PlayerDeath();
+	
 	static constexpr int32 MaxBulletSlots = 6;
 
 	UPROPERTY(BlueprintReadOnly)
@@ -48,5 +56,19 @@ public:
 	int32 EnemyCount = 0;
 
 private:
+	UFUNCTION()
+	void StageClear();
+	
+	UFUNCTION()
+	void StageFailed();
+	
+	void UnbindCutSceneManagerDelegates() const;
+	
 	int32 DestroyedProjectileCount = 0;
+	
+	UPROPERTY()
+	TObjectPtr<UOSMKCutSceneManager> CutSceneManager;
+	
+	UPROPERTY()
+	TObjectPtr<AActor> LastDeadEnemy;
 };

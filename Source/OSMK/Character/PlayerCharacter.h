@@ -8,6 +8,8 @@
 #include "Weapons/Bullets/BulletBase.h"
 #include "PlayerCharacter.generated.h"
 
+class ULevelSequence;
+class ACutSceneActor;
 struct FInputActionValue;
 class UInputAction;
 class UCameraComponent;
