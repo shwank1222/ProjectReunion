@@ -51,4 +51,7 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class UPopupConfirmWidget> PopupConfirmWidgetClass = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UUserWidget> SettingsWidgetClass = nullptr;
 };

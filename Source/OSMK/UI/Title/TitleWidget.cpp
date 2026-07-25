@@ -54,6 +54,14 @@ void UTitleWidget::OnClickGameStart()
 
 void UTitleWidget::OnClickSettings()
 {
+	if (SettingsWidgetClass)
+	{
+		UUserWidget* SettingsWidget = CreateWidget<UUserWidget>(this, SettingsWidgetClass);
+		if (SettingsWidget)
+		{
+			SettingsWidget->AddToViewport();
+		}
+	}
 }
 
 void UTitleWidget::OnClickCredits()
