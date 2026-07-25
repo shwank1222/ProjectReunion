@@ -41,13 +41,13 @@ private:
 	void CheckStageResult();
 	
 public:
-	static constexpr int32 MaxBulletSlots = 6;
-
 	UPROPERTY(BlueprintAssignable)
 	FOnEnemyCountChanged OnEnemyCountChanged;
 
 	UPROPERTY(BlueprintReadOnly)
 	EOSMKStageState CurrentStageState = EOSMKStageState::Scouting;
+
+	static constexpr int32 MaxBulletSlots = 6;
 
 	UPROPERTY(BlueprintReadOnly)
 	int32 EnemyCount = 0;

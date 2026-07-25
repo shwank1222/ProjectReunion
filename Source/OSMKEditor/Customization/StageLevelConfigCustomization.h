@@ -17,10 +17,10 @@ public:
 		IPropertyTypeCustomizationUtils& StructCustomizationUtils) override;
 
 private:
-	TSharedPtr<IPropertyHandle> UnlockedBulletRowNamesHandle;
-
-	class UDataTable* GetBulletDataTable(TSharedRef<IPropertyHandle> StructPropertyHandle) const;
-	TArray<FName> GetCurrentUnlockedNames() const;
-	ECheckBoxState GetCheckBoxState(FName RowName) const;
-	void OnCheckBoxChanged(ECheckBoxState NewState, FName RowName);
+	class UDataTable* GetBulletDataTable(TSharedRef<IPropertyHandle> InStructHandle) const;
+	TOptional<int32> GetBulletCount(FName RowName) const;
+	void SetBulletCount(int32 NewValue, ETextCommit::Type, FName RowName);
+	
+private:
+	TSharedPtr<IPropertyHandle> StructHandle = nullptr;	
 };

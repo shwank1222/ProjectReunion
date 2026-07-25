@@ -31,7 +31,7 @@ struct FStageLevelConfig
 	FName StageRowName = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet")
-	TArray<FName> UnlockedBulletRowNames;
+	TMap<FName, int32> BulletCounts;
 };
 
 UCLASS()

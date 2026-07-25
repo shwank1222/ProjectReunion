@@ -12,6 +12,7 @@ class OSMK_API UBulletSelectionWidget : public UUserWidget
 
 protected:
 	virtual void NativeConstruct() override;
+	void UpdateListItemCount(FName RowName);
 	
 private:
 	UFUNCTION()
@@ -20,11 +21,17 @@ private:
 	UFUNCTION()
 	void OnResetClicked();
 	
+	UFUNCTION()
+	void OnPopClicked();
+	
 	void PopulateBulletList();
-	void InitSlots();
 	void AddBulletToSlot(FName RowName);
-	void RemoveBulletFromSlot(int32 SlotIndex);
 	void RefreshConfirmButton();
+	void UpdateSlotImages();
+
+private:
+	int32 GetAvailableCount(FName RowName) const;
+	int32 GetSelectedCount(FName RowName) const;
 	
 public:
 	static constexpr int32 MaxBulletSlots = AOSMKGameState::MaxBulletSlots;
@@ -34,13 +41,31 @@ protected:
 	class UScrollBox* List_Bullets = nullptr;
 
 	UPROPERTY(meta = (BindWidget))
-	class UHorizontalBox* Box_Slots = nullptr;
+	TObjectPtr<class UImage> BulletSlot_1 = nullptr;
+	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UImage> BulletSlot_2 = nullptr;
+	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UImage> BulletSlot_3 = nullptr;
+	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UImage> BulletSlot_4 = nullptr;
+	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UImage> BulletSlot_5 = nullptr;
+	
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<class UImage> BulletSlot_6 = nullptr;
 
 	UPROPERTY(meta = (BindWidget))
 	class UButton* Btn_Confirm = nullptr;
 	
 	UPROPERTY(meta = (BindWidget))
 	class UButton* Btn_Reset = nullptr;
+	
+	UPROPERTY(meta = (BindWidget))
+	class UButton* Btn_Pop = nullptr;
 
 	UPROPERTY(EditDefaultsOnly)
 	class UDataTable* BulletDataTable = nullptr;
@@ -48,10 +73,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class UBulletListItemWidget> BulletItemWidgetClass = nullptr;
 
-	UPROPERTY(EditDefaultsOnly)
-	TSubclassOf<class UBulletSlotWidget> SlotWidgetClass = nullptr;
-
 private:
 	TArray<FName> SlotBullets;
-	TArray<class UBulletSlotWidget*> SlotWidgets;
+	TMap<FName, class UBulletListItemWidget*> ListItemWidgets;
 };
