@@ -55,7 +55,7 @@ private:
 	void CancelFiring();
 	void Fire();
 	
-	void StopSlowMotion() const;
+	void StopSlowMotion();
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
@@ -73,6 +73,7 @@ private:
 	FTimerHandle RestoreTimerHandle;
 	
 	uint8 bIsFirring : 1 = false;
+	uint8 bIsFired : 1 = false;
 	
 #pragma endregion
 
