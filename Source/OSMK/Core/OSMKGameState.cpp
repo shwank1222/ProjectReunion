@@ -48,9 +48,6 @@ void AOSMKGameState::CheckStageResult()
 {
 	if (EnemyCount <= 0)
 	{
-		CurrentStageState = EOSMKStageState::Clear;
-		UE_LOG(LogTemp, Warning, TEXT("Stage Clear"));
-		
 		if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(GetWorld()->GetAuthGameMode()))
 		{
 			GM->HandleStageClear();
@@ -60,9 +57,6 @@ void AOSMKGameState::CheckStageResult()
 
 	if (DestroyedProjectileCount >= MaxBulletSlots)
 	{
-		CurrentStageState = EOSMKStageState::Failed;
-		UE_LOG(LogTemp, Warning, TEXT("Stage Failed"));
-
 		if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(GetWorld()->GetAuthGameMode()))
 		{
 			GM->HandleStageFail();

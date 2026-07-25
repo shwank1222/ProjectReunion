@@ -469,6 +469,17 @@ void AOSMKInGameGameMode::ActivateEnemies()
 
 void AOSMKInGameGameMode::HandleStageClear()
 {
+	AOSMKGameState* GS = GetGameState<AOSMKGameState>();
+	if (GS && GS->CurrentStageState != EOSMKStageState::InProgress)
+	{
+		return;
+	}
+
+	if (GS)
+	{
+		GS->CurrentStageState = EOSMKStageState::Clear;
+	}
+
 	GetWorldTimerManager().SetTimer(StageResultTimerHandle, this, &AOSMKInGameGameMode::ShowStageClearWidget, 1.5f, false);
 }
 
