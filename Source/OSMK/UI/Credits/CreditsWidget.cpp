@@ -5,6 +5,8 @@ void UCreditsWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	OriginalScrollSpeed = ScrollSpeed;
+
 	bIsFocusable = true;
 	SetKeyboardFocus();
 
@@ -35,6 +37,7 @@ void UCreditsWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 		SetRenderOpacity(CurrentOpacity);
 		if (CurrentOpacity <= 0.0f)
 		{
+			OnCreditsFinished.Broadcast();
 			RemoveFromParent();
 		}
 		return;
@@ -54,13 +57,45 @@ void UCreditsWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 FReply UCreditsWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
 {
-	CloseCredits();
+	if (bFastForwardOnInput)
+	{
+		ScrollSpeed = OriginalScrollSpeed * 3.0f;
+	}
+	else
+	{
+		CloseCredits();
+	}
+	return FReply::Handled();
+}
+
+FReply UCreditsWidget::NativeOnKeyUp(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
+{
+	if (bFastForwardOnInput)
+	{
+		ScrollSpeed = OriginalScrollSpeed;
+	}
 	return FReply::Handled();
 }
 
 FReply UCreditsWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
-	CloseCredits();
+	if (bFastForwardOnInput)
+	{
+		ScrollSpeed = OriginalScrollSpeed * 3.0f;
+	}
+	else
+	{
+		CloseCredits();
+	}
+	return FReply::Handled();
+}
+
+FReply UCreditsWidget::NativeOnMouseButtonUp(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	if (bFastForwardOnInput)
+	{
+		ScrollSpeed = OriginalScrollSpeed;
+	}
 	return FReply::Handled();
 }
 

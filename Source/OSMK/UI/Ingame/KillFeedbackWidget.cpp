@@ -1,31 +1,25 @@
 #include "KillFeedbackWidget.h"
 #include "Components/TextBlock.h"
 #include "Animation/WidgetAnimation.h"
-#include "Data/KillFeedbackData.h"
-#include "Kismet/KismetMathLibrary.h"
 
-void UKillFeedbackWidget::ShowRandomFeedback()
+void UKillFeedbackWidget::InitFeedback(const FText& Text)
 {
-	if (!KillFeedbackDataTable || !Text_Feedback)
+	if (Text_Feedback)
 	{
-		return;
+		Text_Feedback->SetText(Text);
 	}
 
-	TArray<FName> RowNames = KillFeedbackDataTable->GetRowNames();
-	if (RowNames.Num() > 0)
+	if (Anim_ShowFeedback)
 	{
-		const int32 RandomIndex = FMath::RandRange(0, RowNames.Num() - 1);
-		const FName SelectedRowName = RowNames[RandomIndex];
+		FWidgetAnimationDynamicEvent EndDelegate;
+		EndDelegate.BindDynamic(this, &UKillFeedbackWidget::OnFadeOutFinished);
+		BindToAnimationFinished(Anim_ShowFeedback, EndDelegate);
 
-		if (const FKillFeedbackData* Row = KillFeedbackDataTable->FindRow<FKillFeedbackData>(SelectedRowName, TEXT("KillFeedback")))
-		{
-			Text_Feedback->SetText(Row->FeedbackText);
-
-			if (Anim_ShowFeedback)
-			{
-				StopAnimation(Anim_ShowFeedback);
-				PlayAnimation(Anim_ShowFeedback);
-			}
-		}
+		PlayAnimation(Anim_ShowFeedback);
 	}
+}
+
+void UKillFeedbackWidget::OnFadeOutFinished()
+{
+	RemoveFromParent();
 }

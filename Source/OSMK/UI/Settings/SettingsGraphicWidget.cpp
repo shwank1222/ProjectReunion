@@ -3,6 +3,8 @@
 #include "Components/Button.h"
 #include "Components/ComboBoxString.h"
 #include "SliderWidget.h"
+#include "Core/OSMKSaveGame.h"
+#include "Core/OSMKGameInstance.h"
 
 void USettingsGraphicWidget::NativeConstruct()
 {
@@ -68,7 +70,12 @@ void USettingsGraphicWidget::NativeOnOpenTab(UOSMKSaveGame* InSaveGame)
 	BackupSettings.WindowMode     = UserSettings->GetFullscreenMode();
 	BackupSettings.Resolution     = UserSettings->GetScreenResolution();
 	BackupSettings.OverallQuality = UserSettings->GetOverallScalabilityLevel();
-	BackupSettings.Brightness     = BrightnessSlider ? BrightnessSlider->GetValue() : 0.5f;
+	BackupSettings.Brightness     = InSaveGame ? InSaveGame->Brightness : 0.5f;
+
+	if (BrightnessSlider)
+	{
+		BrightnessSlider->SetValue(BackupSettings.Brightness);
+	}
 
 	UpdateUIFromUserSettings();
 }
@@ -209,8 +216,25 @@ void USettingsGraphicWidget::OnResolutionChanged(FString SelectedItem, ESelectIn
 	}
 }
 
+void USettingsGraphicWidget::ApplyBrightness(float Value)
+{
+	if (!GEngine)
+	{
+		return;
+	}
+
+	UOSMKGameInstance* GI = GetGameInstance<UOSMKGameInstance>();
+	if (!GI)
+	{
+		return;
+	}
+
+	GEngine->DisplayGamma = FMath::Lerp(GI->BrightnessGammaMax, GI->BrightnessGammaMin, Value);
+}
+
 void USettingsGraphicWidget::OnBrightnessValueChanged(float Value)
 {
+	ApplyBrightness(Value);
 }
 
 void USettingsGraphicWidget::NativeOnConfirmSettings(UOSMKSaveGame* OutSaveGame)
@@ -219,6 +243,11 @@ void USettingsGraphicWidget::NativeOnConfirmSettings(UOSMKSaveGame* OutSaveGame)
 	if (UserSettings)
 	{
 		UserSettings->SaveSettings();
+	}
+
+	if (OutSaveGame && BrightnessSlider)
+	{
+		OutSaveGame->Brightness = BrightnessSlider->GetValue();
 	}
 }
 
@@ -242,6 +271,8 @@ void USettingsGraphicWidget::NativeOnCancelSettings()
 	{
 		BrightnessSlider->SetValue(BackupSettings.Brightness);
 	}
+
+	ApplyBrightness(BackupSettings.Brightness);
 }
 
 void USettingsGraphicWidget::NativeOnResetToDefault()
@@ -259,6 +290,8 @@ void USettingsGraphicWidget::NativeOnResetToDefault()
 	{
 		BrightnessSlider->SetValue(0.5f);
 	}
+
+	ApplyBrightness(0.5f);
 
 	UpdateUIFromUserSettings();
 }
