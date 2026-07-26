@@ -16,19 +16,60 @@ void UStageFailWidget::NativeConstruct()
 	{
 		Btn_Title->OnClicked.AddDynamic(this, &UStageFailWidget::OnTitleClicked);
 	}
+
+	if (Anim_FadeIn)
+	{
+		PlayAnimation(Anim_FadeIn);
+	}
 }
 
 void UStageFailWidget::OnRetryClicked()
 {
-	RemoveFromParent();
+	bRetryPending = true;
 
-	if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(GetWorld()->GetAuthGameMode()))
+	if (Anim_FadeOut)
 	{
-		GM->RetryStage();
+		FWidgetAnimationDynamicEvent Delegate;
+		Delegate.BindDynamic(this, &UStageFailWidget::OnFadeOutFinished);
+		BindToAnimationFinished(Anim_FadeOut, Delegate);
+		PlayAnimation(Anim_FadeOut);
+	}
+	else
+	{
+		OnFadeOutFinished();
 	}
 }
 
 void UStageFailWidget::OnTitleClicked()
 {
-	UGameplayStatics::OpenLevel(this, FName("L_Title"));
+	bRetryPending = false;
+
+	if (Anim_FadeOut)
+	{
+		FWidgetAnimationDynamicEvent Delegate;
+		Delegate.BindDynamic(this, &UStageFailWidget::OnFadeOutFinished);
+		BindToAnimationFinished(Anim_FadeOut, Delegate);
+		PlayAnimation(Anim_FadeOut);
+	}
+	else
+	{
+		OnFadeOutFinished();
+	}
+}
+
+void UStageFailWidget::OnFadeOutFinished()
+{
+	RemoveFromParent();
+
+	if (bRetryPending)
+	{
+		if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(GetWorld()->GetAuthGameMode()))
+		{
+			GM->RetryStage();
+		}
+	}
+	else
+	{
+		UGameplayStatics::OpenLevel(this, FName("L_Title"));
+	}
 }

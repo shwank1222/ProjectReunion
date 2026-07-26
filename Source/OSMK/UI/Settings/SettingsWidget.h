@@ -33,6 +33,7 @@ private:
 	void SwitchToTab(int32 TabIndex);
 
 	void InitializeTabButtons();
+	void CollectButtons(UWidget* Root);
 
 protected:
 	UPROPERTY(BlueprintReadWrite, Category = "UI", meta = (BindWidget))

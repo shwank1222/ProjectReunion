@@ -33,6 +33,8 @@ private:
 	UFUNCTION()
 	void HandleTextCommitted(const FText& Text, ETextCommit::Type CommitMethod);
 
+	bool bSuppressBroadcast = false;
+
 	float ToActual(float Normalized) const;
 	float ToNormalized(float Actual) const;
 	void SyncText(float ActualValue);
@@ -66,4 +68,7 @@ protected:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slider", meta=(EditCondition="!bDisplayAsPercentage"))
 	int32 DecimalPlaces = 2;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Slider|Sound")
+	class USoundBase* ValueChangedSound = nullptr;
 };

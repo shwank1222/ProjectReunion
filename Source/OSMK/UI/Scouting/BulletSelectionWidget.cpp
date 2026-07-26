@@ -10,6 +10,7 @@
 #include "Components/CanvasPanelSlot.h"
 #include "Components/ScrollBox.h"
 #include "Components/Image.h"
+#include "Components/TextBlock.h"
 #include "Engine/DataTable.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -141,12 +142,14 @@ void UBulletSelectionWidget::NativeConstruct()
 
 	UpdateSlotImages();
 	PopulateBulletList();
-	RefreshConfirmButton();
 
 	if (Btn_Confirm)
 	{
+		Btn_Confirm->SetVisibility(ESlateVisibility::Hidden);
 		Btn_Confirm->OnClicked.AddDynamic(this, &UBulletSelectionWidget::OnConfirmClicked);
 	}
+
+	RefreshConfirmButton();
 	if (Btn_Reset)
 	{
 		Btn_Reset->OnClicked.AddDynamic(this, &UBulletSelectionWidget::OnResetClicked);
@@ -177,11 +180,13 @@ void UBulletSelectionWidget::UpdateSlotImages()
 			if (FBulletData* Row = BulletDataTable->FindRow<FBulletData>(SlotBullets[i], TEXT("")))
 			{
 				SlotArray[i]->SetBrushFromTexture(Row->CylinderIcon.LoadSynchronous());
+				SlotArray[i]->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 1.f));
 			}
 		}
 		else
 		{
 			SlotArray[i]->SetBrushFromTexture(nullptr);
+			SlotArray[i]->SetColorAndOpacity(FLinearColor(1.f, 1.f, 1.f, 0.f));
 		}
 	}
 }
@@ -365,7 +370,7 @@ void UBulletSelectionWidget::OnPopUnhovered()
 	{
 		if (SlotArray[i])
 		{
-			SlotArray[i]->SetColorAndOpacity(FLinearColor::White);
+			SlotArray[i]->SetColorAndOpacity(SlotBullets[i].IsNone() ? FLinearColor(1.f, 1.f, 1.f, 0.f) : FLinearColor::White);
 		}
 	}
 }
@@ -451,7 +456,23 @@ void UBulletSelectionWidget::RefreshConfirmButton()
 	{
 		return;
 	}
-	Btn_Confirm->SetIsEnabled(!SlotBullets.Contains(NAME_None));
+
+	const bool bAllFilled = !SlotBullets.Contains(NAME_None);
+
+	if (bAllFilled)
+	{
+		Btn_Confirm->SetVisibility(ESlateVisibility::Visible);
+		if (Img_Action) Img_Action->SetVisibility(ESlateVisibility::HitTestInvisible);
+		if (Txt_Action) Txt_Action->SetVisibility(ESlateVisibility::HitTestInvisible);
+		if (Anim_Confirm) PlayAnimation(Anim_Confirm, 0.f, 0);
+	}
+	else
+	{
+		Btn_Confirm->SetVisibility(ESlateVisibility::Hidden);
+		if (Img_Action) Img_Action->SetVisibility(ESlateVisibility::Hidden);
+		if (Txt_Action) Txt_Action->SetVisibility(ESlateVisibility::Hidden);
+		if (Anim_Confirm) StopAnimation(Anim_Confirm);
+	}
 }
 
 void UBulletSelectionWidget::OnConfirmClicked()
@@ -516,7 +537,7 @@ void UBulletSelectionWidget::OnResetUnhovered()
 	{
 		if (SlotArray[i])
 		{
-			SlotArray[i]->SetColorAndOpacity(FLinearColor::White);
+			SlotArray[i]->SetColorAndOpacity(SlotBullets[i].IsNone() ? FLinearColor(1.f, 1.f, 1.f, 0.f) : FLinearColor::White);
 		}
 	}
 }

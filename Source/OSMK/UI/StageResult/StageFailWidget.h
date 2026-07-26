@@ -20,10 +20,22 @@ protected:
 	UFUNCTION()
 	void OnTitleClicked();
 
+	UFUNCTION()
+	void OnFadeOutFinished();
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Btn_Retry = nullptr;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Btn_Title = nullptr;
+
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	TObjectPtr<UWidgetAnimation> Anim_FadeIn = nullptr;
+
+	UPROPERTY(Transient, meta = (BindWidgetAnim))
+	TObjectPtr<UWidgetAnimation> Anim_FadeOut = nullptr;
+
+private:
+	bool bRetryPending = false;
 };

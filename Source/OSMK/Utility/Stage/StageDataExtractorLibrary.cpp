@@ -19,6 +19,7 @@
 
 #if WITH_EDITOR
 #include "EngineUtils.h"
+#include "LevelInstance/LevelInstanceActor.h"
 #endif
 
 void UStageDataExtractorLibrary::ExtractStaticMeshFromLevels(UDataTable* TargetDataTable, TArray<TSoftObjectPtr<UWorld>> TargetLevels)
@@ -238,6 +239,20 @@ void UStageDataExtractorLibrary::ExtractActorDataFromLevels(UDataTable* TargetDa
 			FStageNavMeshItem NavItem;
 			NavItem.Transform = NavMeshVol->GetActorTransform();
 			NewActorData.NavMeshList.Add(NavItem);
+		}
+
+		for (TActorIterator<ALevelInstance> It(LoadedWorld); It; ++It)
+		{
+			ALevelInstance* LevelInst = *It;
+			if (!LevelInst)
+			{
+				continue;
+			}
+
+			FLevelInstanceItem Item;
+			Item.LevelAsset = LevelInst->GetWorldAsset();
+			Item.Transform = LevelInst->GetActorTransform();
+			NewActorData.LevelInstanceList.Add(Item);
 		}
 
 		TargetDataTable->AddRow(RowName, NewActorData);
