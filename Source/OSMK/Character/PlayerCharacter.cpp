@@ -80,6 +80,8 @@ void APlayerCharacter::Die()
 	Super::Die();
 
 	DisableInput(Cast<APlayerController>(GetController()));
+	
+	SetActorHiddenInGame(true);
 }
 
 void APlayerCharacter::MoveInput(const FInputActionValue& Value)

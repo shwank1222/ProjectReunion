@@ -4,6 +4,7 @@
 #include "BulletBase.h"
 
 #include "NiagaraComponent.h"
+#include "NiagaraFunctionLibrary.h"
 #include "Character/AI/EnemyCharacter.h"
 #include "Components/DecalComponent.h"
 #include "Core/OSMKGameState.h"
@@ -19,18 +20,18 @@ ABulletBase::ABulletBase()
 
 	MeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("MeshComponent"));
 	SetRootComponent(MeshComponent);
-	
+
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
 	ProjectileMovement->InitialSpeed = 5000.0f;
 	ProjectileMovement->MaxSpeed = 5000.0f;
 	ProjectileMovement->ProjectileGravityScale = 0.1f;
 	ProjectileMovement->bShouldBounce = false;
-	
+
 	InitialLifeSpan = Lifespan;
-	
+
 	TrailEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("TrailEffect"));
 	TrailEffect->SetupAttachment(MeshComponent);
-	
+
 	MeshComponent->OnComponentHit.AddUniqueDynamic(this, &ThisClass::OnBulletHit);
 	MeshComponent->OnComponentBeginOverlap.AddUniqueDynamic(this, &ThisClass::OnBeginOverlap);
 }
@@ -38,7 +39,6 @@ ABulletBase::ABulletBase()
 void ABulletBase::BeginPlay()
 {
 	Super::BeginPlay();
-	
 }
 
 void ABulletBase::Destroyed()
@@ -47,7 +47,7 @@ void ABulletBase::Destroyed()
 	{
 		GS->NotifyProjectileDestroyed();
 	}
-	
+
 	Super::Destroyed();
 }
 
@@ -55,37 +55,47 @@ void ABulletBase::OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherAc
                               const FHitResult& Hit)
 {
 	UE_LOG(LogBullet, Warning, TEXT("[%s] Hit"), *GetName());
-	
+
 	if (IsValid(OtherActor))
 	{
 		UE_LOG(LogBullet, Warning, TEXT("Hit Actor: %s"), *OtherActor->GetName());
 	}
-	
+
 	TriggerGimmick(OtherActor);
 	EnemyAttack(OtherActor);
-	
+
 	if (!Cast<AEnemyCharacter>(OtherActor))
 	{
 		SpawnBulletHoleDecal(Hit.ImpactPoint, Hit.ImpactNormal);
+		SpawnBulletHitEffect(Hit.ImpactPoint, Hit.ImpactNormal);
+	}
+	else
+	{
+		SpawnBloodEffect(Hit.ImpactPoint, Hit.ImpactNormal);
 	}
 }
 
 void ABulletBase::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
-	bool bFromSweep, const FHitResult& SweepResult)
+                                 bool bFromSweep, const FHitResult& SweepResult)
 {
 	UE_LOG(LogBullet, Warning, TEXT("[%s] Overlap"), *GetName());
-	
+
 	if (IsValid(OtherActor))
 	{
 		UE_LOG(LogBullet, Warning, TEXT("Overlap Actor: %s"), *OtherActor->GetName());
 	}
-	
+
 	TriggerGimmick(OtherActor);
 	EnemyAttack(OtherActor);
-	
+
 	if (!Cast<AEnemyCharacter>(OtherActor))
 	{
 		SpawnBulletHoleDecal(SweepResult.ImpactPoint, SweepResult.ImpactNormal);
+		SpawnBulletHitEffect(SweepResult.ImpactPoint, SweepResult.ImpactNormal);
+	}
+	else
+	{
+		SpawnBloodEffect(SweepResult.ImpactPoint, SweepResult.ImpactNormal);
 	}
 }
 
@@ -102,11 +112,28 @@ void ABulletBase::SpawnBulletHoleDecal(const FVector& Location, const FVector& I
 	const float RandomSize = FMath::FRandRange(3.0f, 7.0f);
 
 	const FRotator Rotation = (-ImpactNormal).Rotation();
-	
+
 	if (UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), BulletHoleDecal, FVector(RandomSize), Location, Rotation, 5.0f))
 	{
 		Decal->SetFadeScreenSize(0.0f);
 	}
+}
+
+void ABulletBase::SpawnBulletHitEffect(const FVector& Location, const FVector& ImpactNormal) const
+{
+	SpawnEffect(BulletHitEffect, Location, ImpactNormal);
+}
+
+void ABulletBase::SpawnBloodEffect(const FVector& Location, const FVector& ImpactNormal) const
+{
+	SpawnEffect(BloodEffect, Location, ImpactNormal);
+}
+
+void ABulletBase::SpawnEffect(UNiagaraSystem* Effect, const FVector& Location, const FVector& ImpactNormal) const
+{
+	const FRotator Rotation = (-ImpactNormal).Rotation();
+
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), Effect, Location, Rotation, FVector::OneVector);
 }
 
 void ABulletBase::EnemyAttack(AActor* OtherActor)
@@ -116,4 +143,3 @@ void ABulletBase::EnemyAttack(AActor* OtherActor)
 		Enemy->ApplyDamage();
 	}
 }
-

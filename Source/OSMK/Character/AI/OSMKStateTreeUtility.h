@@ -11,6 +11,26 @@ class AOSMKAIController;
 class AEnemyCharacter;
 
 USTRUCT()
+struct FStateTreeEquipPistolInstanceData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, Category = Context)
+	TObjectPtr<AEnemyCharacter> Character;
+};
+
+USTRUCT(meta = (DisplayName = "Equip Pistol"))
+struct FStateTreeEquipPistolTask : public FStateTreeTaskCommonBase
+{
+	GENERATED_BODY()
+
+	using FInstanceDataType = FStateTreeEquipPistolInstanceData;
+	virtual const UStruct* GetInstanceDataType() const override { return FInstanceDataType::StaticStruct(); }
+
+	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+};
+
+USTRUCT()
 struct FStateTreeShootAtTargetInstanceData
 {
 	GENERATED_BODY()

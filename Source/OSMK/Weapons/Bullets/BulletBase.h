@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "BulletBase.generated.h"
 
+class UNiagaraSystem;
 class UNiagaraComponent;
 class UProjectileMovementComponent;
 
@@ -36,12 +37,23 @@ protected:
 	static void TriggerGimmick(AActor* OtherActor);
 	
 	void SpawnBulletHoleDecal(const FVector& Location, const FVector& ImpactNormal) const;
+	
+	void SpawnBulletHitEffect(const FVector& Location, const FVector& ImpactNormal) const;
+	void SpawnBloodEffect(const FVector& Location, const FVector& ImpactNormal) const;
+	
+	void SpawnEffect(UNiagaraSystem* Effect, const FVector& Location, const FVector& ImpactNormal) const;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UMeshComponent> MeshComponent;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UNiagaraComponent> TrailEffect;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UNiagaraSystem> BulletHitEffect;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UNiagaraSystem> BloodEffect;
 	
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
 	TObjectPtr<UMaterialInterface> BulletHoleDecal;

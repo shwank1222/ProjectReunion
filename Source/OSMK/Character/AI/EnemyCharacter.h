@@ -16,20 +16,19 @@ public:
 	
 	virtual void BeginPlay() override;
 	
-	void Fire() const;
+	void EquipPistol();
+	
+	void Fire();
 	
 	void ActivateEnemy() const;
 	
-	bool CanAttackTarget(const AActor* TargetActor) const;
+	bool CanAttackTarget(AActor* TargetActor);
+	
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE bool IsEquippedPistol() const { return bIsEquippedPistol; }
 	
 protected:
 	virtual void Die() override;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<UArrowComponent> AttackArrow;
-	
-	UPROPERTY()
-	TObjectPtr<ACharacter> PlayerCharacter;
 	
 	UPROPERTY(EditAnywhere)
 	uint8 bAutoActivate : 1 = false;
@@ -38,10 +37,18 @@ protected:
 	float AttackRange = 500.0f;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
-	FRotator AimRotationRate = FRotator(0.0f, 180.0f, 0.0f);
+	float AimOffsetZ = 40.0f;
+	
+	UPROPERTY(EditDefaultsOnly)
+	TEnumAsByte<ECollisionChannel> IgnoreCollisionChannel;
 
 private:
 	void DestroyCharacter();
 	
-	bool TrySweep(FHitResult& HitResult, float Distance) const;
+	bool TrySweep(AActor* TargetActor, FHitResult& HitResult, float Distance);
+	
+	UPROPERTY()
+	AActor* PlayerCharacter;
+	
+	uint8 bIsEquippedPistol : 1 = false;
 };
