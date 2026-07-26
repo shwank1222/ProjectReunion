@@ -81,7 +81,7 @@ void AEnemyCharacter::Die()
 	Super::Die();
 	
 	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
-	GetMesh()->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
+	GetMesh()->SetCollisionResponseToChannel(IgnoreCollisionChannel, ECR_Ignore);
 	GetMesh()->SetSimulatePhysics(true);
 	
 	GetMesh()->WakeAllRigidBodies();

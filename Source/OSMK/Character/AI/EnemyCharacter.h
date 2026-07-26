@@ -38,6 +38,9 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
 	float AimOffsetZ = 40.0f;
+	
+	UPROPERTY(EditDefaultsOnly)
+	TEnumAsByte<ECollisionChannel> IgnoreCollisionChannel;
 
 private:
 	void DestroyCharacter();
