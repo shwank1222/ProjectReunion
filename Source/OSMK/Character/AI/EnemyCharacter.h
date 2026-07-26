@@ -16,11 +16,16 @@ public:
 	
 	virtual void BeginPlay() override;
 	
+	void EquipPistol();
+	
 	void Fire();
 	
 	void ActivateEnemy() const;
 	
 	bool CanAttackTarget(AActor* TargetActor);
+	
+	UFUNCTION(BlueprintPure)
+	FORCEINLINE bool IsEquippedPistol() const { return bIsEquippedPistol; }
 	
 protected:
 	virtual void Die() override;
@@ -41,4 +46,6 @@ private:
 	
 	UPROPERTY()
 	AActor* PlayerCharacter;
+	
+	uint8 bIsEquippedPistol : 1 = false;
 };

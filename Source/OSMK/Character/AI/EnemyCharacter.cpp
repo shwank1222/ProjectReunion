@@ -12,6 +12,8 @@ DEFINE_LOG_CATEGORY_STATIC(LogEnemy, Log, All);
 AEnemyCharacter::AEnemyCharacter()
 {
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
+	
+	PistolMesh->SetHiddenInGame(true);
 }
 
 void AEnemyCharacter::BeginPlay()
@@ -22,6 +24,17 @@ void AEnemyCharacter::BeginPlay()
 	{
 		ActivateEnemy();
 	}
+}
+
+void AEnemyCharacter::EquipPistol()
+{
+	if (bIsEquippedPistol)
+	{
+		return;
+	}
+	
+	PistolMesh->SetHiddenInGame(false);
+	bIsEquippedPistol = true;
 }
 
 void AEnemyCharacter::Fire()
