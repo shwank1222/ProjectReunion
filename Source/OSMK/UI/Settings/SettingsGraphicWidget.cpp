@@ -284,14 +284,17 @@ void USettingsGraphicWidget::NativeOnResetToDefault()
 	}
 
 	UserSettings->SetToDefaults();
+	UserSettings->SetOverallScalabilityLevel(3);
 	UserSettings->ApplySettings(false);
+
+	const float DefaultBrightness = GetDefault<UOSMKSaveGame>()->Brightness;
 
 	if (BrightnessSlider)
 	{
-		BrightnessSlider->SetValue(0.5f);
+		BrightnessSlider->SetValue(DefaultBrightness);
 	}
 
-	ApplyBrightness(0.5f);
+	ApplyBrightness(DefaultBrightness);
 
 	UpdateUIFromUserSettings();
 }

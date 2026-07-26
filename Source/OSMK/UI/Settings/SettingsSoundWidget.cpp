@@ -92,6 +92,11 @@ void USettingsSoundWidget::NativeOnConfirmSettings(UOSMKSaveGame* OutSaveGame)
 void USettingsSoundWidget::NativeOnCancelSettings()
 {
 	RestoreBackup();
+
+	if (UOSMKGameInstance* GI = Cast<UOSMKGameInstance>(GetGameInstance()))
+	{
+		GI->ApplySoundSettings();
+	}
 }
 
 void USettingsSoundWidget::NativeOnResetToDefault()
