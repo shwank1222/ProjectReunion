@@ -51,6 +51,9 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ClearLevelInstances();
 
+	UFUNCTION()
+	void OnLevelInstanceLoaded();
+
 	UFUNCTION(BlueprintCallable)
 	void ClearScoutCamera();
 
@@ -145,5 +148,7 @@ private:
 
 	FTransform PlayerStartTransform;
 	int32 CurrentStageIndex = 0;
+	int32 PendingLevelInstanceCount = 0;
+	int32 PendingStageIndexForEnemies = 0;
 	FTimerHandle StageResultTimerHandle;
 };

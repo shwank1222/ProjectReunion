@@ -47,7 +47,6 @@ void AOSMKInGameGameMode::SpawnStage(int32 StageIndex)
 	ClearStage();
 
 	SpawnStaticMesh(StageIndex);
-	SpawnEnemies(StageIndex);
 	SpawnGimmicks(StageIndex);
 	SpawnActors(StageIndex);
 	SpawnLevelInstances(StageIndex);
@@ -376,20 +375,26 @@ void AOSMKInGameGameMode::SpawnScoutCamera(int32 StageIndex)
 
 void AOSMKInGameGameMode::SpawnLevelInstances(int32 StageIndex)
 {
+	PendingStageIndexForEnemies = StageIndex;
+	PendingLevelInstanceCount = 0;
+
 	if (!StageData || !StageData->StageActorData)
 	{
+		SpawnEnemies(StageIndex);
 		return;
 	}
 
 	TArray<FName> RowNames = StageData->StageActorData->GetRowNames();
 	if (!RowNames.IsValidIndex(StageIndex))
 	{
+		SpawnEnemies(StageIndex);
 		return;
 	}
 
 	FStageActorData* Row = StageData->StageActorData->FindRow<FStageActorData>(RowNames[StageIndex], TEXT(""));
-	if (!Row)
+	if (!Row || Row->LevelInstanceList.IsEmpty())
 	{
+		SpawnEnemies(StageIndex);
 		return;
 	}
 
@@ -412,7 +417,23 @@ void AOSMKInGameGameMode::SpawnLevelInstances(int32 StageIndex)
 		if (bSuccess && Streaming)
 		{
 			SpawnedLevelStreamings.Add(Streaming);
+			PendingLevelInstanceCount++;
+			Streaming->OnLevelLoaded.AddDynamic(this, &AOSMKInGameGameMode::OnLevelInstanceLoaded);
 		}
+	}
+
+	if (PendingLevelInstanceCount == 0)
+	{
+		SpawnEnemies(StageIndex);
+	}
+}
+
+void AOSMKInGameGameMode::OnLevelInstanceLoaded()
+{
+	PendingLevelInstanceCount--;
+	if (PendingLevelInstanceCount <= 0)
+	{
+		SpawnEnemies(PendingStageIndexForEnemies);
 	}
 }
 
