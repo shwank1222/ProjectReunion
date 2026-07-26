@@ -15,6 +15,7 @@
 #include "Character/AI/EnemyCharacter.h"
 #include "Character/PlayerCharacter.h"
 #include "Blueprint/UserWidget.h"
+#include "UI/StageResult/StageClearWidget.h"
 #include "UI/Credits/CreditsWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/StaticMeshComponent.h"
@@ -633,7 +634,14 @@ void AOSMKInGameGameMode::ProceedToNextStage()
 {
 	if (IsValid(StageClearWidgetInstance))
 	{
-		StageClearWidgetInstance->RemoveFromParent();
+		if (UStageClearWidget* ClearWidget = Cast<UStageClearWidget>(StageClearWidgetInstance))
+		{
+			ClearWidget->PlayFadeOut();
+		}
+		else
+		{
+			StageClearWidgetInstance->RemoveFromParent();
+		}
 		StageClearWidgetInstance = nullptr;
 	}
 

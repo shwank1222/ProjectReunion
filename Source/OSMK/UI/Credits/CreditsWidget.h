@@ -35,12 +35,11 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Credits")
 	float ScrollSpeed = 150.0f;
 
-	UPROPERTY(EditAnywhere, Category = "Credits")
-	float EndPositionY = -2000.0f;
-
 private:
 	float CurrentY = 0.0f;
+	float EndPositionY = 0.0f;
 	float OriginalScrollSpeed = 0.0f;
 	float CurrentOpacity = 0.0f;
 	bool bIsClosing = false;
+	bool bEndPositionReady = false;
 };

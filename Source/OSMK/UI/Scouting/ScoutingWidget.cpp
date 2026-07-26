@@ -14,12 +14,13 @@ void UScoutingWidget::NativeConstruct()
 	if (Btn_BulletPrep)
 	{
 		Btn_BulletPrep->OnClicked.AddDynamic(this, &UScoutingWidget::OnBulletPrepClicked);
+		Btn_BulletPrep->SetIsEnabled(true);
 	}
 
 	if (Btn_Scout)
 	{
-		Btn_Scout->SetVisibility(ESlateVisibility::Collapsed);
 		Btn_Scout->OnClicked.AddDynamic(this, &UScoutingWidget::OnScoutClicked);
+		Btn_Scout->SetIsEnabled(false);
 	}
 }
 
@@ -31,11 +32,11 @@ void UScoutingWidget::OnBulletPrepClicked()
 	}
 	if (Btn_BulletPrep)
 	{
-		Btn_BulletPrep->SetVisibility(ESlateVisibility::Collapsed);
+		Btn_BulletPrep->SetIsEnabled(false);
 	}
 	if (Btn_Scout)
 	{
-		Btn_Scout->SetVisibility(ESlateVisibility::Visible);
+		Btn_Scout->SetIsEnabled(true);
 	}
 }
 
@@ -47,10 +48,10 @@ void UScoutingWidget::OnScoutClicked()
 	}
 	if (Btn_Scout)
 	{
-		Btn_Scout->SetVisibility(ESlateVisibility::Collapsed);
+		Btn_Scout->SetIsEnabled(false);
 	}
 	if (Btn_BulletPrep)
 	{
-		Btn_BulletPrep->SetVisibility(ESlateVisibility::Visible);
+		Btn_BulletPrep->SetIsEnabled(true);
 	}
 }
