@@ -3,10 +3,13 @@
 
 #include "BulletBase.h"
 
+#include "NiagaraComponent.h"
 #include "Character/AI/EnemyCharacter.h"
+#include "Components/DecalComponent.h"
 #include "Core/OSMKGameState.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Interactable/Gimmick/GimmickBase.h"
+#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(LogBullet);
 
@@ -18,12 +21,15 @@ ABulletBase::ABulletBase()
 	SetRootComponent(MeshComponent);
 	
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
-	ProjectileMovement->InitialSpeed = 3000.0f;
-	ProjectileMovement->MaxSpeed = 3500.0f;
-	ProjectileMovement->ProjectileGravityScale = 0.2f;
+	ProjectileMovement->InitialSpeed = 5000.0f;
+	ProjectileMovement->MaxSpeed = 5000.0f;
+	ProjectileMovement->ProjectileGravityScale = 0.1f;
 	ProjectileMovement->bShouldBounce = false;
 	
 	InitialLifeSpan = Lifespan;
+	
+	TrailEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("TrailEffect"));
+	TrailEffect->SetupAttachment(MeshComponent);
 	
 	MeshComponent->OnComponentHit.AddUniqueDynamic(this, &ThisClass::OnBulletHit);
 	MeshComponent->OnComponentBeginOverlap.AddUniqueDynamic(this, &ThisClass::OnBeginOverlap);
@@ -57,6 +63,11 @@ void ABulletBase::OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherAc
 	
 	TriggerGimmick(OtherActor);
 	EnemyAttack(OtherActor);
+	
+	if (!Cast<AEnemyCharacter>(OtherActor))
+	{
+		SpawnBulletHoleDecal(Hit.ImpactPoint, Hit.ImpactNormal);
+	}
 }
 
 void ABulletBase::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
@@ -71,6 +82,11 @@ void ABulletBase::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	
 	TriggerGimmick(OtherActor);
 	EnemyAttack(OtherActor);
+	
+	if (!Cast<AEnemyCharacter>(OtherActor))
+	{
+		SpawnBulletHoleDecal(SweepResult.ImpactPoint, SweepResult.ImpactNormal);
+	}
 }
 
 void ABulletBase::TriggerGimmick(AActor* OtherActor)
@@ -78,6 +94,18 @@ void ABulletBase::TriggerGimmick(AActor* OtherActor)
 	if (AGimmickBase* Gimmick = Cast<AGimmickBase>(OtherActor))
 	{
 		Gimmick->Trigger();
+	}
+}
+
+void ABulletBase::SpawnBulletHoleDecal(const FVector& Location, const FVector& ImpactNormal) const
+{
+	const float RandomSize = FMath::FRandRange(3.0f, 7.0f);
+
+	const FRotator Rotation = (-ImpactNormal).Rotation();
+	
+	if (UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), BulletHoleDecal, FVector(RandomSize), Location, Rotation, 5.0f))
+	{
+		Decal->SetFadeScreenSize(0.0f);
 	}
 }
 

@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "BulletBase.generated.h"
 
+class UNiagaraComponent;
 class UProjectileMovementComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBullet, Log, All);
@@ -33,9 +34,17 @@ protected:
 	                            bool bFromSweep, const FHitResult& SweepResult);
 
 	static void TriggerGimmick(AActor* OtherActor);
+	
+	void SpawnBulletHoleDecal(const FVector& Location, const FVector& ImpactNormal) const;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UMeshComponent> MeshComponent;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UNiagaraComponent> TrailEffect;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UMaterialInterface> BulletHoleDecal;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
