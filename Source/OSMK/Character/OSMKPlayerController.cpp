@@ -6,6 +6,7 @@
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
 #include "GameFramework/SpringArmComponent.h"
+#include "UI/Ingame/PauseMenuWidget.h"
 
 class UEnhancedInputLocalPlayerSubsystem;
 
@@ -38,6 +39,41 @@ void AOSMKPlayerController::SetupInputComponent()
 			}
 		}
 	}
+
+	if (UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(InputComponent))
+	{
+		if (IA_Pause)
+		{
+			EIC->BindAction(IA_Pause, ETriggerEvent::Started, this, &AOSMKPlayerController::OnPausePressed);
+		}
+	}
+}
+
+void AOSMKPlayerController::TogglePauseMenu()
+{
+	if (PauseMenuWidgetInstance && PauseMenuWidgetInstance->IsInViewport())
+	{
+		PauseMenuWidgetInstance->RemoveFromParent();
+		PauseMenuWidgetInstance = nullptr;
+		return;
+	}
+
+	if (!PauseMenuWidgetClass)
+	{
+		return;
+	}
+
+	PauseMenuWidgetInstance = CreateWidget<UPauseMenuWidget>(this, PauseMenuWidgetClass);
+	if (PauseMenuWidgetInstance)
+	{
+		PauseMenuWidgetInstance->AddToViewport();
+		PauseMenuWidgetInstance->SetFocus();
+	}
+}
+
+void AOSMKPlayerController::OnPausePressed(const FInputActionValue& Value)
+{
+	TogglePauseMenu();
 }
 
 void AOSMKPlayerController::EnterScoutingMode(AActor* CameraActor)
