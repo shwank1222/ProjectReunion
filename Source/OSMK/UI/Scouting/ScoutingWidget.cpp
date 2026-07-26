@@ -38,6 +38,10 @@ void UScoutingWidget::OnBulletPrepClicked()
 	{
 		Btn_Scout->SetIsEnabled(true);
 	}
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		PC->SetShowMouseCursor(true);
+	}
 }
 
 void UScoutingWidget::OnScoutClicked()
@@ -53,5 +57,9 @@ void UScoutingWidget::OnScoutClicked()
 	if (Btn_BulletPrep)
 	{
 		Btn_BulletPrep->SetIsEnabled(true);
+	}
+	if (APlayerController* PC = GetOwningPlayer())
+	{
+		PC->SetShowMouseCursor(true);
 	}
 }
