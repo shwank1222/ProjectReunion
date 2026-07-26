@@ -284,7 +284,7 @@ FTransform APlayerCharacter::CalculateProjectileSpawnTransform(const FVector& Ta
 
 	const FRotator AimRot = UKismetMathLibrary::FindLookAtRotation(SpawnLoc, TargetLocation);
 
-	return FTransform(AimRot, SpawnLoc, FVector::OneVector * 0.1f);
+	return FTransform(AimRot, SpawnLoc, FVector::OneVector * 0.05f);
 }
 
 void APlayerCharacter::PlayHeartPulseSound()
