@@ -56,7 +56,7 @@ protected:
 	UPROPERTY(BlueprintReadWrite, Category = "UI", meta = (BindWidget))
 	class USettingsSoundWidget* SoundTabWidget = nullptr;
 	
-	UPROPERTY(BlueprintReadWrite, Category = "UI", meta = (BindWidget))
+	UPROPERTY(BlueprintReadWrite, Category = "UI", meta = (BindWidgetOptional))
 	class USettingsControlWidget* ControlTabWidget = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite, Category = "UI", meta = (BindWidget))

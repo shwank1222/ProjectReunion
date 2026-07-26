@@ -44,8 +44,6 @@ protected:
 	TObjectPtr<UCameraComponent> FirstPersonCameraComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent> FirstPersonPistol;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<USkeletalMeshComponent> ThirdPersonPistol;
 
 #pragma region Input
 
@@ -105,21 +103,14 @@ private:
 	FVector GetWeaponTargetLocation() const;
 	FTransform CalculateProjectileSpawnTransform(const FVector& TargetLocation) const;
 	
-	void PlayFireMontage() const;
-	
 	void PlayHeartPulseSound();
 	void StopHeartPulseSound() const;
 
 	FBulletData* GetBulletData(const FName RowName) const;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	TObjectPtr<UAnimMontage> FireAnimMontage;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TObjectPtr<USoundBase> HeartPulseSound;
 	
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	FName MuzzleSocketName;
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	float MuzzleOffset = 10.0f;
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")

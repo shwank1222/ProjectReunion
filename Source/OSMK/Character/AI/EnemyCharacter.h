@@ -26,8 +26,6 @@ protected:
 	virtual void Die() override;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<USkeletalMeshComponent> PistolMesh;
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UArrowComponent> AttackArrow;
 	
 	UPROPERTY()
@@ -35,9 +33,6 @@ protected:
 	
 	UPROPERTY(EditAnywhere)
 	uint8 bAutoActivate : 1 = false;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Aim")
-	FName MuzzleName = FName("Muzzle");
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Aim", meta = (AllowPrivateAccess = true))
 	float AttackRange = 500.0f;
