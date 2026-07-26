@@ -3,6 +3,7 @@
 
 #include "BulletBase.h"
 
+#include "NiagaraComponent.h"
 #include "Character/AI/EnemyCharacter.h"
 #include "Core/OSMKGameState.h"
 #include "GameFramework/ProjectileMovementComponent.h"
@@ -18,12 +19,15 @@ ABulletBase::ABulletBase()
 	SetRootComponent(MeshComponent);
 	
 	ProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovement"));
-	ProjectileMovement->InitialSpeed = 3000.0f;
-	ProjectileMovement->MaxSpeed = 3500.0f;
-	ProjectileMovement->ProjectileGravityScale = 0.2f;
+	ProjectileMovement->InitialSpeed = 5000.0f;
+	ProjectileMovement->MaxSpeed = 5000.0f;
+	ProjectileMovement->ProjectileGravityScale = 0.1f;
 	ProjectileMovement->bShouldBounce = false;
 	
 	InitialLifeSpan = Lifespan;
+	
+	TrailEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("TrailEffect"));
+	TrailEffect->SetupAttachment(MeshComponent);
 	
 	MeshComponent->OnComponentHit.AddUniqueDynamic(this, &ThisClass::OnBulletHit);
 	MeshComponent->OnComponentBeginOverlap.AddUniqueDynamic(this, &ThisClass::OnBeginOverlap);

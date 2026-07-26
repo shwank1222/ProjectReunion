@@ -6,6 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "BulletBase.generated.h"
 
+class UNiagaraComponent;
 class UProjectileMovementComponent;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogBullet, Log, All);
@@ -36,6 +37,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UMeshComponent> MeshComponent;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UNiagaraComponent> TrailEffect;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
