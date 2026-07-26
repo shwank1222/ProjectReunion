@@ -49,6 +49,7 @@ void AOSMKInGameGameMode::SpawnStage(int32 StageIndex)
 	SpawnEnemies(StageIndex);
 	SpawnGimmicks(StageIndex);
 	SpawnActors(StageIndex);
+	SpawnLevelInstances(StageIndex);
 	SpawnScoutCamera(StageIndex);
 	SpawnPlayerCharacter();
 
@@ -221,6 +222,7 @@ void AOSMKInGameGameMode::ClearStage()
 	ClearEnemies();
 	ClearGimmicks();
 	ClearActors();
+	ClearLevelInstances();
 	ClearScoutCamera();
 	ClearPlayerCharacter();
 	UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] Stage cleared"));
@@ -371,6 +373,60 @@ void AOSMKInGameGameMode::SpawnScoutCamera(int32 StageIndex)
 	}
 }
 
+void AOSMKInGameGameMode::SpawnLevelInstances(int32 StageIndex)
+{
+	if (!StageData || !StageData->StageActorData)
+	{
+		return;
+	}
+
+	TArray<FName> RowNames = StageData->StageActorData->GetRowNames();
+	if (!RowNames.IsValidIndex(StageIndex))
+	{
+		return;
+	}
+
+	FStageActorData* Row = StageData->StageActorData->FindRow<FStageActorData>(RowNames[StageIndex], TEXT(""));
+	if (!Row)
+	{
+		return;
+	}
+
+	for (const FLevelInstanceItem& Item : Row->LevelInstanceList)
+	{
+		if (Item.LevelAsset.IsNull())
+		{
+			continue;
+		}
+
+		bool bSuccess = false;
+		ULevelStreamingDynamic* Streaming = ULevelStreamingDynamic::LoadLevelInstanceBySoftObjectPtr(
+			GetWorld(),
+			Item.LevelAsset,
+			Item.Transform.GetLocation(),
+			Item.Transform.GetRotation().Rotator(),
+			bSuccess
+		);
+
+		if (bSuccess && Streaming)
+		{
+			SpawnedLevelStreamings.Add(Streaming);
+		}
+	}
+}
+
+void AOSMKInGameGameMode::ClearLevelInstances()
+{
+	for (ULevelStreamingDynamic* Streaming : SpawnedLevelStreamings)
+	{
+		if (IsValid(Streaming))
+		{
+			Streaming->SetIsRequestingUnloadAndRemoval(true);
+		}
+	}
+	SpawnedLevelStreamings.Empty();
+}
+
 void AOSMKInGameGameMode::ClearActors()
 {
 	for (AActor* Actor : SpawnedTriggerActors)
@@ -382,6 +438,7 @@ void AOSMKInGameGameMode::ClearActors()
 	}
 	SpawnedTriggerActors.Empty();
 }
+
 
 void AOSMKInGameGameMode::ClearScoutCamera()
 {

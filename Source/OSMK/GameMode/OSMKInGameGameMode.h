@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Data/StageData.h"
+#include "Engine/LevelStreamingDynamic.h"
 #include "GameFramework/GameMode.h"
 #include "OSMKInGameGameMode.generated.h"
 
@@ -43,6 +44,12 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 	void ClearActors();
+
+	UFUNCTION(BlueprintCallable)
+	void SpawnLevelInstances(int32 StageIndex);
+
+	UFUNCTION(BlueprintCallable)
+	void ClearLevelInstances();
 
 	UFUNCTION(BlueprintCallable)
 	void ClearScoutCamera();
@@ -129,6 +136,9 @@ private:
 
 	UPROPERTY()
 	TArray<AActor*> SpawnedTriggerActors;
+
+	UPROPERTY()
+	TArray<ULevelStreamingDynamic*> SpawnedLevelStreamings;
 
 	UPROPERTY()
 	AActor* SpawnedScoutCameraActor = nullptr;
