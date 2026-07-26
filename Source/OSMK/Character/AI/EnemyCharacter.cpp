@@ -6,6 +6,7 @@
 #include "OSMKAIController.h"
 #include "Character/PlayerCharacter.h"
 #include "Components/ArrowComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Core/OSMKGameState.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -96,10 +97,8 @@ void AEnemyCharacter::DestroyCharacter()
 	{
 		AIController->DeactivateLogic(TEXT("Enemy Dead"));
 	}
-
-	SetActorHiddenInGame(true);
 	
-	// Destroy();
+	Destroy();
 }
 
 bool AEnemyCharacter::TrySweep(FHitResult& HitResult, const float Distance) const
