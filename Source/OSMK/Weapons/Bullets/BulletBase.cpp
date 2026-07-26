@@ -5,9 +5,11 @@
 
 #include "NiagaraComponent.h"
 #include "Character/AI/EnemyCharacter.h"
+#include "Components/DecalComponent.h"
 #include "Core/OSMKGameState.h"
 #include "GameFramework/ProjectileMovementComponent.h"
 #include "Interactable/Gimmick/GimmickBase.h"
+#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(LogBullet);
 
@@ -61,6 +63,11 @@ void ABulletBase::OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherAc
 	
 	TriggerGimmick(OtherActor);
 	EnemyAttack(OtherActor);
+	
+	if (!Cast<AEnemyCharacter>(OtherActor))
+	{
+		SpawnBulletHoleDecal(Hit.ImpactPoint, Hit.ImpactNormal);
+	}
 }
 
 void ABulletBase::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
@@ -75,6 +82,11 @@ void ABulletBase::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	
 	TriggerGimmick(OtherActor);
 	EnemyAttack(OtherActor);
+	
+	if (!Cast<AEnemyCharacter>(OtherActor))
+	{
+		SpawnBulletHoleDecal(SweepResult.ImpactPoint, SweepResult.ImpactNormal);
+	}
 }
 
 void ABulletBase::TriggerGimmick(AActor* OtherActor)
@@ -82,6 +94,18 @@ void ABulletBase::TriggerGimmick(AActor* OtherActor)
 	if (AGimmickBase* Gimmick = Cast<AGimmickBase>(OtherActor))
 	{
 		Gimmick->Trigger();
+	}
+}
+
+void ABulletBase::SpawnBulletHoleDecal(const FVector& Location, const FVector& ImpactNormal) const
+{
+	const float RandomSize = FMath::FRandRange(3.0f, 7.0f);
+
+	const FRotator Rotation = (-ImpactNormal).Rotation();
+	
+	if (UDecalComponent* Decal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), BulletHoleDecal, FVector(RandomSize), Location, Rotation, 5.0f))
+	{
+		Decal->SetFadeScreenSize(0.0f);
 	}
 }
 

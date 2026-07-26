@@ -34,12 +34,17 @@ protected:
 	                            bool bFromSweep, const FHitResult& SweepResult);
 
 	static void TriggerGimmick(AActor* OtherActor);
+	
+	void SpawnBulletHoleDecal(const FVector& Location, const FVector& ImpactNormal) const;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UMeshComponent> MeshComponent;
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UNiagaraComponent> TrailEffect;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UMaterialInterface> BulletHoleDecal;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
