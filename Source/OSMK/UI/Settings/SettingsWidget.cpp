@@ -63,6 +63,29 @@ void USettingsWidget::NativeConstruct()
 	SetFocus();
 }
 
+void USettingsWidget::CollectButtons(UWidget* Root)
+{
+	if (!Root)
+	{
+		return;
+	}
+
+	if (UButton* Button = Cast<UButton>(Root))
+	{
+		TabButtons.Add(Button);
+		Button->OnClicked.AddDynamic(this, &USettingsWidget::OnTabButtonClicked);
+		return;
+	}
+
+	if (UPanelWidget* Panel = Cast<UPanelWidget>(Root))
+	{
+		for (int32 i = 0; i < Panel->GetChildrenCount(); ++i)
+		{
+			CollectButtons(Panel->GetChildAt(i));
+		}
+	}
+}
+
 void USettingsWidget::InitializeTabButtons()
 {
 	TabButtons.Empty();
@@ -72,32 +95,9 @@ void USettingsWidget::InitializeTabButtons()
 		return;
 	}
 
-	int32 ChildCount = TabButtonContainer->GetChildrenCount();
-	for (int32 i = 0; i < ChildCount; ++i)
+	for (int32 i = 0; i < TabButtonContainer->GetChildrenCount(); ++i)
 	{
-		UWidget* DirectChild = TabButtonContainer->GetChildAt(i);
-		if (!DirectChild)
-		{
-			continue;
-		}
-
-		if (UButton* TargetButton = Cast<UButton>(DirectChild))
-		{
-			TabButtons.Add(TargetButton);
-			TargetButton->OnClicked.AddDynamic(this, &USettingsWidget::OnTabButtonClicked);
-		}
-		else if (UPanelWidget* SubPanel = Cast<UPanelWidget>(DirectChild))
-		{
-			int32 SubChildCount = SubPanel->GetChildrenCount();
-			for (int32 j = 0; j < SubChildCount; ++j)
-			{
-				if (UButton* SubButton = Cast<UButton>(SubPanel->GetChildAt(j)))
-				{
-					TabButtons.Add(SubButton);
-					SubButton->OnClicked.AddDynamic(this, &USettingsWidget::OnTabButtonClicked);
-				}
-			}
-		}
+		CollectButtons(TabButtonContainer->GetChildAt(i));
 	}
 }
 
