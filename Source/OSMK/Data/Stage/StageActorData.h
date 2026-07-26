@@ -26,6 +26,18 @@ struct FStageNavMeshItem
 };
 
 USTRUCT(BlueprintType)
+struct FLevelInstanceItem
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	TSoftObjectPtr<UWorld> LevelAsset;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly)
+	FTransform Transform = FTransform::Identity;
+};
+
+USTRUCT(BlueprintType)
 struct FStageActorData : public FTableRowBase
 {
 	GENERATED_BODY()
@@ -35,6 +47,9 @@ struct FStageActorData : public FTableRowBase
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "NavMesh")
 	TArray<FStageNavMeshItem> NavMeshList;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level Instance")
+	TArray<FLevelInstanceItem> LevelInstanceList;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Player Start")
 	FTransform PlayerStartTransform = FTransform::Identity;
