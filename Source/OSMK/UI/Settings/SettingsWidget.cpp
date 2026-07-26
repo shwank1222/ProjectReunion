@@ -170,13 +170,9 @@ void USettingsWidget::OnResetClicked()
 		return;
 	}
 
-	int32 ActiveIndex = TabSwitcher->GetActiveWidgetIndex();
-	if (SettingTabs.IsValidIndex(ActiveIndex))
+	if (USettingsTabWidgetBase* ActiveTab = Cast<USettingsTabWidgetBase>(TabSwitcher->GetActiveWidget()))
 	{
-		if (USettingsTabWidgetBase* ActiveTab = SettingTabs[ActiveIndex])
-		{
-			ActiveTab->NativeOnResetToDefault();
-		}
+		ActiveTab->NativeOnResetToDefault();
 	}
 }
 
