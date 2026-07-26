@@ -5,37 +5,29 @@
 
 #include "OSMKAIController.h"
 #include "Character/PlayerCharacter.h"
-#include "Components/ArrowComponent.h"
-#include "Components/CapsuleComponent.h"
 #include "Core/OSMKGameState.h"
-#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogEnemy, Log, All);
 
 AEnemyCharacter::AEnemyCharacter()
 {
-	AttackArrow = CreateDefaultSubobject<UArrowComponent>(FName("AttackArrow"));
-	AttackArrow->SetupAttachment(RootComponent);
-	
 	AutoPossessAI = EAutoPossessAI::PlacedInWorldOrSpawned;
 }
 
 void AEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	PlayerCharacter = UGameplayStatics::GetPlayerCharacter(this, 0);
-
+	
 	if (bAutoActivate)
 	{
 		ActivateEnemy();
 	}
 }
 
-void AEnemyCharacter::Fire() const
+void AEnemyCharacter::Fire()
 {
 	FHitResult Hit;
-	if (TrySweep(Hit, 10000.0f))
+	if (TrySweep(PlayerCharacter, Hit, 10000.0f))
 	{
 		UE_LOG(LogEnemy, Warning, TEXT("Hit: %s"), *Hit.GetActor()->GetName());
 
@@ -58,7 +50,7 @@ void AEnemyCharacter::ActivateEnemy() const
 	}
 }
 
-bool AEnemyCharacter::CanAttackTarget(const AActor* TargetActor) const
+bool AEnemyCharacter::CanAttackTarget(AActor* TargetActor)
 {
 	if (!IsValid(TargetActor))
 	{
@@ -66,7 +58,7 @@ bool AEnemyCharacter::CanAttackTarget(const AActor* TargetActor) const
 	}
 	
 	FHitResult Hit;
-	const bool bHit = TrySweep(Hit, AttackRange);
+	const bool bHit = TrySweep(TargetActor, Hit, AttackRange);
 	
 	return bHit ? Hit.GetActor() == TargetActor : false;
 }
@@ -100,10 +92,18 @@ void AEnemyCharacter::DestroyCharacter()
 	Destroy();
 }
 
-bool AEnemyCharacter::TrySweep(FHitResult& HitResult, const float Distance) const
+bool AEnemyCharacter::TrySweep(AActor* TargetActor, FHitResult& HitResult, const float Distance)
 {
-	const FVector Start = AttackArrow->GetComponentLocation();
-	const FVector Direction = AttackArrow->GetForwardVector();
+	PlayerCharacter = TargetActor;
+	if (!IsValid(PlayerCharacter))
+	{
+		return false;
+	}
+	
+	const FVector Start = PistolMesh->GetSocketLocation(MuzzleSocketName);
+	FVector TargetLocation = PlayerCharacter->GetActorLocation();
+	TargetLocation.Z += AimOffsetZ;
+	const FVector Direction = (TargetLocation - Start).GetSafeNormal();
 	const FVector End = Start + Direction * Distance;
 
 	DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 0.0f);
