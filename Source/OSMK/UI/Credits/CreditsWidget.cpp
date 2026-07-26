@@ -45,10 +45,20 @@ void UCreditsWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 
 	if (Box_Credits)
 	{
+		if (!bEndPositionReady)
+		{
+			const float ContentHeight = Box_Credits->GetCachedGeometry().GetLocalSize().Y;
+			if (ContentHeight > 0.f)
+			{
+				EndPositionY = -ContentHeight;
+				bEndPositionReady = true;
+			}
+		}
+
 		CurrentY -= ScrollSpeed * InDeltaTime;
 		Box_Credits->SetRenderTranslation(FVector2D(0.f, CurrentY));
 
-		if (CurrentY <= EndPositionY)
+		if (bEndPositionReady && CurrentY <= EndPositionY)
 		{
 			CloseCredits();
 		}

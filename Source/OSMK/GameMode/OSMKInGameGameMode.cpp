@@ -15,6 +15,7 @@
 #include "Character/AI/EnemyCharacter.h"
 #include "Character/PlayerCharacter.h"
 #include "Blueprint/UserWidget.h"
+#include "UI/StageResult/StageClearWidget.h"
 #include "UI/Credits/CreditsWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "Components/StaticMeshComponent.h"
@@ -46,9 +47,9 @@ void AOSMKInGameGameMode::SpawnStage(int32 StageIndex)
 	ClearStage();
 
 	SpawnStaticMesh(StageIndex);
-	SpawnEnemies(StageIndex);
 	SpawnGimmicks(StageIndex);
 	SpawnActors(StageIndex);
+	SpawnLevelInstances(StageIndex);
 	SpawnScoutCamera(StageIndex);
 	SpawnPlayerCharacter();
 
@@ -221,6 +222,7 @@ void AOSMKInGameGameMode::ClearStage()
 	ClearEnemies();
 	ClearGimmicks();
 	ClearActors();
+	ClearLevelInstances();
 	ClearScoutCamera();
 	ClearPlayerCharacter();
 	UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] Stage cleared"));
@@ -371,6 +373,82 @@ void AOSMKInGameGameMode::SpawnScoutCamera(int32 StageIndex)
 	}
 }
 
+void AOSMKInGameGameMode::SpawnLevelInstances(int32 StageIndex)
+{
+	PendingStageIndexForEnemies = StageIndex;
+	PendingLevelInstanceCount = 0;
+
+	if (!StageData || !StageData->StageActorData)
+	{
+		SpawnEnemies(StageIndex);
+		return;
+	}
+
+	TArray<FName> RowNames = StageData->StageActorData->GetRowNames();
+	if (!RowNames.IsValidIndex(StageIndex))
+	{
+		SpawnEnemies(StageIndex);
+		return;
+	}
+
+	FStageActorData* Row = StageData->StageActorData->FindRow<FStageActorData>(RowNames[StageIndex], TEXT(""));
+	if (!Row || Row->LevelInstanceList.IsEmpty())
+	{
+		SpawnEnemies(StageIndex);
+		return;
+	}
+
+	for (const FLevelInstanceItem& Item : Row->LevelInstanceList)
+	{
+		if (Item.LevelAsset.IsNull())
+		{
+			continue;
+		}
+
+		bool bSuccess = false;
+		ULevelStreamingDynamic* Streaming = ULevelStreamingDynamic::LoadLevelInstanceBySoftObjectPtr(
+			GetWorld(),
+			Item.LevelAsset,
+			Item.Transform.GetLocation(),
+			Item.Transform.GetRotation().Rotator(),
+			bSuccess
+		);
+
+		if (bSuccess && Streaming)
+		{
+			SpawnedLevelStreamings.Add(Streaming);
+			PendingLevelInstanceCount++;
+			Streaming->OnLevelLoaded.AddDynamic(this, &AOSMKInGameGameMode::OnLevelInstanceLoaded);
+		}
+	}
+
+	if (PendingLevelInstanceCount == 0)
+	{
+		SpawnEnemies(StageIndex);
+	}
+}
+
+void AOSMKInGameGameMode::OnLevelInstanceLoaded()
+{
+	PendingLevelInstanceCount--;
+	if (PendingLevelInstanceCount <= 0)
+	{
+		SpawnEnemies(PendingStageIndexForEnemies);
+	}
+}
+
+void AOSMKInGameGameMode::ClearLevelInstances()
+{
+	for (ULevelStreamingDynamic* Streaming : SpawnedLevelStreamings)
+	{
+		if (IsValid(Streaming))
+		{
+			Streaming->SetIsRequestingUnloadAndRemoval(true);
+		}
+	}
+	SpawnedLevelStreamings.Empty();
+}
+
 void AOSMKInGameGameMode::ClearActors()
 {
 	for (AActor* Actor : SpawnedTriggerActors)
@@ -382,6 +460,7 @@ void AOSMKInGameGameMode::ClearActors()
 	}
 	SpawnedTriggerActors.Empty();
 }
+
 
 void AOSMKInGameGameMode::ClearScoutCamera()
 {
@@ -576,7 +655,14 @@ void AOSMKInGameGameMode::ProceedToNextStage()
 {
 	if (IsValid(StageClearWidgetInstance))
 	{
-		StageClearWidgetInstance->RemoveFromParent();
+		if (UStageClearWidget* ClearWidget = Cast<UStageClearWidget>(StageClearWidgetInstance))
+		{
+			ClearWidget->PlayFadeOut();
+		}
+		else
+		{
+			StageClearWidgetInstance->RemoveFromParent();
+		}
 		StageClearWidgetInstance = nullptr;
 	}
 
