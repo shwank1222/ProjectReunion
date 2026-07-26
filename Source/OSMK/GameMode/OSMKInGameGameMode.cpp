@@ -1,20 +1,33 @@
 #include "GameMode/OSMKInGameGameMode.h"
+
+#include "NavigationSystem.h"
+#include "GameFramework/Pawn.h"
+#include "Character/OSMKPlayerController.h"
 #include "UI/Scouting/ScoutingWidget.h"
+#include "UI/Ingame/OSMKIngameHUD.h"
 #include "Core/OSMKGameState.h"
 #include "Data/StageData.h"
 #include "Data/Stage/StageStaticMeshData.h"
 #include "Data/Stage/StageEnemyData.h"
-#include "Character/AI/EnemyCharacter.h"
-#include "Blueprint/UserWidget.h"
-#include "Components/StaticMeshComponent.h"
 #include "Data/Stage/StageGimmickData.h"
+#include "Data/Stage/StageActorData.h"
+#include "Data/Stage/StageScoutCameraData.h"
+#include "Character/AI/EnemyCharacter.h"
+#include "Character/PlayerCharacter.h"
+#include "Blueprint/UserWidget.h"
+#include "UI/Credits/CreditsWidget.h"
+#include "Kismet/GameplayStatics.h"
+#include "Components/StaticMeshComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "Engine/StaticMeshActor.h"
+#include "NavMesh/NavMeshBoundsVolume.h"
 
 void AOSMKInGameGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-	SpawnStage(0);
+	CurrentStageIndex = 0;
+	SpawnStage(CurrentStageIndex);
 
 	if (!ScoutingWidgetClass)
 	{
@@ -30,14 +43,22 @@ void AOSMKInGameGameMode::BeginPlay()
 
 void AOSMKInGameGameMode::SpawnStage(int32 StageIndex)
 {
-	if (StageIndex > 0)
-	{
-		ClearStage();
-	}
+	ClearStage();
 
 	SpawnStaticMesh(StageIndex);
 	SpawnEnemies(StageIndex);
 	SpawnGimmicks(StageIndex);
+	SpawnActors(StageIndex);
+	SpawnScoutCamera(StageIndex);
+	SpawnPlayerCharacter();
+
+	GetWorldTimerManager().SetTimerForNextTick([this]()
+	{
+		if (UNavigationSystemV1* NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld()))
+		{
+			NavSys->Build();
+		}
+	});
 }
 
 void AOSMKInGameGameMode::SpawnStaticMesh(int32 StageIndex)
@@ -199,6 +220,9 @@ void AOSMKInGameGameMode::ClearStage()
 	ClearStaticMesh();
 	ClearEnemies();
 	ClearGimmicks();
+	ClearActors();
+	ClearScoutCamera();
+	ClearPlayerCharacter();
 	UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] Stage cleared"));
 }
 
@@ -236,4 +260,361 @@ void AOSMKInGameGameMode::ClearGimmicks()
 		}
 	}
 	SpawnedGimmickActors.Empty();
+}
+
+void AOSMKInGameGameMode::SpawnActors(int32 StageIndex)
+{
+	if (!StageData || !StageData->StageActorData)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[InGameGameMode] SpawnActors: StageData or StageActorData is null"));
+		return;
+	}
+
+	TArray<FName> RowNames = StageData->StageActorData->GetRowNames();
+	if (!RowNames.IsValidIndex(StageIndex))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[InGameGameMode] SpawnActors: invalid StageIndex %d"), StageIndex);
+		return;
+	}
+
+	FStageActorData* Row = StageData->StageActorData->FindRow<FStageActorData>(RowNames[StageIndex], TEXT(""));
+	if (!Row)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[InGameGameMode] SpawnActors: row not found"));
+		return;
+	}
+
+	PlayerStartTransform = Row->PlayerStartTransform;
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	for (const FStageActorItem& Item : Row->TriggerList)
+	{
+		UClass* TriggerClass = Item.ActorClass.LoadSynchronous();
+		if (!TriggerClass)
+		{
+			continue;
+		}
+
+		AActor* Spawned = GetWorld()->SpawnActor<AActor>(TriggerClass, Item.Transform, SpawnParams);
+		if (Spawned)
+		{
+			SpawnedTriggerActors.Add(Spawned);
+		}
+	}
+
+	// for (const FStageNavMeshItem& Item : Row->NavMeshList)
+	// {
+	// 	ANavMeshBoundsVolume* NavMeshVol = GetWorld()->SpawnActor<ANavMeshBoundsVolume>(ANavMeshBoundsVolume::StaticClass(), Item.Transform, SpawnParams);
+	// 	if (NavMeshVol)
+	// 	{
+	// 		SpawnedTriggerActors.Add(NavMeshVol);
+	// 	}
+	// }
+}
+
+void AOSMKInGameGameMode::SpawnScoutCamera(int32 StageIndex)
+{
+	if (!StageData || !StageData->StageScoutCameraData)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[InGameGameMode] SpawnScoutCamera: StageData or StageScoutCameraData is null"));
+		return;
+	}
+
+	UClass* CameraClass = StageData->ScoutCameraClass.LoadSynchronous();
+	if (!CameraClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[InGameGameMode] SpawnScoutCamera: ScoutCameraClass is null"));
+		return;
+	}
+
+	TArray<FName> RowNames = StageData->StageScoutCameraData->GetRowNames();
+	if (!RowNames.IsValidIndex(StageIndex))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[InGameGameMode] SpawnScoutCamera: invalid StageIndex %d"), StageIndex);
+		return;
+	}
+
+	FStageScoutCameraData* Row = StageData->StageScoutCameraData->FindRow<FStageScoutCameraData>(RowNames[StageIndex], TEXT(""));
+	if (!Row)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[InGameGameMode] SpawnScoutCamera: row not found"));
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+	SpawnedScoutCameraActor = GetWorld()->SpawnActor<AActor>(CameraClass, Row->CameraTransform, SpawnParams);
+	if (SpawnedScoutCameraActor)
+	{
+		if (USpringArmComponent* SpringArm = SpawnedScoutCameraActor->FindComponentByClass<USpringArmComponent>())
+		{
+			SpringArm->TargetArmLength = Row->SpringArmLength;
+			SpringArm->SocketOffset = Row->SpringArmSocketOffset;
+		}
+
+		AActor* CameraActor = SpawnedScoutCameraActor;
+		GetWorldTimerManager().SetTimerForNextTick([this, CameraActor]()
+		{
+			if (!IsValid(CameraActor))
+			{
+				return;
+			}
+			if (AOSMKPlayerController* PC = Cast<AOSMKPlayerController>(GetWorld()->GetFirstPlayerController()))
+			{
+				PC->SetViewTarget(CameraActor);
+				PC->EnterScoutingMode(CameraActor);
+			}
+		});
+	}
+}
+
+void AOSMKInGameGameMode::ClearActors()
+{
+	for (AActor* Actor : SpawnedTriggerActors)
+	{
+		if (IsValid(Actor))
+		{
+			Actor->Destroy();
+		}
+	}
+	SpawnedTriggerActors.Empty();
+}
+
+void AOSMKInGameGameMode::ClearScoutCamera()
+{
+	if (IsValid(SpawnedScoutCameraActor))
+	{
+		SpawnedScoutCameraActor->Destroy();
+		SpawnedScoutCameraActor = nullptr;
+	}
+}
+
+void AOSMKInGameGameMode::ClearPlayerCharacter()
+{
+	if (IsValid(SpawnedPlayerCharacter))
+	{
+		if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+		{
+			PC->UnPossess();
+		}
+		SpawnedPlayerCharacter->Destroy();
+		SpawnedPlayerCharacter = nullptr;
+	}
+}
+
+void AOSMKInGameGameMode::SpawnPlayerCharacter()
+{
+	if (!StageData)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[InGameGameMode] SpawnPlayerCharacter: StageData is null"));
+		return;
+	}
+
+	UClass* PlayerCharacterClass = StageData->PlayerCharacterClass.LoadSynchronous();
+	if (!PlayerCharacterClass)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[InGameGameMode] SpawnPlayerCharacter: PlayerCharacterClass is null"));
+		return;
+	}
+
+	FActorSpawnParameters SpawnParams;
+	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	SpawnedPlayerCharacter = GetWorld()->SpawnActor<APawn>(PlayerCharacterClass, PlayerStartTransform, SpawnParams);
+}
+
+void AOSMKInGameGameMode::PossessPlayerCharacter()
+{
+	if (!SpawnedPlayerCharacter)
+	{
+		UE_LOG(LogTemp, Error, TEXT("[InGameGameMode] PossessPlayerCharacter: SpawnedPlayerCharacter is null"));
+		return;
+	}
+
+	AOSMKPlayerController* PC = Cast<AOSMKPlayerController>(GetWorld()->GetFirstPlayerController());
+	if (!PC)
+	{
+		return;
+	}
+
+	PC->ExitScoutingMode();
+	PC->Possess(SpawnedPlayerCharacter);
+
+	if (APlayerCharacter* PlayerChar = Cast<APlayerCharacter>(SpawnedPlayerCharacter))
+	{
+		if (AOSMKGameState* GS = GetGameState<AOSMKGameState>())
+		{
+			PlayerChar->OnCharacterDeath.AddUniqueDynamic(GS, &AOSMKGameState::PlayerDeath);
+		}
+	}
+
+	if (ScoutingWidget)
+	{
+		ScoutingWidget->RemoveFromParent();
+		ScoutingWidget = nullptr;
+	}
+}
+
+void AOSMKInGameGameMode::ActivateEnemies()
+{
+	UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] ActivateEnemies called. Total spawned enemies: %d"), SpawnedEnemyActors.Num());
+
+	for (AActor* Actor : SpawnedEnemyActors)
+	{
+		if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(Actor))
+		{
+			Enemy->ActivateEnemy();
+			UE_LOG(LogTemp, Log, TEXT("[InGameGameMode] Activated Enemy: %s"), *Enemy->GetName());
+		}
+	}
+}
+
+void AOSMKInGameGameMode::HandleStageClear()
+{
+	AOSMKGameState* GS = GetGameState<AOSMKGameState>();
+	if (GS && GS->CurrentStageState != EOSMKStageState::InProgress)
+	{
+		return;
+	}
+
+	if (GS)
+	{
+		GS->CurrentStageState = EOSMKStageState::Clear;
+	}
+
+	GetWorldTimerManager().SetTimer(StageResultTimerHandle, this, &AOSMKInGameGameMode::ShowStageClearWidget, 1.5f, false);
+}
+
+void AOSMKInGameGameMode::HandleStageFail()
+{
+	AOSMKGameState* GS = GetGameState<AOSMKGameState>();
+	if (GS && GS->CurrentStageState != EOSMKStageState::InProgress)
+	{
+		return;
+	}
+
+	if (GS)
+	{
+		GS->CurrentStageState = EOSMKStageState::Failed;
+	}
+
+	if (AOSMKIngameHUD* HUD = Cast<AOSMKIngameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
+	{
+		HUD->SetHUDVisible(false);
+	}
+
+	GetWorldTimerManager().SetTimer(StageResultTimerHandle, this, &AOSMKInGameGameMode::ShowStageFailWidget, 1.5f, false);
+}
+
+void AOSMKInGameGameMode::ShowStageClearWidget()
+{
+	if (StageClearWidgetClass)
+	{
+		StageClearWidgetInstance = CreateWidget<UUserWidget>(GetWorld(), StageClearWidgetClass);
+		if (StageClearWidgetInstance)
+		{
+			StageClearWidgetInstance->AddToViewport();
+		}
+	}
+
+	if (AOSMKIngameHUD* HUD = Cast<AOSMKIngameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
+	{
+		HUD->SetHUDVisible(false);
+	}
+
+	GetWorldTimerManager().SetTimer(StageResultTimerHandle, this, &AOSMKInGameGameMode::ProceedToNextStage, 2.0f, false);
+}
+
+void AOSMKInGameGameMode::ShowStageFailWidget()
+{
+	if (StageFailWidgetClass)
+	{
+		if (UUserWidget* FailWidget = CreateWidget<UUserWidget>(GetWorld(), StageFailWidgetClass))
+		{
+			FailWidget->AddToViewport();
+
+			if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+			{
+				PC->SetShowMouseCursor(true);
+				PC->SetInputMode(FInputModeUIOnly());
+			}
+		}
+	}
+}
+
+void AOSMKInGameGameMode::ShowCredits()
+{
+	if (!CreditsWidgetClass)
+	{
+		return;
+	}
+
+	UCreditsWidget* Widget = CreateWidget<UCreditsWidget>(GetWorld(), CreditsWidgetClass);
+	if (!Widget)
+	{
+		return;
+	}
+
+	Widget->bFastForwardOnInput = true;
+	Widget->OnCreditsFinished.AddLambda([this]()
+	{
+		UGameplayStatics::OpenLevel(this, TitleLevelName);
+	});
+	Widget->AddToViewport();
+
+	if (APlayerController* PC = GetWorld()->GetFirstPlayerController())
+	{
+		PC->SetShowMouseCursor(false);
+		PC->SetInputMode(FInputModeUIOnly());
+	}
+}
+
+void AOSMKInGameGameMode::ProceedToNextStage()
+{
+	if (IsValid(StageClearWidgetInstance))
+	{
+		StageClearWidgetInstance->RemoveFromParent();
+		StageClearWidgetInstance = nullptr;
+	}
+
+	CurrentStageIndex++;
+
+	if (!StageData || !StageData->StageConfigs.IsValidIndex(CurrentStageIndex))
+	{
+		ShowCredits();
+		return;
+	}
+
+	SpawnStage(CurrentStageIndex);
+
+	if (ScoutingWidgetClass)
+	{
+		ScoutingWidget = CreateWidget<UScoutingWidget>(GetWorld(), ScoutingWidgetClass);
+		if (ScoutingWidget)
+		{
+			ScoutingWidget->AddToViewport();
+		}
+	}
+}
+
+void AOSMKInGameGameMode::RetryStage()
+{
+	if (AOSMKGameState* GS = GetGameState<AOSMKGameState>())
+	{
+		GS->ResetStageState();
+	}
+
+	SpawnStage(CurrentStageIndex);
+
+	if (ScoutingWidgetClass)
+	{
+		ScoutingWidget = CreateWidget<UScoutingWidget>(GetWorld(), ScoutingWidgetClass);
+		if (ScoutingWidget)
+		{
+			ScoutingWidget->AddToViewport();
+		}
+	}
 }

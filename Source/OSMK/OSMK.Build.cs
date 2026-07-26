@@ -23,7 +23,10 @@ public class OSMK : ModuleRules
 			"Niagara",
 			"GeometryCollectionEngine",
 			"FieldSystemEngine",
-			"CableComponent"
+			"CableComponent",
+			"NavigationSystem",
+			"LevelSequence",
+			"MovieScene"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });

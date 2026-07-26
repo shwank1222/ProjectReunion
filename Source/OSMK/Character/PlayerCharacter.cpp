@@ -5,6 +5,7 @@
 
 #include "EnhancedInputComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Core/OSMKSlowMotionSubsystem.h"
 #include "Kismet/GameplayStatics.h"
@@ -53,6 +54,8 @@ void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	SlowMotionSubsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>();
+	
 	ResetAmmo();
 }
 
@@ -70,21 +73,12 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 		EnhancedInputComponent->BindAction(FireAction, ETriggerEvent::Completed, this, &ThisClass::CancelFiring);
 	}
 }
+
 void APlayerCharacter::Die()
 {
 	Super::Die();
 
 	DisableInput(Cast<APlayerController>(GetController()));
-}
-
-void APlayerCharacter::EnableRagdoll()
-{
-	Super::EnableRagdoll();
-
-	FirstPersonMesh->SetCollisionProfileName(TEXT("Ragdoll"));
-	FirstPersonMesh->SetSimulatePhysics(true);
-
-	FirstPersonMesh->WakeAllRigidBodies();
 }
 
 void APlayerCharacter::MoveInput(const FInputActionValue& Value)
@@ -115,35 +109,59 @@ void APlayerCharacter::LookInput(const FInputActionValue& Value)
 
 void APlayerCharacter::StartFiring()
 {
-	bIsFirring = false;
+	if (LoadedAmmo.IsEmpty())
+	{
+		return;
+	}
+
+	if (bIsFired)
+	{
+		return;
+	}
+
+	bIsFiring = false;
 	GetWorldTimerManager().SetTimer(AutoFireTimerHandle, this, &ThisClass::Fire, AutoFireDuration, false);
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void APlayerCharacter::OnHoldTriggered()
 {
-	if (bIsFirring)
+	if (LoadedAmmo.IsEmpty())
+	{
+		return;
+	}
+
+	if (bIsFiring)
 	{
 		return;
 	}
 	
-	if (UOSMKSlowMotionSubsystem* Subsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
+	if (IsValid(SlowMotionSubsystem))
 	{
-		Subsystem->ApplySlowMotion(0.2f, 10000.0f);
-		bIsFirring = true;
+		SlowMotionSubsystem->ApplySlowMotion(0.2f, 10000.0f);
+		SlowMotionSubsystem->ApplyGimmickHighlight();
+		
+		PlayHeartPulseSound();
 	}
+
+	bIsFiring = true;
 }
 
 void APlayerCharacter::CancelFiring()
 {
-	if (GetWorldTimerManager().IsTimerActive(AutoFireTimerHandle))
+	if (!bIsFired && GetWorldTimerManager().IsTimerActive(AutoFireTimerHandle))
 	{
-		Fire();		
+		Fire();
 	}
 }
 
 void APlayerCharacter::Fire()
 {
+	if (bIsFired)
+	{
+		return;
+	}
+
 	if (LoadedAmmo.IsEmpty())
 	{
 		UE_LOG(LogTemp, Warning, TEXT("No Loaded Ammo"));
@@ -154,23 +172,30 @@ void APlayerCharacter::Fire()
 
 	PlayFireMontage();
 	PlayFireSound();
-	
+
 	FireProjectile(BulletClassSoft.LoadSynchronous());
-	
+
+	bIsFired = true;
+	bIsFiring = false;
+
 	GetWorldTimerManager().ClearTimer(AutoFireTimerHandle);
-	bIsFirring = false;
-	
+
 	GetWorldTimerManager().SetTimer(RestoreTimerHandle, this, &ThisClass::StopSlowMotion, PostAutoFireDelay, false);
 
 	UE_LOG(LogTemp, Warning, TEXT("Fired!"));
 }
 
-void APlayerCharacter::StopSlowMotion() const
+void APlayerCharacter::StopSlowMotion()
 {
-	if (UOSMKSlowMotionSubsystem* Subsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
+	if (IsValid(SlowMotionSubsystem))
 	{
-		Subsystem->RestoreTimeDilation();
+		SlowMotionSubsystem->RestoreTimeDilation();
+		SlowMotionSubsystem->RestoreGimmickHighlight();
+	
+		StopHeartPulseSound();
 	}
+
+	bIsFired = false;
 }
 
 void APlayerCharacter::AddAmmo(const FName RowName)
@@ -202,9 +227,9 @@ void APlayerCharacter::RestoreAmmo()
 		UE_LOG(LogCharacter, Warning, TEXT("No Loaded Ammo"));
 		return;
 	}
-	
+
 	LoadedAmmo.RemoveAt(LoadedAmmo.Num() - 1);
-	
+
 	OnLoadedAmmoChanged.Broadcast();
 }
 
@@ -267,25 +292,42 @@ void APlayerCharacter::PlayFireMontage() const
 			FirstPersonAnimInstance->Montage_Play(FireAnimMontage);
 		}
 	}
-
 }
 
-void APlayerCharacter::PlayFireSound() const
+void APlayerCharacter::PlayHeartPulseSound()
 {
-	if (!IsValid(FireSound))
+	if (!IsValid(HeartPulseSound))
 	{
-		UE_LOG(LogCharacter, Warning, TEXT("Invalid Fire Sound"));
+		UE_LOG(LogCharacter, Warning, TEXT("Invalid Heart Pulse Sound"));
 		return;
 	}
 
-	UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+	if (!IsValid(HeartPulseSoundComponent))
+	{
+		UE_LOG(LogCharacter, Warning, TEXT("Create Heart Pulse Sound"));
+		HeartPulseSoundComponent = UGameplayStatics::SpawnSoundAttached(HeartPulseSound, FirstPersonMesh);
+	}
+	else if (!HeartPulseSoundComponent->IsPlaying())
+	{
+		UE_LOG(LogCharacter, Warning, TEXT("Play Heart Pulse Sound"));
+		HeartPulseSoundComponent->Play();
+	}
+}
+
+void APlayerCharacter::StopHeartPulseSound() const
+{
+	if (IsValid(HeartPulseSoundComponent))
+	{
+		UE_LOG(LogCharacter, Warning, TEXT("Stop Heart Pulse Sound"));
+		HeartPulseSoundComponent->Stop();
+	}
 }
 
 FBulletData* APlayerCharacter::GetBulletData(const FName RowName) const
 {
 	if (!IsValid(BulletDataTable))
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Invalid bullet data"));
+		UE_LOG(LogCharacter, Warning, TEXT("Invalid bullet data"));
 		return nullptr;
 	}
 

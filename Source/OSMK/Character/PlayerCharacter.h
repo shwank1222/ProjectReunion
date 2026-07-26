@@ -8,6 +8,10 @@
 #include "Weapons/Bullets/BulletBase.h"
 #include "PlayerCharacter.generated.h"
 
+class UOSMKPostProcessManager;
+class UOSMKSlowMotionSubsystem;
+class ULevelSequence;
+class ACutsceneActor;
 struct FInputActionValue;
 class UInputAction;
 class UCameraComponent;
@@ -33,7 +37,6 @@ public:
 
 protected:
 	virtual void Die() override;
-	virtual void EnableRagdoll() override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<USkeletalMeshComponent> FirstPersonMesh;
@@ -55,7 +58,7 @@ private:
 	void CancelFiring();
 	void Fire();
 	
-	void StopSlowMotion() const;
+	void StopSlowMotion();
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> MoveAction;
@@ -72,7 +75,8 @@ private:
 	FTimerHandle AutoFireTimerHandle;
 	FTimerHandle RestoreTimerHandle;
 	
-	uint8 bIsFirring : 1 = false;
+	uint8 bIsFiring : 1 = false;
+	uint8 bIsFired : 1 = false;
 	
 #pragma endregion
 
@@ -102,7 +106,9 @@ private:
 	FTransform CalculateProjectileSpawnTransform(const FVector& TargetLocation) const;
 	
 	void PlayFireMontage() const;
-	void PlayFireSound() const;
+	
+	void PlayHeartPulseSound();
+	void StopHeartPulseSound() const;
 
 	FBulletData* GetBulletData(const FName RowName) const;
 
@@ -110,7 +116,7 @@ private:
 	TObjectPtr<UAnimMontage> FireAnimMontage;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	TObjectPtr<USoundBase> FireSound;
+	TObjectPtr<USoundBase> HeartPulseSound;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	FName MuzzleSocketName;
@@ -126,6 +132,13 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
 	TArray<FBulletData> LoadedAmmo;
+	
+	UPROPERTY()
+	TObjectPtr<UAudioComponent> HeartPulseSoundComponent;
 
 #pragma endregion
+	
+private:
+	UPROPERTY()
+	TObjectPtr<UOSMKSlowMotionSubsystem> SlowMotionSubsystem;
 };

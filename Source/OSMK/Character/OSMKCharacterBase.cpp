@@ -4,6 +4,7 @@
 #include "OSMKCharacterBase.h"
 
 #include "GameFramework/CharacterMovementComponent.h"
+#include "Kismet/GameplayStatics.h"
 
 DEFINE_LOG_CATEGORY(LogCharacter);
 
@@ -31,22 +32,18 @@ void AOSMKCharacterBase::Die()
 	
 	OnCharacterDeath.Broadcast();
 	
-	EnableRagdoll();
+	GetCharacterMovement()->DisableMovement();
 	
 	bIsDead = true;
 }
 
-void AOSMKCharacterBase::EnableRagdoll()
+void AOSMKCharacterBase::PlayFireSound() const
 {
-	// // Disable capsule collision
-	// GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
-	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
-	GetMesh()->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
-	GetMesh()->SetSimulatePhysics(true);
-	
-	GetMesh()->WakeAllRigidBodies();
+	if (!IsValid(FireSound))
+	{
+		UE_LOG(LogCharacter, Warning, TEXT("Invalid Fire Sound"));
+		return;
+	}
 
-	// Stop CharacterMovement
-	GetCharacterMovement()->DisableMovement();
+	UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
 }

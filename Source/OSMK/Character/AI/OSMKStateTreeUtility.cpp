@@ -24,21 +24,35 @@ EStateTreeRunStatus FStateTreeShootAtTargetTask::EnterState(FStateTreeExecutionC
 EStateTreeRunStatus FStateTreeGetPlayerInfoTask::EnterState(FStateTreeExecutionContext& Context,
                                                             const FStateTreeTransitionResult& Transition) const
 {
-	auto& [Character, TargetActor, DistanceToTarget] = Context.GetInstanceData(*this);
+	FInstanceDataType& InstanceData = Context.GetInstanceData(*this);
 	
-	if (!IsValid(Character))
+	if (!IsValid(InstanceData.Character))
 	{
 		return EStateTreeRunStatus::Failed;
 	}
 	
-	TargetActor = UGameplayStatics::GetPlayerCharacter(Character->GetWorld(), 0);
+	InstanceData.TargetActor = UGameplayStatics::GetPlayerCharacter(InstanceData.Character->GetWorld(), 0);
 	
-	if (!IsValid(TargetActor))
+	if (!IsValid(InstanceData.TargetActor))
+	{
+		return EStateTreeRunStatus::Failed;
+	}
+	
+	return EStateTreeRunStatus::Running;
+}
+
+EStateTreeRunStatus FStateTreeGetPlayerInfoTask::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
+{
+	auto& [Character, TargetActor,DistanceToTarget, bCanAttackTarget] = Context.GetInstanceData(*this);
+	
+	if (!IsValid(Character) || !IsValid(TargetActor))
 	{
 		return EStateTreeRunStatus::Failed;
 	}
 	
 	DistanceToTarget = FVector::Dist(Character->GetActorLocation(), TargetActor->GetActorLocation());
+	
+	bCanAttackTarget = Character->CanAttackTarget(TargetActor);
 	
 	return EStateTreeRunStatus::Running;
 }

@@ -35,4 +35,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Gimmick")
 	bool bTriggered = false;
+	
+	void SetCustomStencil() const;
 };

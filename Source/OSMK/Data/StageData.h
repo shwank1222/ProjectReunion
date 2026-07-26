@@ -4,6 +4,7 @@
 #include "Engine/DataAsset.h"
 #include "Engine/DataTable.h"
 #include "GameplayTagContainer.h"
+#include "GameFramework/Pawn.h"
 #include "StageData.generated.h"
 
 USTRUCT(BlueprintType)
@@ -30,7 +31,7 @@ struct FStageLevelConfig
 	FName StageRowName = NAME_None;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet")
-	TArray<FName> UnlockedBulletRowNames;
+	TMap<FName, int32> BulletCounts;
 };
 
 UCLASS()
@@ -47,23 +48,38 @@ public:
 #endif
 	
 public:
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	UDataTable* BulletDataTable = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Enemy")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	TSoftClassPtr<AActor> EnemyClass = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	TSoftClassPtr<AActor> ScoutCameraClass = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	TSoftClassPtr<APawn> PlayerCharacterClass = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
+	TSoftObjectPtr<UWorld> TitleLevel = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
 	TSoftObjectPtr<UWorld> InGameLevel = nullptr;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
 	TObjectPtr<UDataTable> StageStaticMeshData = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
 	TObjectPtr<UDataTable> StageEnemyData = nullptr;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
 	TObjectPtr<UDataTable> StageGimmickData = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
+	TObjectPtr<UDataTable> StageActorData = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
+	TObjectPtr<UDataTable> StageScoutCameraData = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stage")
 	TArray<FStageLevelConfig> StageConfigs;

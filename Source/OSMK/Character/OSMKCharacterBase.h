@@ -25,8 +25,12 @@ public:
 	
 protected:
 	virtual void Die();
-	virtual void EnableRagdoll();
+	
+	void PlayFireSound() const;
 	
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = true))
 	uint8 bIsDead : 1 = false;
+	
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<USoundBase> FireSound;
 };
