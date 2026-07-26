@@ -2,6 +2,7 @@
 #include "Components/Slider.h"
 #include "Components/ProgressBar.h"
 #include "Components/EditableTextBox.h"
+#include "Kismet/GameplayStatics.h"
 
 float USliderWidget::ToActual(float Normalized) const
 {
@@ -76,8 +77,10 @@ void USliderWidget::NativeConstruct()
 
 void USliderWidget::SetValue(float NewValue)
 {
+	bSuppressBroadcast = true;
 	CurrentValue = FMath::Clamp(NewValue, MinValue, MaxValue);
 	ApplyNormalized(ToNormalized(CurrentValue));
+	bSuppressBroadcast = false;
 }
 
 float USliderWidget::GetValue() const
@@ -93,7 +96,18 @@ void USliderWidget::HandleSliderValueChanged(float NormalizedValue)
 		FillBar->SetPercent(NormalizedValue);
 	}
 	SyncText(CurrentValue);
+
+	if (bSuppressBroadcast)
+	{
+		return;
+	}
+
 	OnValueChanged.Broadcast(CurrentValue);
+
+	if (ValueChangedSound)
+	{
+		UGameplayStatics::PlaySound2D(this, ValueChangedSound);
+	}
 }
 
 void USliderWidget::HandleTextCommitted(const FText& Text, ETextCommit::Type CommitMethod)
@@ -119,4 +133,9 @@ void USliderWidget::HandleTextCommitted(const FText& Text, ETextCommit::Type Com
 
 	SetValue(FMath::Clamp(Parsed, MinValue, MaxValue));
 	OnValueChanged.Broadcast(CurrentValue);
+
+	if (ValueChangedSound)
+	{
+		UGameplayStatics::PlaySound2D(this, ValueChangedSound);
+	}
 }
