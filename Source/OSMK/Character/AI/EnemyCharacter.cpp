@@ -14,9 +14,6 @@ DEFINE_LOG_CATEGORY_STATIC(LogEnemy, Log, All);
 
 AEnemyCharacter::AEnemyCharacter()
 {
-	PistolMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("PistolMesh"));
-	PistolMesh->SetupAttachment(GetMesh(), FName("HandGrip_R"));
-
 	AttackArrow = CreateDefaultSubobject<UArrowComponent>(FName("AttackArrow"));
 	AttackArrow->SetupAttachment(RootComponent);
 	
@@ -48,7 +45,9 @@ void AEnemyCharacter::Fire() const
 		}
 	}
 	
+	PlayFireMontage(GetMesh());
 	PlayFireSound();
+	PlayFireEffect();
 }
 
 void AEnemyCharacter::ActivateEnemy() const
