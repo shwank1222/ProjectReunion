@@ -6,6 +6,7 @@
 #include "OSMKAIController.h"
 #include "Character/PlayerCharacter.h"
 #include "Components/ArrowComponent.h"
+#include "Components/CapsuleComponent.h"
 #include "Core/OSMKGameState.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -13,9 +14,6 @@ DEFINE_LOG_CATEGORY_STATIC(LogEnemy, Log, All);
 
 AEnemyCharacter::AEnemyCharacter()
 {
-	PistolMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("PistolMesh"));
-	PistolMesh->SetupAttachment(GetMesh(), FName("HandGrip_R"));
-
 	AttackArrow = CreateDefaultSubobject<UArrowComponent>(FName("AttackArrow"));
 	AttackArrow->SetupAttachment(RootComponent);
 	
@@ -47,7 +45,9 @@ void AEnemyCharacter::Fire() const
 		}
 	}
 	
+	PlayFireMontage(GetMesh());
 	PlayFireSound();
+	PlayFireEffect();
 }
 
 void AEnemyCharacter::ActivateEnemy() const
@@ -74,10 +74,16 @@ bool AEnemyCharacter::CanAttackTarget(const AActor* TargetActor) const
 void AEnemyCharacter::Die()
 {
 	Super::Die();
+	
+	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+	GetMesh()->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
+	GetMesh()->SetSimulatePhysics(true);
+	
+	GetMesh()->WakeAllRigidBodies();
 
 	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
 	{
-		GS->NotifyEnemyKilled(this);
+		GS->NotifyEnemyKilled();
 	}
 
 	FTimerHandle TimerHandle;
@@ -90,10 +96,8 @@ void AEnemyCharacter::DestroyCharacter()
 	{
 		AIController->DeactivateLogic(TEXT("Enemy Dead"));
 	}
-
-	SetActorHiddenInGame(true);
 	
-	// Destroy();
+	Destroy();
 }
 
 bool AEnemyCharacter::TrySweep(FHitResult& HitResult, const float Distance) const

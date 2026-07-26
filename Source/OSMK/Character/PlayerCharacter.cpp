@@ -4,6 +4,7 @@
 #include "PlayerCharacter.h"
 
 #include "EnhancedInputComponent.h"
+#include "NiagaraComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -38,22 +39,24 @@ APlayerCharacter::APlayerCharacter()
 	GetMesh()->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::WorldSpaceRepresentation;
 
 	GetCapsuleComponent()->SetCapsuleSize(34.0f, 96.0f);
-
+	
+	PistolMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::WorldSpaceRepresentation;
+	PistolMesh->bOwnerNoSee = true;
+	
 	FirstPersonPistol = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FP Pistol"));
 	FirstPersonPistol->SetupAttachment(FirstPersonMesh, FName("HandGrip_R"));
 	FirstPersonPistol->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
 	FirstPersonPistol->bOnlyOwnerSee = true;
-
-	ThirdPersonPistol = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("TP Pistol"));
-	ThirdPersonPistol->SetupAttachment(GetMesh(), FName("HandGrip_R"));
-	ThirdPersonPistol->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::WorldSpaceRepresentation;
-	ThirdPersonPistol->bOwnerNoSee = true;
+	
+	MuzzleEffect->SetupAttachment(FirstPersonPistol, MuzzleSocketName);
 }
 
 void APlayerCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	SlowMotionSubsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>();
+	
 	ResetAmmo();
 }
 
@@ -77,16 +80,6 @@ void APlayerCharacter::Die()
 	Super::Die();
 
 	DisableInput(Cast<APlayerController>(GetController()));
-}
-
-void APlayerCharacter::EnableRagdoll()
-{
-	Super::EnableRagdoll();
-
-	FirstPersonMesh->SetCollisionProfileName(TEXT("Ragdoll"));
-	FirstPersonMesh->SetSimulatePhysics(true);
-
-	FirstPersonMesh->WakeAllRigidBodies();
 }
 
 void APlayerCharacter::MoveInput(const FInputActionValue& Value)
@@ -127,7 +120,7 @@ void APlayerCharacter::StartFiring()
 		return;
 	}
 
-	bIsFirring = false;
+	bIsFiring = false;
 	GetWorldTimerManager().SetTimer(AutoFireTimerHandle, this, &ThisClass::Fire, AutoFireDuration, false);
 }
 
@@ -139,20 +132,20 @@ void APlayerCharacter::OnHoldTriggered()
 		return;
 	}
 
-	if (bIsFirring)
+	if (bIsFiring)
 	{
 		return;
 	}
-
-	if (UOSMKSlowMotionSubsystem* Subsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
+	
+	if (IsValid(SlowMotionSubsystem))
 	{
-		Subsystem->ApplySlowMotion(0.2f, 10000.0f);
-		Subsystem->ApplyGimmickHighlight();
-
+		SlowMotionSubsystem->ApplySlowMotion(0.2f, 10000.0f);
+		SlowMotionSubsystem->ApplyGimmickHighlight();
+		
 		PlayHeartPulseSound();
-
-		bIsFirring = true;
 	}
+
+	bIsFiring = true;
 }
 
 void APlayerCharacter::CancelFiring()
@@ -178,13 +171,14 @@ void APlayerCharacter::Fire()
 
 	const TSoftClassPtr<ABulletBase> BulletClassSoft = LoadedAmmo[0].BulletBlueprint;
 
-	PlayFireMontage();
+	PlayFireMontage(FirstPersonMesh);
 	PlayFireSound();
+	PlayFireEffect();
 
 	FireProjectile(BulletClassSoft.LoadSynchronous());
 
 	bIsFired = true;
-	bIsFirring = false;
+	bIsFiring = false;
 
 	GetWorldTimerManager().ClearTimer(AutoFireTimerHandle);
 
@@ -195,11 +189,11 @@ void APlayerCharacter::Fire()
 
 void APlayerCharacter::StopSlowMotion()
 {
-	if (UOSMKSlowMotionSubsystem* Subsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
+	if (IsValid(SlowMotionSubsystem))
 	{
-		Subsystem->RestoreTimeDilation();
-		Subsystem->RestoreGimmickHighlight();
-
+		SlowMotionSubsystem->RestoreTimeDilation();
+		SlowMotionSubsystem->RestoreGimmickHighlight();
+	
 		StopHeartPulseSound();
 	}
 
@@ -257,7 +251,7 @@ void APlayerCharacter::FireProjectile(const TSubclassOf<ABulletBase> BulletClass
 	SpawnParams.TransformScaleMethod = ESpawnActorScaleMethod::OverrideRootScale;
 	SpawnParams.Owner = GetOwner();
 	SpawnParams.Instigator = GetInstigator();
-
+	
 	GetWorld()->SpawnActor<ABulletBase>(BulletClass, ProjectileTransform, SpawnParams);
 
 	LoadedAmmo.RemoveAt(0);
@@ -272,11 +266,11 @@ FVector APlayerCharacter::GetWeaponTargetLocation() const
 
 	FCollisionQueryParams QueryParams;
 	QueryParams.AddIgnoredActor(this);
-	QueryParams.AddIgnoredComponent(FirstPersonPistol.Get());
+	QueryParams.AddIgnoredComponent(FirstPersonMesh.Get());
 
 	FHitResult Hit;
 	const bool bIsHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, QueryParams);
-
+	
 	return bIsHit ? Hit.ImpactPoint : Hit.TraceEnd;
 }
 
@@ -286,20 +280,9 @@ FTransform APlayerCharacter::CalculateProjectileSpawnTransform(const FVector& Ta
 
 	const FVector SpawnLoc = MuzzleLoc + ((TargetLocation - MuzzleLoc).GetSafeNormal() * MuzzleOffset);
 
-	const FRotator AimRot = UKismetMathLibrary::FindLookAtRotation(SpawnLoc, TargetLocation + UKismetMathLibrary::RandomUnitVector());
+	const FRotator AimRot = UKismetMathLibrary::FindLookAtRotation(SpawnLoc, TargetLocation);
 
 	return FTransform(AimRot, SpawnLoc, FVector::OneVector * 0.1f);
-}
-
-void APlayerCharacter::PlayFireMontage() const
-{
-	if (IsValid(FireAnimMontage))
-	{
-		if (UAnimInstance* FirstPersonAnimInstance = FirstPersonMesh->GetAnimInstance())
-		{
-			FirstPersonAnimInstance->Montage_Play(FireAnimMontage);
-		}
-	}
 }
 
 void APlayerCharacter::PlayHeartPulseSound()

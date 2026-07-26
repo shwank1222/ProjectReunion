@@ -3,6 +3,7 @@
 
 #include "OSMKCharacterBase.h"
 
+#include "NiagaraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -11,6 +12,12 @@ DEFINE_LOG_CATEGORY(LogCharacter);
 AOSMKCharacterBase::AOSMKCharacterBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	
+	PistolMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("PistolMesh"));
+	PistolMesh->SetupAttachment(GetMesh(), FName("HandGrip_R"));
+	
+	MuzzleEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("MuzzleEffect"));
+	MuzzleEffect->SetupAttachment(PistolMesh, MuzzleSocketName);
 }
 
 void AOSMKCharacterBase::ApplyDamage()
@@ -32,33 +39,40 @@ void AOSMKCharacterBase::Die()
 	
 	OnCharacterDeath.Broadcast();
 	
-	EnableRagdoll();
+	GetCharacterMovement()->DisableMovement();
 	
 	bIsDead = true;
 }
 
-void AOSMKCharacterBase::EnableRagdoll()
+void AOSMKCharacterBase::PlayFireMontage(const USkeletalMeshComponent* SkeletalMesh) const
 {
-	// // Disable capsule collision
-	// GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	
-	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
-	GetMesh()->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
-	GetMesh()->SetSimulatePhysics(true);
-	
-	GetMesh()->WakeAllRigidBodies();
-
-	// Stop CharacterMovement
-	GetCharacterMovement()->DisableMovement();
+	if (IsValid(FireAnimMontage))
+	{
+		if (UAnimInstance* FirstPersonAnimInstance = SkeletalMesh->GetAnimInstance())
+		{
+			FirstPersonAnimInstance->Montage_Play(FireAnimMontage);
+		}
+	}
 }
 
 void AOSMKCharacterBase::PlayFireSound() const
 {
 	if (!IsValid(FireSound))
 	{
-		UE_LOG(LogCharacter, Warning, TEXT("Invalid Fire Sound"));
+		UE_LOG(LogCharacter, Warning, TEXT("Fire Sound Is Invalid"));
 		return;
 	}
 
 	UGameplayStatics::PlaySoundAtLocation(this, FireSound, GetActorLocation());
+}
+
+void AOSMKCharacterBase::PlayFireEffect() const
+{
+	if (!IsValid(MuzzleEffect))
+	{
+		UE_LOG(LogCharacter, Warning, TEXT("Muzzle Effect Is Invalid"));
+		return;
+	}
+	
+	MuzzleEffect->Activate();
 }

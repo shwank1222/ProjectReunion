@@ -24,7 +24,7 @@ public:
 	void RestoreGimmickHighlight() const;
 
 private:
-	APostProcessVolume* GetPostProcessVolume() const;
+	void UpdatePostProcessMaterialValue(const int32 Index, const float Value) const;
 	
 	FTimerHandle TimerHandle;
 	bool bIsActive = false;

@@ -4,27 +4,28 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "CutSceneActor.generated.h"
+#include "CutsceneActor.generated.h"
 
 class UCameraComponent;
 class USpringArmComponent;
 
 UCLASS()
-class OSMK_API ACutSceneActor : public AActor
+class OSMK_API ACutsceneActor : public AActor
 {
 	GENERATED_BODY()
 
 public:
-	ACutSceneActor();
+	ACutsceneActor();
 	
-	void ShowActor(const FTransform& Transform, const bool bClear);
-	void HideActor();
+	void ShowActor(const bool bClear);
 	
 protected:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<USceneComponent> SceneComponent;
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<USkeletalMeshComponent> SkeletalMeshComponent;
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> BoxMeshComponent;
 	
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<USpringArmComponent> SpringArmComponent;

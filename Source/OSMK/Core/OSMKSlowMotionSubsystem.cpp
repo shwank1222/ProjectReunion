@@ -46,34 +46,22 @@ void UOSMKSlowMotionSubsystem::RestoreTimeDilation()
 
 void UOSMKSlowMotionSubsystem::ApplyGimmickHighlight() const
 {
-	APostProcessVolume* PostProcessVolume = GetPostProcessVolume(); 
-	if (!IsValid(PostProcessVolume))
-	{
-		return;
-	}
-	
-	if (!PostProcessVolume->Settings.WeightedBlendables.Array.IsEmpty())
-	{
-		PostProcessVolume->Settings.WeightedBlendables.Array[0].Weight = 1.0f;
-	}
+	UpdatePostProcessMaterialValue(0, 1.0f);
 }
 
 void UOSMKSlowMotionSubsystem::RestoreGimmickHighlight() const
 {
-	APostProcessVolume* PostProcessVolume = GetPostProcessVolume(); 
-	if (!IsValid(PostProcessVolume))
-	{
-		return;
-	}
-	
-	if (!PostProcessVolume->Settings.WeightedBlendables.Array.IsEmpty())
-	{
-		PostProcessVolume->Settings.WeightedBlendables.Array[0].Weight = 0.0f;
-	}
+	UpdatePostProcessMaterialValue(0, 0.0f);
 }
 
-APostProcessVolume* UOSMKSlowMotionSubsystem::GetPostProcessVolume() const
+void UOSMKSlowMotionSubsystem::UpdatePostProcessMaterialValue(const int32 Index, const float Value) const
 {
-	AActor* FindActor = UGameplayStatics::GetActorOfClass(this, APostProcessVolume::StaticClass());
-	return Cast<APostProcessVolume>(FindActor);
+	if (APostProcessVolume* PostProcessVolume = Cast<APostProcessVolume>(
+		UGameplayStatics::GetActorOfClass(GetWorld(), APostProcessVolume::StaticClass())))
+	{
+		if (!PostProcessVolume->Settings.WeightedBlendables.Array.IsEmpty())
+		{
+			PostProcessVolume->Settings.WeightedBlendables.Array[Index].Weight = Value;
+		}
+	}
 }

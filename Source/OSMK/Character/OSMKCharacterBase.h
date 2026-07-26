@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "OSMKCharacterBase.generated.h"
 
+class UNiagaraComponent;
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnCharacterDeath);
 
 DECLARE_LOG_CATEGORY_EXTERN(LogCharacter, Log, All);
@@ -25,13 +26,24 @@ public:
 	
 protected:
 	virtual void Die();
-	virtual void EnableRagdoll();
 	
+	void PlayFireMontage(const USkeletalMeshComponent* SkeletalMesh) const;
 	void PlayFireSound() const;
+	void PlayFireEffect() const;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<USkeletalMeshComponent> PistolMesh;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UNiagaraComponent> MuzzleEffect;
+	
+	UPROPERTY(EditDefaultsOnly)
+	FName MuzzleSocketName = FName("Muzzle");
+	
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<UAnimMontage> FireAnimMontage;
+	UPROPERTY(EditDefaultsOnly)
+	TObjectPtr<USoundBase> FireSound;
 	
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = true))
 	uint8 bIsDead : 1 = false;
-	
-	UPROPERTY(EditDefaultsOnly)
-	TObjectPtr<USoundBase> FireSound;
 };
