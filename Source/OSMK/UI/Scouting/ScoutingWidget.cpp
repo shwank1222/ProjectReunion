@@ -6,6 +6,8 @@ void UScoutingWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	SetIsFocusable(true);
+
 	if (BulletSelectionWidget)
 	{
 		BulletSelectionWidget->SetVisibility(ESlateVisibility::Collapsed);
@@ -38,10 +40,7 @@ void UScoutingWidget::OnBulletPrepClicked()
 	{
 		Btn_Scout->SetIsEnabled(true);
 	}
-	if (APlayerController* PC = GetOwningPlayer())
-	{
-		PC->SetShowMouseCursor(true);
-	}
+	SetUserFocus(GetOwningPlayer());
 }
 
 void UScoutingWidget::OnScoutClicked()
@@ -58,8 +57,5 @@ void UScoutingWidget::OnScoutClicked()
 	{
 		Btn_BulletPrep->SetIsEnabled(true);
 	}
-	if (APlayerController* PC = GetOwningPlayer())
-	{
-		PC->SetShowMouseCursor(true);
-	}
+	SetUserFocus(GetOwningPlayer());
 }

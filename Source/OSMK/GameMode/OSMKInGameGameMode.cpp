@@ -367,7 +367,7 @@ void AOSMKInGameGameMode::SpawnScoutCamera(int32 StageIndex)
 			if (AOSMKPlayerController* PC = Cast<AOSMKPlayerController>(GetWorld()->GetFirstPlayerController()))
 			{
 				PC->SetViewTarget(CameraActor);
-				PC->EnterScoutingMode(CameraActor);
+				PC->EnterScoutingMode(CameraActor, ScoutingWidget);
 			}
 		});
 	}
