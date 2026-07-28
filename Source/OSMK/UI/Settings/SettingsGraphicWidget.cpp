@@ -229,7 +229,7 @@ void USettingsGraphicWidget::ApplyBrightness(float Value)
 		return;
 	}
 
-	GEngine->DisplayGamma = FMath::Lerp(GI->BrightnessGammaMax, GI->BrightnessGammaMin, Value);
+	GEngine->DisplayGamma = FMath::Lerp(GI->BrightnessGammaMin, GI->BrightnessGammaMax, Value);
 }
 
 void USettingsGraphicWidget::OnBrightnessValueChanged(float Value)
