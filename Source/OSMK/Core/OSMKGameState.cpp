@@ -1,6 +1,7 @@
 #include "Core/OSMKGameState.h"
 
 #include "OSMKCutsceneManager.h"
+#include "OSMKSlowMotionSubsystem.h"
 #include "Character/PlayerCharacter.h"
 #include "GameFramework/Character.h"
 #include "GameMode/OSMKInGameGameMode.h"
@@ -90,22 +91,34 @@ void AOSMKGameState::PlayerDeath()
 // ReSharper disable once CppMemberFunctionMayBeConst
 void AOSMKGameState::StageClear()
 {
+	if (UOSMKSlowMotionSubsystem* SlowMotion = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
+	{
+		SlowMotion->RestoreTimeDilation();
+		SlowMotion->RestoreGimmickHighlight();
+	}
+
 	if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(GetWorld()->GetAuthGameMode()))
 	{
 		GM->HandleStageClear();
 	}
-	
+
 	UnbindCutsceneManagerDelegates();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void AOSMKGameState::StageFailed()
 {
+	if (UOSMKSlowMotionSubsystem* SlowMotion = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>())
+	{
+		SlowMotion->RestoreTimeDilation();
+		SlowMotion->RestoreGimmickHighlight();
+	}
+
 	if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(GetWorld()->GetAuthGameMode()))
 	{
 		GM->HandleStageFail();
 	}
-	
+
 	UnbindCutsceneManagerDelegates();
 }
 
