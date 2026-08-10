@@ -1,5 +1,6 @@
 #include "UI/Title/TitleWidget.h"
 
+#include "ControlsWidget.h"
 #include "PopupConfirmWidget.h"
 #include "Components/Button.h"
 #include "Data/StageData.h"
@@ -22,6 +23,10 @@ void UTitleWidget::NativeConstruct()
 	if (Btn_Settings)
 	{
 		Btn_Settings->OnClicked.AddDynamic(this, &UTitleWidget::OnClickSettings);
+	}
+	if (Btn_Controls)
+	{
+		Btn_Controls->OnClicked.AddDynamic(this, &UTitleWidget::OnClickControls);
 	}
 	if (Btn_Credits)
 	{
@@ -60,6 +65,19 @@ void UTitleWidget::OnClickSettings()
 		if (SettingsWidget)
 		{
 			SettingsWidget->AddToViewport();
+		}
+	}
+}
+
+void UTitleWidget::OnClickControls()
+{
+	if (ControlsWidgetClass)
+	{
+		UControlsWidget* Widget = CreateWidget<UControlsWidget>(this, ControlsWidgetClass);
+		if (Widget)
+		{
+			Widget->AddToViewport();
+			Widget->SetFocus();
 		}
 	}
 }
