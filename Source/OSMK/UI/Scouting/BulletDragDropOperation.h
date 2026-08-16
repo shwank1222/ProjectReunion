@@ -11,8 +11,11 @@ class OSMK_API UBulletDragDropOperation : public UDragDropOperation
 
 public:
 	virtual void Dragged_Implementation(const FPointerEvent& PointerEvent) override;
-	
+	virtual void DragCancelled_Implementation(const FPointerEvent& PointerEvent) override;
+
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DragDrop")
 	FName BulletRowName = NAME_None;
+
+	TWeakObjectPtr<class UBulletListItemWidget> SourceItem = nullptr;
 };

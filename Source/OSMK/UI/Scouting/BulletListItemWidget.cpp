@@ -58,6 +58,12 @@ void UBulletListItemWidget::SetIconHidden(bool bHidden)
 	}
 }
 
+void UBulletListItemWidget::RestoreFromDrag()
+{
+	SetCount(PreDragCount);
+	SetIconHidden(false);
+}
+
 FReply UBulletListItemWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	FReply Reply = Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
@@ -80,6 +86,7 @@ void UBulletListItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, co
 
 	DragOperation->BulletRowName = RowName;
 	DragOperation->Pivot = EDragPivot::CenterLeft;
+	DragOperation->SourceItem = this;
 
 	if (DragVisualClass)
 	{
@@ -96,6 +103,7 @@ void UBulletListItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, co
 	if (Text_Count)
 	{
 		int32 CurrentCount = FCString::Atoi(*Text_Count->GetText().ToString());
+		PreDragCount = CurrentCount;
 		Text_Count->SetText(FText::AsNumber(FMath::Max(0, CurrentCount - 1)));
 	}
 

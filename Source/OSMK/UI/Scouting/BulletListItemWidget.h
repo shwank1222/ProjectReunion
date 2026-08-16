@@ -15,6 +15,7 @@ public:
 	void Init(FName InRowName, UTexture2D* InIcon, const FText& InBulletName, const FText& InBulletDescription);
 	void SetCount(int32 Count);
 	void SetIconHidden(bool bHidden);
+	void RestoreFromDrag();
 
 protected:
 	virtual void NativeConstruct() override;
@@ -40,4 +41,5 @@ protected:
 
 private:
 	FName RowName = NAME_None;
+	int32 PreDragCount = 0;
 };
