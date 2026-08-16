@@ -15,6 +15,13 @@ struct FResetFlyEntry
 	float Progress = 0.0f;
 };
 
+enum class EBulletFlyMode : uint8
+{
+	LoadToCylinder,
+	PopFromCylinder,
+	ReturnToItem,
+};
+
 UCLASS()
 class OSMK_API UBulletSelectionWidget : public UUserWidget
 {
@@ -23,6 +30,8 @@ class OSMK_API UBulletSelectionWidget : public UUserWidget
 protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
+	virtual void NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	void UpdateListItemCount(FName RowName);
 
 private:
@@ -48,12 +57,17 @@ private:
 	void OnPopUnhovered();
 
 	void PopulateBulletList();
-	void AddBulletToSlot(FName RowName);
 	void RefreshConfirmButton();
 	void UpdateSlotImages();
-	void StartFlyAnimation(FName BulletName, int32 SlotIndex, bool bToSlot);
+
+	void HandleBulletDropped(FName RowName, const FVector2D& CursorScreenPos, bool bOnCylinder);
+	void StartCursorFly(FName BulletName, const FVector2D& CursorScreenPos, int32 SlotIndex, EBulletFlyMode Mode);
+	void StartPopFly(int32 SlotIndex);
+	void SetItemIconHidden(FName RowName, bool bHidden);
 	void SetInteractable(bool bEnabled);
 	void FinishReset();
+
+	FVector2D LocalPositionOf(const class UWidget* Widget) const;
 
 private:
 	int32 GetAvailableCount(FName RowName) const;
@@ -114,6 +128,12 @@ protected:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<class UBulletListItemWidget> BulletItemWidgetClass = nullptr;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Fly", meta = (ClampMin = "0.01"))
+	float FlySpeed = 3.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Fly")
+	float FlyingBulletUprightAngle = 90.0f;
+
 private:
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UImage* Img_FlyingBullet = nullptr;
@@ -121,18 +141,27 @@ private:
 	UPROPERTY()
 	TArray<class UImage*> ResetFlyImages;
 	
+	TArray<FResetFlyEntry> ResetFlyEntries;
 	TArray<FName> SlotBullets;
+	
 	TMap<FName, class UBulletListItemWidget*> ListItemWidgets;
+	
 	float CurrentRotationAngle = 0.0f;
 	float TargetRotationAngle  = 0.0f;
-	bool  bIsFlying       = false;
-	bool  bIsFlyingToSlot = true;
 	float FlyProgress     = 0.0f;
+	float FlyAngle        = 0.0f;
+	
+	bool  bIsFlying       = false;
+	
+	EBulletFlyMode FlyMode = EBulletFlyMode::LoadToCylinder;
+	
 	FName PendingBulletName;
+	
 	int32 PendingSlotIndex  = -1;
+	
 	FVector2D FlyStartPos   = FVector2D::ZeroVector;
 	FVector2D FlyEndPos     = FVector2D::ZeroVector;
 	FVector2D FlyStartSize  = FVector2D::ZeroVector;
 	FVector2D FlyEndSize    = FVector2D::ZeroVector;
-	TArray<FResetFlyEntry> ResetFlyEntries;
+	FVector2D FlyTextureSize = FVector2D::ZeroVector;
 };

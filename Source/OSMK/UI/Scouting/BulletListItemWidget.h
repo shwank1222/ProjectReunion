@@ -12,21 +12,16 @@ class OSMK_API UBulletListItemWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	FOnBulletItemClicked OnBulletItemClicked;
-
 	void Init(FName InRowName, UTexture2D* InIcon, const FText& InBulletName, const FText& InBulletDescription);
 	void SetCount(int32 Count);
+	void SetIconHidden(bool bHidden);
 
 protected:
 	virtual void NativeConstruct() override;
-
-private:
-	UFUNCTION()
-	void OnItemClicked();
+	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
 	
 protected:
-	UPROPERTY(meta = (BindWidget))
-	class UButton* Btn_Item = nullptr;
 
 	UPROPERTY(meta = (BindWidget))
 	class UImage* Img_Icon = nullptr;
@@ -39,6 +34,9 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Tooltip")
 	TSubclassOf<class UBulletTooltipWidget> TooltipWidgetClass = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "DragDrop")
+	TSubclassOf<class UBulletDragVisualWidget> DragVisualClass = nullptr;
 
 private:
 	FName RowName = NAME_None;

@@ -1,5 +1,10 @@
 #include "UI/Scouting/BulletListItemWidget.h"
+
+#include "BulletDragDropOperation.h"
+#include "BulletDragVisualWidget.h"
 #include "BulletTooltipWidget.h"
+#include "Blueprint/DragDropOperation.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
 #include "Components/Button.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
@@ -8,10 +13,7 @@ void UBulletListItemWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
-	if (Btn_Item)
-	{
-		Btn_Item->OnClicked.AddDynamic(this, &UBulletListItemWidget::OnItemClicked);
-	}
+	SetVisibility(ESlateVisibility::Visible);
 }
 
 void UBulletListItemWidget::Init(FName InRowName, UTexture2D* InIcon, const FText& InBulletName, const FText& InBulletDescription)
@@ -35,7 +37,7 @@ void UBulletListItemWidget::Init(FName InRowName, UTexture2D* InIcon, const FTex
 		{
 			FText FormattedDescription = FText::FromString(InBulletDescription.ToString().Replace(TEXT("\\n"), TEXT("\n")));
 			TooltipWidget->SetTooltipData(InBulletName, FormattedDescription);
-			Btn_Item->SetToolTip(TooltipWidget);
+			SetToolTip(TooltipWidget);
 		}
 	}
 }
@@ -48,7 +50,54 @@ void UBulletListItemWidget::SetCount(int32 Count)
 	}
 }
 
-void UBulletListItemWidget::OnItemClicked()
+void UBulletListItemWidget::SetIconHidden(bool bHidden)
 {
-	OnBulletItemClicked.ExecuteIfBound(RowName);
+	if (Img_Icon)
+	{
+		Img_Icon->SetRenderOpacity(bHidden ? 0.0f : 1.0f);
+	}
+}
+
+FReply UBulletListItemWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	FReply Reply = Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
+	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+	{
+		return UWidgetBlueprintLibrary::DetectDragIfPressed(InMouseEvent, this, EKeys::LeftMouseButton).NativeReply;
+	}
+	return Reply;
+}
+
+void UBulletListItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation)
+{
+	Super::NativeOnDragDetected(InGeometry, InMouseEvent, OutOperation);
+
+	UBulletDragDropOperation* DragOperation = Cast<UBulletDragDropOperation>(UWidgetBlueprintLibrary::CreateDragDropOperation(UBulletDragDropOperation::StaticClass()));
+	if (!DragOperation)
+	{
+		return;
+	}
+
+	DragOperation->BulletRowName = RowName;
+	DragOperation->Pivot = EDragPivot::CenterLeft;
+
+	if (DragVisualClass)
+	{
+		UBulletDragVisualWidget* DragVisual = CreateWidget<UBulletDragVisualWidget>(this, DragVisualClass);
+		if (DragVisual && Img_Icon)
+		{
+			DragVisual->InitVisual(Cast<UTexture2D>(Img_Icon->GetBrush().GetResourceObject()));
+		}
+		DragOperation->DefaultDragVisual = DragVisual;
+	}
+
+	OutOperation = DragOperation;
+
+	if (Text_Count)
+	{
+		int32 CurrentCount = FCString::Atoi(*Text_Count->GetText().ToString());
+		Text_Count->SetText(FText::AsNumber(FMath::Max(0, CurrentCount - 1)));
+	}
+
+	SetIconHidden(true);
 }
