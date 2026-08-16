@@ -42,4 +42,5 @@ protected:
 private:
 	FName RowName = NAME_None;
 	int32 PreDragCount = 0;
+	int32 CurrentCount = 0;
 };

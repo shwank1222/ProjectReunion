@@ -44,30 +44,34 @@ void UBulletListItemWidget::Init(FName InRowName, UTexture2D* InIcon, const FTex
 
 void UBulletListItemWidget::SetCount(int32 Count)
 {
+	CurrentCount = Count;
+
 	if (Text_Count)
 	{
 		Text_Count->SetText(FText::AsNumber(Count));
 	}
+
+	SetIconHidden(false);
 }
 
 void UBulletListItemWidget::SetIconHidden(bool bHidden)
 {
 	if (Img_Icon)
 	{
-		Img_Icon->SetRenderOpacity(bHidden ? 0.0f : 1.0f);
+		const bool bHide = bHidden || CurrentCount <= 0;
+		Img_Icon->SetRenderOpacity(bHide ? 0.0f : 1.0f);
 	}
 }
 
 void UBulletListItemWidget::RestoreFromDrag()
 {
 	SetCount(PreDragCount);
-	SetIconHidden(false);
 }
 
 FReply UBulletListItemWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	FReply Reply = Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);
-	if (InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
+	if (CurrentCount > 0 && InMouseEvent.GetEffectingButton() == EKeys::LeftMouseButton)
 	{
 		return UWidgetBlueprintLibrary::DetectDragIfPressed(InMouseEvent, this, EKeys::LeftMouseButton).NativeReply;
 	}
@@ -100,12 +104,8 @@ void UBulletListItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, co
 
 	OutOperation = DragOperation;
 
-	if (Text_Count)
-	{
-		int32 CurrentCount = FCString::Atoi(*Text_Count->GetText().ToString());
-		PreDragCount = CurrentCount;
-		Text_Count->SetText(FText::AsNumber(FMath::Max(0, CurrentCount - 1)));
-	}
+	PreDragCount = CurrentCount;
+	SetCount(FMath::Max(0, CurrentCount - 1));
 
 	SetIconHidden(true);
 }
