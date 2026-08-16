@@ -17,8 +17,14 @@ void UControlsWidget::NativeConstruct()
 		Btn_Scout->OnClicked.AddDynamic(this, &UControlsWidget::OnScoutClicked);
 	}
 
-	if (CP_InGame) CP_InGame->SetVisibility(ESlateVisibility::Visible);
-	if (CP_Scout)  CP_Scout->SetVisibility(ESlateVisibility::Hidden);
+	if (CP_InGame)
+	{
+		CP_InGame->SetVisibility(ESlateVisibility::Visible);
+	}
+	if (CP_Scout)
+	{
+		CP_Scout->SetVisibility(ESlateVisibility::Hidden);
+	}
 }
 
 FReply UControlsWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyEvent& InKeyEvent)
@@ -33,12 +39,24 @@ FReply UControlsWidget::NativeOnKeyDown(const FGeometry& InGeometry, const FKeyE
 
 void UControlsWidget::OnInGameClicked()
 {
-	if (CP_InGame) CP_InGame->SetVisibility(ESlateVisibility::Visible);
-	if (CP_Scout)  CP_Scout->SetVisibility(ESlateVisibility::Hidden);
+	if (CP_InGame)
+	{
+		CP_InGame->SetVisibility(ESlateVisibility::Visible);
+	}
+	if (CP_Scout)
+	{
+		CP_Scout->SetVisibility(ESlateVisibility::Hidden);
+	}
 }
 
 void UControlsWidget::OnScoutClicked()
 {
-	if (CP_Scout)  CP_Scout->SetVisibility(ESlateVisibility::Visible);
-	if (CP_InGame) CP_InGame->SetVisibility(ESlateVisibility::Hidden);
+	if (CP_Scout)
+	{
+		CP_Scout->SetVisibility(ESlateVisibility::Visible);
+	}
+	if (CP_InGame)
+	{
+		CP_InGame->SetVisibility(ESlateVisibility::Hidden);
+	}
 }
