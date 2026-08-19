@@ -11,7 +11,7 @@
 AExplosiveBarrel::AExplosiveBarrel()
 {
 	BarrelMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BarrelMesh"));
-	SetRootComponent(BarrelMesh);
+	BarrelMesh -> SetupAttachment(SceneRoot);
 	
 	GeometryCollection = CreateDefaultSubobject<UGeometryCollectionComponent>(TEXT("GeometryCollection"));
 	GeometryCollection->SetupAttachment(RootComponent);

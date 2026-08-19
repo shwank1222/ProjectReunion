@@ -14,7 +14,7 @@
 APressurePipe::APressurePipe()
 {
 	PipeMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PipeMesh"));
-	SetRootComponent(PipeMesh);
+	PipeMesh->SetupAttachment(SceneRoot);
 	
 	BurstPoint = CreateDefaultSubobject<USceneComponent>(TEXT("BurstPoint"));
 	BurstPoint->SetupAttachment(PipeMesh);
