@@ -28,6 +28,9 @@ protected:
 	void OnClickQuit();
 	
 	UFUNCTION()
+	void OnClickControls();
+
+	UFUNCTION()
 	void OnQuitConfirmed();
 	
 protected:
@@ -36,6 +39,9 @@ protected:
 
 	UPROPERTY(meta = (BindWidget))
 	UButton* Btn_Settings = nullptr;
+	
+	UPROPERTY(meta = (BindWidget))
+	UButton* Btn_Controls = nullptr;
 	
 	UPROPERTY(meta = (BindWidget))
 	UButton* Btn_Credits = nullptr;
@@ -54,4 +60,7 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class UUserWidget> SettingsWidgetClass = nullptr;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<class UUserWidget> ControlsWidgetClass = nullptr;
 };

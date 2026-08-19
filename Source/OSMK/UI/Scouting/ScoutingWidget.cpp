@@ -6,6 +6,8 @@ void UScoutingWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
+	SetIsFocusable(true);
+
 	if (BulletSelectionWidget)
 	{
 		BulletSelectionWidget->SetVisibility(ESlateVisibility::Collapsed);
@@ -38,6 +40,7 @@ void UScoutingWidget::OnBulletPrepClicked()
 	{
 		Btn_Scout->SetIsEnabled(true);
 	}
+	SetUserFocus(GetOwningPlayer());
 }
 
 void UScoutingWidget::OnScoutClicked()
@@ -54,4 +57,5 @@ void UScoutingWidget::OnScoutClicked()
 	{
 		Btn_BulletPrep->SetIsEnabled(true);
 	}
+	SetUserFocus(GetOwningPlayer());
 }

@@ -9,6 +9,7 @@
 class UInputMappingContext;
 class UInputAction;
 class UPauseMenuWidget;
+class UWidget;
 
 UCLASS()
 class OSMK_API AOSMKPlayerController : public APlayerController
@@ -62,7 +63,7 @@ private:
 
 #pragma region Scouting Camera
 public:
-	void EnterScoutingMode(AActor* CameraActor);
+	void EnterScoutingMode(AActor* CameraActor, UWidget* FocusWidget = nullptr);
 	void ExitScoutingMode();
 	
 private:

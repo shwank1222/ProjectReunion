@@ -1,4 +1,5 @@
 #include "BulletSelectionWidget.h"
+#include "BulletDragDropOperation.h"
 #include "Character/PlayerCharacter.h"
 #include "UI/Scouting/BulletListItemWidget.h"
 #include "Core/OSMKGameState.h"
@@ -20,20 +21,25 @@ void UBulletSelectionWidget::NativeTick(const FGeometry& MyGeometry, float InDel
 
 	if (bIsFlying)
 	{
-		FlyProgress += InDeltaTime * 3.0f;
+		FlyProgress += InDeltaTime * FlySpeed;
 		FlyProgress = FMath::Min(FlyProgress, 1.0f);
 
 		if (Img_FlyingBullet)
 		{
-			FVector2D CurrentPos  = FMath::Lerp(FlyStartPos, FlyEndPos, FlyProgress);
-			FVector2D CurrentSize = FMath::Lerp(FlyStartSize, FlyEndSize, FlyProgress);
+			FVector2D CurrentPos = FMath::Lerp(FlyStartPos, FlyEndPos, FlyProgress);
 
 			FWidgetTransform Transform;
 			Transform.Translation = CurrentPos;
-			FVector2D BulletImageSize = Img_FlyingBullet->GetCachedGeometry().GetLocalSize();
-			if (!BulletImageSize.IsNearlyZero())
+			Transform.Angle = FlyAngle;
+
+			const FVector2D BoxSize = Img_FlyingBullet->GetCachedGeometry().GetLocalSize();
+			if (BoxSize.X > KINDA_SMALL_NUMBER && BoxSize.Y > KINDA_SMALL_NUMBER &&
+				FlyTextureSize.X > KINDA_SMALL_NUMBER && FlyTextureSize.Y > KINDA_SMALL_NUMBER)
 			{
-				Transform.Scale = CurrentSize / BulletImageSize;
+				const FVector2D TargetBox = FMath::Lerp(FlyStartSize, FlyEndSize, FlyProgress);
+				const float Fit = FMath::Min(TargetBox.X / FlyTextureSize.X, TargetBox.Y / FlyTextureSize.Y);
+				const FVector2D DesiredSize = FlyTextureSize * Fit;
+				Transform.Scale = DesiredSize / BoxSize;
 			}
 			Img_FlyingBullet->SetRenderTransform(Transform);
 		}
@@ -47,21 +53,30 @@ void UBulletSelectionWidget::NativeTick(const FGeometry& MyGeometry, float InDel
 			}
 			SetInteractable(true);
 
-			if (bIsFlyingToSlot)
+			switch (FlyMode)
 			{
+			case EBulletFlyMode::LoadToCylinder:
 				SlotBullets[PendingSlotIndex] = PendingBulletName;
 				TargetRotationAngle += 60.0f;
 				UpdateSlotImages();
 				UpdateListItemCount(PendingBulletName);
+				SetItemIconHidden(PendingBulletName, false);
 				RefreshConfirmButton();
-			}
-			else
-			{
+				break;
+
+			case EBulletFlyMode::PopFromCylinder:
 				SlotBullets[PendingSlotIndex] = NAME_None;
 				TargetRotationAngle -= 60.0f;
 				UpdateSlotImages();
 				UpdateListItemCount(PendingBulletName);
 				RefreshConfirmButton();
+				break;
+
+			case EBulletFlyMode::ReturnToItem:
+				UpdateListItemCount(PendingBulletName);
+				SetItemIconHidden(PendingBulletName, false);
+				RefreshConfirmButton();
+				break;
 			}
 		}
 	}
@@ -223,7 +238,6 @@ void UBulletSelectionWidget::PopulateBulletList()
 
 		Item->Init(RowName, Row->BulletIcon.LoadSynchronous(), Row->BulletName, Row->BulletDescription);
 		Item->SetCount(Available);
-		Item->OnBulletItemClicked.BindUObject(this, &UBulletSelectionWidget::AddBulletToSlot);
 		List_Bullets->AddChild(Item);
 		ListItemWidgets.Add(RowName, Item);
 	}
@@ -246,28 +260,84 @@ void UBulletSelectionWidget::SetInteractable(bool bEnabled)
 	}
 }
 
-void UBulletSelectionWidget::StartFlyAnimation(FName BulletName, int32 SlotIndex, bool bToSlot)
+FVector2D UBulletSelectionWidget::LocalPositionOf(const UWidget* Widget) const
+{
+	if (!Widget)
+	{
+		return FVector2D::ZeroVector;
+	}
+	return GetCachedGeometry().AbsoluteToLocal(Widget->GetCachedGeometry().GetAbsolutePosition());
+}
+
+void UBulletSelectionWidget::StartCursorFly(FName BulletName, const FVector2D& CursorScreenPos, int32 SlotIndex, EBulletFlyMode Mode)
 {
 	UImage* SlotArray[MaxBulletSlots] = { BulletSlot_1, BulletSlot_2, BulletSlot_3, BulletSlot_4, BulletSlot_5, BulletSlot_6 };
 	UBulletListItemWidget** ItemPtr = ListItemWidgets.Find(BulletName);
 	UImage* SlotImage = (SlotIndex >= 0 && SlotIndex < MaxBulletSlots) ? SlotArray[SlotIndex] : nullptr;
 
-	if (SlotImage && ItemPtr)
-	{
-		FVector2D SlotPos  = GetCachedGeometry().AbsoluteToLocal(SlotImage->GetCachedGeometry().GetAbsolutePosition());
-		FVector2D ItemPos  = GetCachedGeometry().AbsoluteToLocal((*ItemPtr)->GetCachedGeometry().GetAbsolutePosition());
-		FVector2D SlotSize = SlotImage->GetCachedGeometry().GetLocalSize();
-		FVector2D ItemSize = (*ItemPtr)->GetCachedGeometry().GetLocalSize();
+	const FVector2D ItemSize = ItemPtr ? (*ItemPtr)->GetCachedGeometry().GetLocalSize() : FVector2D::ZeroVector;
+	const FVector2D SlotSize = SlotImage ? SlotImage->GetCachedGeometry().GetLocalSize() : ItemSize;
 
-		FlyStartPos  = bToSlot ? ItemPos  : SlotPos;
-		FlyEndPos    = bToSlot ? SlotPos  : ItemPos;
-		FlyStartSize = bToSlot ? ItemSize : SlotSize;
-		FlyEndSize   = bToSlot ? SlotSize : ItemSize;
+	FlyStartSize = ItemSize;
+	const FVector2D CursorLocal = GetCachedGeometry().AbsoluteToLocal(CursorScreenPos);
+	FlyStartPos  = CursorLocal - FlyStartSize * 0.5f;
+
+	if (Mode == EBulletFlyMode::LoadToCylinder && SlotImage)
+	{
+		FlyEndPos  = LocalPositionOf(SlotImage);
+		FlyEndSize = SlotSize;
+	}
+	else if (ItemPtr)
+	{
+		FlyEndPos  = LocalPositionOf(*ItemPtr);
+		FlyEndSize = ItemSize;
 	}
 
 	PendingBulletName = BulletName;
 	PendingSlotIndex  = SlotIndex;
-	bIsFlyingToSlot   = bToSlot;
+	FlyMode = Mode;
+	FlyAngle = FlyingBulletUprightAngle;
+	bIsFlying = true;
+	FlyProgress = 0.0f;
+	SetInteractable(false);
+
+	if (Img_FlyingBullet && BulletDataTable)
+	{
+		if (FBulletData* Row = BulletDataTable->FindRow<FBulletData>(BulletName, TEXT("")))
+		{
+			UTexture2D* Icon = Row->BulletIcon.LoadSynchronous();
+			Img_FlyingBullet->SetBrushFromTexture(Icon);
+			Img_FlyingBullet->SetRenderTransformPivot(FVector2D(0.5f, 0.5f));
+			Img_FlyingBullet->SetVisibility(ESlateVisibility::HitTestInvisible);
+			FlyTextureSize = Icon ? FVector2D(Icon->GetSizeX(), Icon->GetSizeY()) : FVector2D::ZeroVector;
+		}
+	}
+}
+
+void UBulletSelectionWidget::StartPopFly(int32 SlotIndex)
+{
+	UImage* SlotArray[MaxBulletSlots] = { BulletSlot_1, BulletSlot_2, BulletSlot_3, BulletSlot_4, BulletSlot_5, BulletSlot_6 };
+	if (SlotIndex < 0 || SlotIndex >= MaxBulletSlots)
+	{
+		return;
+	}
+
+	const FName BulletName = SlotBullets[SlotIndex];
+	UImage* SlotImage = SlotArray[SlotIndex];
+	UBulletListItemWidget** ItemPtr = ListItemWidgets.Find(BulletName);
+
+	if (SlotImage && ItemPtr)
+	{
+		FlyStartPos  = LocalPositionOf(SlotImage);
+		FlyEndPos    = LocalPositionOf(*ItemPtr);
+		FlyStartSize = SlotImage->GetCachedGeometry().GetLocalSize();
+		FlyEndSize   = (*ItemPtr)->GetCachedGeometry().GetLocalSize();
+	}
+
+	PendingBulletName = BulletName;
+	PendingSlotIndex  = SlotIndex;
+	FlyMode           = EBulletFlyMode::PopFromCylinder;
+	FlyAngle          = 0.0f;
 	bIsFlying         = true;
 	FlyProgress       = 0.0f;
 	SetInteractable(false);
@@ -276,9 +346,20 @@ void UBulletSelectionWidget::StartFlyAnimation(FName BulletName, int32 SlotIndex
 	{
 		if (FBulletData* Row = BulletDataTable->FindRow<FBulletData>(BulletName, TEXT("")))
 		{
-			Img_FlyingBullet->SetBrushFromTexture(Row->BulletIcon.LoadSynchronous());
+			UTexture2D* Icon = Row->BulletIcon.LoadSynchronous();
+			Img_FlyingBullet->SetBrushFromTexture(Icon);
+			Img_FlyingBullet->SetRenderTransformPivot(FVector2D(0.5f, 0.5f));
 			Img_FlyingBullet->SetVisibility(ESlateVisibility::HitTestInvisible);
+			FlyTextureSize = Icon ? FVector2D(Icon->GetSizeX(), Icon->GetSizeY()) : FVector2D::ZeroVector;
 		}
+	}
+}
+
+void UBulletSelectionWidget::SetItemIconHidden(FName RowName, bool bHidden)
+{
+	if (UBulletListItemWidget** ItemPtr = ListItemWidgets.Find(RowName))
+	{
+		(*ItemPtr)->SetIconHidden(bHidden);
 	}
 }
 
@@ -305,25 +386,28 @@ void UBulletSelectionWidget::FinishReset()
 	SetInteractable(true);
 }
 
-void UBulletSelectionWidget::AddBulletToSlot(FName RowName)
+void UBulletSelectionWidget::HandleBulletDropped(FName RowName, const FVector2D& CursorScreenPos, bool bOnCylinder)
 {
 	if (bIsFlying || ResetFlyEntries.Num() > 0)
 	{
-		return;
-	}
-	if (GetSelectedCount(RowName) >= GetAvailableCount(RowName))
-	{
+		UpdateListItemCount(RowName);
+		SetItemIconHidden(RowName, false);
 		return;
 	}
 
-	for (int32 i = 0; i < MaxBulletSlots; i++)
+	if (bOnCylinder && GetSelectedCount(RowName) < GetAvailableCount(RowName))
 	{
-		if (SlotBullets[i].IsNone())
+		for (int32 i = 0; i < MaxBulletSlots; i++)
 		{
-			StartFlyAnimation(RowName, i, true);
-			return;
+			if (SlotBullets[i].IsNone())
+			{
+				StartCursorFly(RowName, CursorScreenPos, i, EBulletFlyMode::LoadToCylinder);
+				return;
+			}
 		}
 	}
+
+	StartCursorFly(RowName, CursorScreenPos, INDEX_NONE, EBulletFlyMode::ReturnToItem);
 }
 
 void UBulletSelectionWidget::OnPopClicked()
@@ -339,7 +423,7 @@ void UBulletSelectionWidget::OnPopClicked()
 	{
 		if (!SlotBullets[i].IsNone())
 		{
-			StartFlyAnimation(SlotBullets[i], i, false);
+			StartPopFly(i);
 			return;
 		}
 	}
@@ -462,16 +546,34 @@ void UBulletSelectionWidget::RefreshConfirmButton()
 	if (bAllFilled)
 	{
 		Btn_Confirm->SetVisibility(ESlateVisibility::Visible);
-		if (Img_Action) Img_Action->SetVisibility(ESlateVisibility::HitTestInvisible);
-		if (Txt_Action) Txt_Action->SetVisibility(ESlateVisibility::HitTestInvisible);
-		if (Anim_Confirm) PlayAnimation(Anim_Confirm, 0.f, 0);
+		if (Img_Action)
+		{
+			Img_Action->SetVisibility(ESlateVisibility::HitTestInvisible);
+		}
+		if (Txt_Action)
+		{
+			Txt_Action->SetVisibility(ESlateVisibility::HitTestInvisible);
+		}
+		if (Anim_Confirm)
+		{
+			PlayAnimation(Anim_Confirm, 0.f, 0);
+		}
 	}
 	else
 	{
 		Btn_Confirm->SetVisibility(ESlateVisibility::Hidden);
-		if (Img_Action) Img_Action->SetVisibility(ESlateVisibility::Hidden);
-		if (Txt_Action) Txt_Action->SetVisibility(ESlateVisibility::Hidden);
-		if (Anim_Confirm) StopAnimation(Anim_Confirm);
+		if (Img_Action)
+		{
+			Img_Action->SetVisibility(ESlateVisibility::Hidden);
+		}
+		if (Txt_Action)
+		{
+			Txt_Action->SetVisibility(ESlateVisibility::Hidden);
+		}
+		if (Anim_Confirm)
+		{
+			StopAnimation(Anim_Confirm);
+		}
 	}
 }
 
@@ -539,5 +641,29 @@ void UBulletSelectionWidget::OnResetUnhovered()
 		{
 			SlotArray[i]->SetColorAndOpacity(SlotBullets[i].IsNone() ? FLinearColor(1.f, 1.f, 1.f, 0.f) : FLinearColor::White);
 		}
+	}
+}
+
+bool UBulletSelectionWidget::NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
+{
+	Super::NativeOnDrop(InGeometry, InDragDropEvent, InOperation);
+	
+	if (UBulletDragDropOperation* BulletOp = Cast<UBulletDragDropOperation>(InOperation))
+	{
+		const FVector2D CursorScreenPos = InDragDropEvent.GetScreenSpacePosition();
+		const bool bOnCylinder = CylinderPanel && CylinderPanel->GetCachedGeometry().IsUnderLocation(CursorScreenPos);
+		HandleBulletDropped(BulletOp->BulletRowName, CursorScreenPos, bOnCylinder);
+		return true;
+	}
+	return false;
+}
+
+void UBulletSelectionWidget::NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation)
+{
+	Super::NativeOnDragCancelled(InDragDropEvent, InOperation);
+
+	if (UBulletDragDropOperation* BulletOp = Cast<UBulletDragDropOperation>(InOperation))
+	{
+		HandleBulletDropped(BulletOp->BulletRowName, InDragDropEvent.GetScreenSpacePosition(), false);
 	}
 }

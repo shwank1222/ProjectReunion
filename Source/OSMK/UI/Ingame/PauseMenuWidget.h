@@ -45,4 +45,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<UPopupConfirmWidget> PopupConfirmWidgetClass = nullptr;
+
+private:
+	bool bRestoreCursorOnClose = false;
 };

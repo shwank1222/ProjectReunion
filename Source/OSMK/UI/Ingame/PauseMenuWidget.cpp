@@ -11,6 +11,8 @@ void UPauseMenuWidget::NativeConstruct()
 	
 	if (APlayerController* PC = GetOwningPlayer())
 	{
+		bRestoreCursorOnClose = PC->bShowMouseCursor;
+
 		PC->SetPause(true);
 		PC->bShowMouseCursor = true;
 		PC->SetInputMode(FInputModeUIOnly());
@@ -35,8 +37,22 @@ void UPauseMenuWidget::NativeDestruct()
 	if (APlayerController* PC = GetOwningPlayer())
 	{
 		PC->SetPause(false);
-		PC->bShowMouseCursor = false;
-		PC->SetInputMode(FInputModeGameOnly());
+
+		if (bRestoreCursorOnClose)
+		{
+			PC->bShowMouseCursor = true;
+
+			FInputModeGameAndUI InputMode;
+			InputMode.SetHideCursorDuringCapture(false);
+			PC->SetInputMode(InputMode);
+		}
+		else
+		{
+			PC->bShowMouseCursor = false;
+			PC->SetInputMode(FInputModeGameOnly());
+		}
+
+		PC->FlushPressedKeys();
 	}
 
 	Super::NativeDestruct();

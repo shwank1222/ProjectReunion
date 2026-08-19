@@ -7,6 +7,7 @@
 #include "InputActionValue.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "UI/Ingame/PauseMenuWidget.h"
+#include "Blueprint/UserWidget.h"
 
 class UEnhancedInputLocalPlayerSubsystem;
 
@@ -76,7 +77,7 @@ void AOSMKPlayerController::OnPausePressed(const FInputActionValue& Value)
 	TogglePauseMenu();
 }
 
-void AOSMKPlayerController::EnterScoutingMode(AActor* CameraActor)
+void AOSMKPlayerController::EnterScoutingMode(AActor* CameraActor, UWidget* FocusWidget)
 {
 	ScoutCameraActor = CameraActor;
 
@@ -102,6 +103,10 @@ void AOSMKPlayerController::EnterScoutingMode(AActor* CameraActor)
 	bShowMouseCursor = true;
 	FInputModeGameAndUI InputMode;
 	InputMode.SetHideCursorDuringCapture(false);
+	if (FocusWidget)
+	{
+		InputMode.SetWidgetToFocus(FocusWidget->TakeWidget());
+	}
 	SetInputMode(InputMode);
 }
 
