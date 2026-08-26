@@ -16,6 +16,7 @@ public:
 	void SetCount(int32 Count);
 	void SetIconHidden(bool bHidden);
 	void RestoreFromDrag();
+	void OnDragEnded();
 
 protected:
 	virtual void NativeConstruct() override;
@@ -38,6 +39,12 @@ protected:
 	
 	UPROPERTY(EditDefaultsOnly, Category = "DragDrop")
 	TSubclassOf<class UBulletDragVisualWidget> DragVisualClass = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Cursor")
+	TEnumAsByte<EMouseCursor::Type> HoverCursor = EMouseCursor::GrabHand;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Cursor")
+	TEnumAsByte<EMouseCursor::Type> DragCursor = EMouseCursor::GrabHandClosed;
 
 private:
 	FName RowName = NAME_None;

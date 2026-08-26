@@ -45,6 +45,7 @@ void UBulletListItemWidget::Init(FName InRowName, UTexture2D* InIcon, const FTex
 void UBulletListItemWidget::SetCount(int32 Count)
 {
 	CurrentCount = Count;
+	SetCursor(CurrentCount > 0 ? HoverCursor.GetValue() : EMouseCursor::Default);
 
 	if (Text_Count)
 	{
@@ -66,6 +67,11 @@ void UBulletListItemWidget::SetIconHidden(bool bHidden)
 void UBulletListItemWidget::RestoreFromDrag()
 {
 	SetCount(PreDragCount);
+}
+
+void UBulletListItemWidget::OnDragEnded()
+{
+	SetCursor(CurrentCount > 0 ? HoverCursor.GetValue() : EMouseCursor::Default);
 }
 
 FReply UBulletListItemWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -106,6 +112,7 @@ void UBulletListItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, co
 
 	PreDragCount = CurrentCount;
 	SetCount(FMath::Max(0, CurrentCount - 1));
+	SetCursor(DragCursor.GetValue());
 
 	SetIconHidden(true);
 }

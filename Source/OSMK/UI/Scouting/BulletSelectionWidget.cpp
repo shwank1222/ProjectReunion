@@ -653,6 +653,10 @@ bool UBulletSelectionWidget::NativeOnDrop(const FGeometry& InGeometry, const FDr
 		const FVector2D CursorScreenPos = InDragDropEvent.GetScreenSpacePosition();
 		const bool bOnCylinder = CylinderPanel && CylinderPanel->GetCachedGeometry().IsUnderLocation(CursorScreenPos);
 		HandleBulletDropped(BulletOp->BulletRowName, CursorScreenPos, bOnCylinder);
+		if (BulletOp->SourceItem.IsValid())
+		{
+			BulletOp->SourceItem->OnDragEnded();
+		}
 		return true;
 	}
 	return false;
