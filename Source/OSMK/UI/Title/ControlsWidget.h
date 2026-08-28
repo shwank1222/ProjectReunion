@@ -22,12 +22,18 @@ protected:
 	UFUNCTION()
 	void OnScoutClicked();
 
+	UFUNCTION()
+	void OnCloseClicked();
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Btn_InGame = nullptr;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UButton> Btn_Scout = nullptr;
+
+	UPROPERTY(meta = (BindWidget))
+	TObjectPtr<UButton> CloseButton = nullptr;
 
 	UPROPERTY(meta = (BindWidget))
 	TObjectPtr<UCanvasPanel> CP_InGame = nullptr;

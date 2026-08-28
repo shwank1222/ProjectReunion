@@ -16,6 +16,10 @@ void UControlsWidget::NativeConstruct()
 	{
 		Btn_Scout->OnClicked.AddDynamic(this, &UControlsWidget::OnScoutClicked);
 	}
+	if (CloseButton)
+	{
+		CloseButton->OnClicked.AddDynamic(this, &UControlsWidget::OnCloseClicked);
+	}
 
 	if (CP_InGame)
 	{
@@ -47,6 +51,11 @@ void UControlsWidget::OnInGameClicked()
 	{
 		CP_Scout->SetVisibility(ESlateVisibility::Hidden);
 	}
+}
+
+void UControlsWidget::OnCloseClicked()
+{
+	RemoveFromParent();
 }
 
 void UControlsWidget::OnScoutClicked()

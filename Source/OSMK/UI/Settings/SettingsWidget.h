@@ -49,6 +49,9 @@ protected:
 	class UButton* CancelButton = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, Category = "UI", meta = (BindWidget))
+	class UButton* CloseButton = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, Category = "UI", meta = (BindWidget))
 	class UPanelWidget* TabButtonContainer = nullptr;
 	
 	UPROPERTY(BlueprintReadWrite, Category = "UI", meta = (BindWidget))

@@ -25,6 +25,10 @@ void USettingsWidget::NativeConstruct()
 	{
 		CancelButton->OnClicked.AddDynamic(this, &USettingsWidget::OnCancelClicked);
 	}
+	if (CloseButton)
+	{
+		CloseButton->OnClicked.AddDynamic(this, &USettingsWidget::OnCancelClicked);
+	}
 
 	SettingTabs.Empty();
 	if (GraphicTabWidget)
