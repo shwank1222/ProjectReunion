@@ -1,4 +1,5 @@
 #include "BulletSelectionWidget.h"
+#include "Rendering/DrawElements.h"
 #include "BulletDragDropOperation.h"
 #include "Character/PlayerCharacter.h"
 #include "UI/Scouting/BulletListItemWidget.h"
@@ -8,6 +9,7 @@
 #include "Blueprint/WidgetTree.h"
 #include "Components/Button.h"
 #include "Components/CanvasPanel.h"
+#include "Components/Overlay.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/ScrollBox.h"
 #include "Components/Image.h"
@@ -116,6 +118,32 @@ void UBulletSelectionWidget::NativeTick(const FGeometry& MyGeometry, float InDel
 			FinishReset();
 		}
 	}
+	if (bIsDrawingLine)
+	{
+		if (LoopDelayRemaining > 0.f)
+		{
+			LoopDelayRemaining -= InDeltaTime;
+			if (LoopDelayRemaining <= 0.f)
+			{
+				LoopDelayRemaining = 0.f;
+				DrawProgress = 0.f;
+			}
+		}
+		else
+		{
+			DrawProgress += InDeltaTime * LineDrawSpeed;
+			if (DrawProgress >= 1.f)
+			{
+				DrawProgress = 1.f;
+				if (bLoopLine)
+				{
+					LoopDelayRemaining = 0.5f;
+				}
+			}
+		}
+		Invalidate(EInvalidateWidgetReason::Paint);
+	}
+
 	if (!bIsFlying && ResetFlyEntries.Num() == 0 &&	CylinderPanel && !FMath::IsNearlyEqual(CurrentRotationAngle, TargetRotationAngle, 0.1f))
 	{
 		CurrentRotationAngle = FMath::FInterpTo(CurrentRotationAngle, TargetRotationAngle, InDeltaTime, 10.0f);
@@ -238,6 +266,8 @@ void UBulletSelectionWidget::PopulateBulletList()
 
 		Item->Init(RowName, Row->BulletIcon.LoadSynchronous(), Row->BulletName, Row->BulletDescription);
 		Item->SetCount(Available);
+		Item->OnBulletItemHovered.BindUObject(this, &UBulletSelectionWidget::OnBulletHovered);
+		Item->OnBulletItemUnhovered.BindUObject(this, &UBulletSelectionWidget::OnBulletUnhovered);
 		List_Bullets->AddChild(Item);
 		ListItemWidgets.Add(RowName, Item);
 	}
@@ -258,6 +288,84 @@ void UBulletSelectionWidget::SetInteractable(bool bEnabled)
 	{
 		Canvas_FlyOverlay->SetVisibility(bEnabled ? ESlateVisibility::HitTestInvisible : ESlateVisibility::Visible);
 	}
+}
+
+int32 UBulletSelectionWidget::NativePaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const
+{
+	const int32 MaxLayer = Super::NativePaint(Args, AllottedGeometry, MyCullingRect, OutDrawElements, LayerId, InWidgetStyle, bParentEnabled);
+
+	if (!bIsDrawingLine || DrawProgress <= 0.f)
+	{
+		return MaxLayer;
+	}
+
+	const FVector2D EndPos = Canvas_Cylinder
+		? LocalPositionOf(Canvas_Cylinder) + Canvas_Cylinder->GetCachedGeometry().GetLocalSize() * 0.5f
+		: LineEndLocal;
+
+	const FVector2D Dir = (EndPos - LineStartLocal).GetSafeNormal();
+	const float TotalLength = FVector2D::Distance(LineStartLocal, EndPos);
+	const float CurrentLength = DrawProgress * TotalLength;
+
+	const float Period = DashLength + DashGap;
+	const int32 DrawLayer = MaxLayer + 1;
+
+	float Traveled = 0.f;
+	while (Traveled < CurrentLength)
+	{
+		const float SegEnd = FMath::Min(Traveled + DashLength, CurrentLength);
+
+		TArray<FVector2D> Seg;
+		Seg.Add(LineStartLocal + Dir * Traveled);
+		Seg.Add(LineStartLocal + Dir * SegEnd);
+		FSlateDrawElement::MakeLines(OutDrawElements, DrawLayer, AllottedGeometry.ToPaintGeometry(), Seg, ESlateDrawEffect::None, LineColor, true, LineThickness);
+
+		Traveled += Period;
+	}
+
+	const FVector2D Tip = LineStartLocal + Dir * CurrentLength;
+	const FVector2D Perp(-Dir.Y, Dir.X);
+
+	TArray<FVector2D> WingL;
+	WingL.Add(Tip - Dir * ArrowSize + Perp * (ArrowSize * 0.5f));
+	WingL.Add(Tip);
+	FSlateDrawElement::MakeLines(OutDrawElements, DrawLayer, AllottedGeometry.ToPaintGeometry(), WingL, ESlateDrawEffect::None, LineColor, true, LineThickness);
+
+	TArray<FVector2D> WingR;
+	WingR.Add(Tip - Dir * ArrowSize - Perp * (ArrowSize * 0.5f));
+	WingR.Add(Tip);
+	FSlateDrawElement::MakeLines(OutDrawElements, DrawLayer, AllottedGeometry.ToPaintGeometry(), WingR, ESlateDrawEffect::None, LineColor, true, LineThickness);
+
+	return DrawLayer;
+}
+
+void UBulletSelectionWidget::OnBulletHovered(FName RowName)
+{
+	if (bIsFlying || ResetFlyEntries.Num() > 0 || !SlotBullets.Contains(NAME_None))
+	{
+		return;
+	}
+
+	UBulletListItemWidget** ItemPtr = ListItemWidgets.Find(RowName);
+	if (!ItemPtr || !Canvas_Cylinder)
+	{
+		return;
+	}
+
+	const FVector2D ItemPos = LocalPositionOf(*ItemPtr);
+	const FVector2D ItemSize = (*ItemPtr)->GetCachedGeometry().GetLocalSize();
+	LineStartLocal = ItemPos + ItemSize * 0.5f;
+
+	DrawProgress = 0.f;
+	bIsDrawingLine = true;
+}
+
+void UBulletSelectionWidget::OnBulletUnhovered(FName RowName)
+{
+	bIsDrawingLine = false;
+	DrawProgress = 0.f;
+	LoopDelayRemaining = 0.f;
+	Invalidate(EInvalidateWidgetReason::Paint);
 }
 
 FVector2D UBulletSelectionWidget::LocalPositionOf(const UWidget* Widget) const

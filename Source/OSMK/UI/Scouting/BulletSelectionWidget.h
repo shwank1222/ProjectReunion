@@ -30,6 +30,7 @@ class OSMK_API UBulletSelectionWidget : public UUserWidget
 protected:
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	virtual int32 NativePaint(const FPaintArgs& Args, const FGeometry& AllottedGeometry, const FSlateRect& MyCullingRect, FSlateWindowElementList& OutDrawElements, int32 LayerId, const FWidgetStyle& InWidgetStyle, bool bParentEnabled) const override;
 	virtual bool NativeOnDrop(const FGeometry& InGeometry, const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	virtual void NativeOnDragCancelled(const FDragDropEvent& InDragDropEvent, UDragDropOperation* InOperation) override;
 	void UpdateListItemCount(FName RowName);
@@ -59,6 +60,9 @@ private:
 	void PopulateBulletList();
 	void RefreshConfirmButton();
 	void UpdateSlotImages();
+
+	void OnBulletHovered(FName RowName);
+	void OnBulletUnhovered(FName RowName);
 
 	void HandleBulletDropped(FName RowName, const FVector2D& CursorScreenPos, bool bOnCylinder);
 	void StartCursorFly(FName BulletName, const FVector2D& CursorScreenPos, int32 SlotIndex, EBulletFlyMode Mode);
@@ -117,6 +121,9 @@ protected:
 	class UButton* Btn_Pop = nullptr;
 
 	UPROPERTY(meta = (BindWidget))
+	class UOverlay* Canvas_Cylinder = nullptr;
+
+	UPROPERTY(meta = (BindWidget))
 	class UCanvasPanel* CylinderPanel = nullptr;
 
 	UPROPERTY(meta = (BindWidgetOptional))
@@ -134,6 +141,27 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Fly")
 	float FlyingBulletUprightAngle = 90.0f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "ConnectionLine", meta = (ClampMin = "0.1"))
+	float LineDrawSpeed = 1.5f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "ConnectionLine")
+	bool bLoopLine = false;
+
+	UPROPERTY(EditDefaultsOnly, Category = "ConnectionLine")
+	FLinearColor LineColor = FLinearColor(1.f, 1.f, 1.f, 0.85f);
+
+	UPROPERTY(EditDefaultsOnly, Category = "ConnectionLine", meta = (ClampMin = "0.1"))
+	float LineThickness = 1.5f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "ConnectionLine", meta = (ClampMin = "1.0"))
+	float DashLength = 12.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "ConnectionLine", meta = (ClampMin = "0.0"))
+	float DashGap = 6.f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "ConnectionLine", meta = (ClampMin = "1.0"))
+	float ArrowSize = 8.f;
+
 private:
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UImage* Img_FlyingBullet = nullptr;
@@ -145,7 +173,13 @@ private:
 	TArray<FName> SlotBullets;
 	
 	TMap<FName, class UBulletListItemWidget*> ListItemWidgets;
-	
+
+	bool bIsDrawingLine = false;
+	float DrawProgress = 0.0f;
+	float LoopDelayRemaining = 0.0f;
+	FVector2D LineStartLocal = FVector2D::ZeroVector;
+	FVector2D LineEndLocal = FVector2D::ZeroVector;
+
 	float CurrentRotationAngle = 0.0f;
 	float TargetRotationAngle  = 0.0f;
 	float FlyProgress     = 0.0f;

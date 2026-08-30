@@ -74,6 +74,29 @@ void UBulletListItemWidget::OnDragEnded()
 	SetCursor(CurrentCount > 0 ? HoverCursor.GetValue() : EMouseCursor::Default);
 }
 
+void UBulletListItemWidget::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
+
+	if (CurrentCount <= 0)
+	{
+		return;
+	}
+
+	GetWorld()->GetTimerManager().SetTimer(HoverTimerHandle, [this]()
+	{
+		OnBulletItemHovered.ExecuteIfBound(RowName);
+	}, 2.f, false);
+}
+
+void UBulletListItemWidget::NativeOnMouseLeave(const FPointerEvent& InMouseEvent)
+{
+	Super::NativeOnMouseLeave(InMouseEvent);
+
+	GetWorld()->GetTimerManager().ClearTimer(HoverTimerHandle);
+	OnBulletItemUnhovered.ExecuteIfBound(RowName);
+}
+
 FReply UBulletListItemWidget::NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	FReply Reply = Super::NativeOnMouseButtonDown(InGeometry, InMouseEvent);

@@ -5,6 +5,7 @@
 #include "BulletListItemWidget.generated.h"
 
 DECLARE_DELEGATE_OneParam(FOnBulletItemClicked, FName);
+DECLARE_DELEGATE_OneParam(FOnBulletItemHovered, FName);
 
 UCLASS()
 class OSMK_API UBulletListItemWidget : public UUserWidget
@@ -18,8 +19,13 @@ public:
 	void RestoreFromDrag();
 	void OnDragEnded();
 
+	FOnBulletItemHovered OnBulletItemHovered;
+	FOnBulletItemHovered OnBulletItemUnhovered;
+
 protected:
 	virtual void NativeConstruct() override;
+	virtual void NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
+	virtual void NativeOnMouseLeave(const FPointerEvent& InMouseEvent) override;
 	virtual FReply NativeOnMouseButtonDown(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent) override;
 	virtual void NativeOnDragDetected(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent, UDragDropOperation*& OutOperation) override;
 	
@@ -50,4 +56,6 @@ private:
 	FName RowName = NAME_None;
 	int32 PreDragCount = 0;
 	int32 CurrentCount = 0;
+
+	FTimerHandle HoverTimerHandle;
 };
