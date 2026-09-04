@@ -6,6 +6,9 @@ DEFINE_LOG_CATEGORY(LogGimmick);
 AGimmickBase::AGimmickBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	
+	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("SceneRoot"));
+	SetRootComponent(SceneRoot);
 }
 
 void AGimmickBase::Trigger()

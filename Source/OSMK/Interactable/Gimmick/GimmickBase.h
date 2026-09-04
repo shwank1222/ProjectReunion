@@ -22,7 +22,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void Trigger();
 	
-
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<USceneComponent> SceneRoot;
 	
 	bool CanTrigger() const;
 	
