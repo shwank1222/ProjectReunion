@@ -7,6 +7,9 @@
 #include "GameFramework/Pawn.h"
 #include "StageData.generated.h"
 
+class UStageExtractRule;
+class UStageExtractedCache;
+
 USTRUCT(BlueprintType)
 struct FStageLevelData
 {
@@ -27,8 +30,11 @@ struct FStageLevelConfig
 {
 	GENERATED_BODY()
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stage")
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stage")
 	FName StageRowName = NAME_None;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
+	TSoftObjectPtr<UWorld> Level = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Bullet")
 	TMap<FName, int32> BulletCounts;
@@ -38,48 +44,25 @@ UCLASS()
 class OSMK_API UStageData : public UDataAsset
 {
 	GENERATED_BODY()
-	
-public:
-	virtual void PostLoad() override;
 
-#if WITH_EDITOR
-	virtual void PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent) override;
-	void RefreshStageConfigs();
-#endif
-	
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	UDataTable* BulletDataTable = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
-	TSoftClassPtr<AActor> EnemyClass = nullptr;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
-	TSoftClassPtr<AActor> ScoutCameraClass = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	TSoftClassPtr<APawn> PlayerCharacterClass = nullptr;
-	
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Data")
 	TSoftObjectPtr<UWorld> TitleLevel = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
 	TSoftObjectPtr<UWorld> InGameLevel = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
-	TObjectPtr<UDataTable> StageStaticMeshData = nullptr;
+	UPROPERTY(EditAnywhere, Instanced, BlueprintReadOnly, Category = "Extractor")
+	TArray<TObjectPtr<UStageExtractRule>> Rules;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
-	TObjectPtr<UDataTable> StageEnemyData = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
-	TObjectPtr<UDataTable> StageGimmickData = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
-	TObjectPtr<UDataTable> StageActorData = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Level")
-	TObjectPtr<UDataTable> StageScoutCameraData = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Extractor")
+	TSoftObjectPtr<UStageExtractedCache> Cache = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Stage")
 	TArray<FStageLevelConfig> StageConfigs;

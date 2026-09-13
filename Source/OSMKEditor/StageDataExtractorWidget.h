@@ -5,7 +5,7 @@
 #include "StageDataExtractorWidget.generated.h"
 
 class UButton;
-class UDataTable;
+class UStageData;
 
 UCLASS()
 class UStageDataExtractorWidget : public UEditorUtilityWidget
@@ -21,25 +21,13 @@ protected:
 protected:
 	UPROPERTY(meta = (BindWidget))
 	class UButton* ExtractButton = nullptr;
-	
+
 	UPROPERTY(meta = (BindWidget))
 	class UDetailsView* LevelDetailsView = nullptr;
 
 public:
-	UPROPERTY(EditDefaultsOnly, Category = "Config")
-	UDataTable* StaticMeshDataTable = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Config")
-	UDataTable* EnemyDataTable = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Config")
-	UDataTable* GimmickDataTable = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Config")
-	UDataTable* ActorDataTable = nullptr;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Config")
-	UDataTable* ScoutCameraDataTable = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stage Data Extractor")
+	UStageData* TargetStageData = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stage Data Extractor")
 	TArray<TSoftObjectPtr<UWorld>> TargetLevels;

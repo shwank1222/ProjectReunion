@@ -14,51 +14,12 @@ class OSMK_API AOSMKInGameGameMode : public AGameMode
 public:
 	UFUNCTION(BlueprintCallable)
 	void SpawnStage(int32 StageIndex);
-	
-	UFUNCTION(BlueprintCallable)
-	void SpawnEnemies(int32 StageIndex);
-	
-	UFUNCTION(BlueprintCallable)
-	void SpawnStaticMesh(int32 StageIndex);
-	
-	UFUNCTION(BlueprintCallable)
-	void SpawnGimmicks(int32 StageIndex);
 
 	UFUNCTION(BlueprintCallable)
 	void ClearStage();
-	
-	UFUNCTION(BlueprintCallable)
-	void ClearStaticMesh();
-	
-	UFUNCTION(BlueprintCallable)
-	void ClearEnemies();
-	
-	UFUNCTION(BlueprintCallable)
-	void ClearGimmicks();
-
-	UFUNCTION(BlueprintCallable)
-	void SpawnActors(int32 StageIndex);
-
-	UFUNCTION(BlueprintCallable)
-	void SpawnScoutCamera(int32 StageIndex);
-
-	UFUNCTION(BlueprintCallable)
-	void ClearActors();
-
-	UFUNCTION(BlueprintCallable)
-	void SpawnLevelInstances(int32 StageIndex);
-
-	UFUNCTION(BlueprintCallable)
-	void ClearLevelInstances();
 
 	UFUNCTION()
 	void OnLevelInstanceLoaded();
-
-	UFUNCTION(BlueprintCallable)
-	void ClearScoutCamera();
-
-	UFUNCTION(BlueprintCallable)
-	void ClearPlayerCharacter();
 
 	FTransform GetPlayerStartTransform() const { return PlayerStartTransform; }
 
@@ -93,15 +54,18 @@ protected:
 	virtual void BeginPlay() override;
 
 private:
+	void AdvanceRules();
+	void OnAllRulesFinished();
+	void SetupScoutCamera(AActor* CameraActor);
 	void ShowStageClearWidget();
 	void ShowStageFailWidget();
 	void ShowCredits();
 	void ProceedToNextStage();
-	
+
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class UScoutingWidget> ScoutingWidgetClass = nullptr;
-	
+
 	UPROPERTY(EditDefaultsOnly, Category = "UI")
 	TSubclassOf<class UUserWidget> StageClearWidgetClass = nullptr;
 
@@ -117,38 +81,33 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Stage")
 	class UStageData* StageData = nullptr;
 
-
 private:
 	UPROPERTY()
 	class UScoutingWidget* ScoutingWidget = nullptr;
 
 	UPROPERTY()
 	class UUserWidget* StageClearWidgetInstance = nullptr;
-	
+
 	UPROPERTY()
 	APawn* SpawnedPlayerCharacter = nullptr;
 
 	UPROPERTY()
-	TArray<AActor*> SpawnedMeshActors;
+	TArray<TObjectPtr<AActor>> SpawnedActors;
 
 	UPROPERTY()
-	TArray<AActor*> SpawnedEnemyActors;
-	
-	UPROPERTY()
-	TArray<AActor*> SpawnedGimmickActors;
-
-	UPROPERTY()
-	TArray<AActor*> SpawnedTriggerActors;
-
-	UPROPERTY()
-	TArray<ULevelStreamingDynamic*> SpawnedLevelStreamings;
+	TArray<TObjectPtr<ULevelStreamingDynamic>> SpawnedLevelStreamings;
 
 	UPROPERTY()
 	AActor* SpawnedScoutCameraActor = nullptr;
 
+	UPROPERTY()
+	class UStageExtractedCache* LoadedCache = nullptr;
+
 	FTransform PlayerStartTransform;
+	FName CurrentLevelName = NAME_None;
 	int32 CurrentStageIndex = 0;
-	int32 PendingLevelInstanceCount = 0;
-	int32 PendingStageIndexForEnemies = 0;
+	int32 CurrentRuleIndex = 0;
+	int32 PendingAsyncSpawns = 0;
+	bool bAdvancingRules = false;
 	FTimerHandle StageResultTimerHandle;
 };

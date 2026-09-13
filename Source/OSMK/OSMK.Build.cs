@@ -26,7 +26,8 @@ public class OSMK : ModuleRules
 			"CableComponent",
 			"NavigationSystem",
 			"LevelSequence",
-			"MovieScene"
+			"MovieScene",
+			"PCG"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] { });

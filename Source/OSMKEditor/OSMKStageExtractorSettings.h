@@ -4,6 +4,8 @@
 #include "Engine/DeveloperSettings.h"
 #include "OSMKStageExtractorSettings.generated.h"
 
+class UStageData;
+
 UCLASS(Config = EditorPerProjectUserSettings, defaultconfig, meta = (DisplayName = "Stage Extractor"))
 class UOSMKStageExtractorSettings : public UDeveloperSettings
 {
@@ -12,4 +14,7 @@ class UOSMKStageExtractorSettings : public UDeveloperSettings
 public:
 	UPROPERTY(Config, EditAnywhere, Category = "Stage Extractor")
 	TArray<TSoftObjectPtr<UWorld>> TargetLevels;
+
+	UPROPERTY(Config, EditAnywhere, Category = "Stage Extractor")
+	TSoftObjectPtr<UStageData> TargetStageData = nullptr;
 };

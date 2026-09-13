@@ -1,6 +1,7 @@
 #include "StageDataExtractorWidget.h"
 #include "Components/Button.h"
 #include "Components/DetailsView.h"
+#include "Data/StageData.h"
 #include "Utility/Stage/StageDataExtractorLibrary.h"
 #include "OSMKStageExtractorSettings.h"
 
@@ -23,6 +24,10 @@ void UStageDataExtractorWidget::NativeConstruct()
 	if (Settings)
 	{
 		TargetLevels = Settings->TargetLevels;
+		if (!Settings->TargetStageData.IsNull())
+		{
+			TargetStageData = Settings->TargetStageData.LoadSynchronous();
+		}
 	}
 }
 
@@ -32,31 +37,12 @@ void UStageDataExtractorWidget::OnExtractButtonClicked()
 	if (Settings)
 	{
 		Settings->TargetLevels = TargetLevels;
+		Settings->TargetStageData = TargetStageData;
 		Settings->SaveConfig();
 	}
 
-	if (TargetLevels.Num() > 0 && StaticMeshDataTable)
+	if (TargetStageData && TargetLevels.Num() > 0)
 	{
-		UStageDataExtractorLibrary::ExtractStaticMeshFromLevels(StaticMeshDataTable, TargetLevels);
-	}
-
-	if (TargetLevels.Num() > 0 && EnemyDataTable)
-	{
-		UStageDataExtractorLibrary::ExtractEnemyFromLevels(EnemyDataTable, TargetLevels);
-	}
-
-	if (TargetLevels.Num() > 0 && GimmickDataTable)
-	{
-		UStageDataExtractorLibrary::ExtractGimmickFromLevels(GimmickDataTable, TargetLevels);
-	}
-
-	if (TargetLevels.Num() > 0 && ActorDataTable)
-	{
-		UStageDataExtractorLibrary::ExtractActorDataFromLevels(ActorDataTable, TargetLevels);
-	}
-
-	if (TargetLevels.Num() > 0 && ScoutCameraDataTable)
-	{
-		UStageDataExtractorLibrary::ExtractScoutCameraDataFromLevels(ScoutCameraDataTable, TargetLevels);
+		UStageDataExtractorLibrary::ExtractFromStageData(TargetStageData, TargetLevels);
 	}
 }
