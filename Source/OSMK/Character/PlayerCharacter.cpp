@@ -8,6 +8,7 @@
 #include "Camera/CameraComponent.h"
 #include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Core/OSMKGameState.h"
 #include "Core/OSMKSlowMotionSubsystem.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -18,22 +19,23 @@ APlayerCharacter::APlayerCharacter()
 {
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
 
-	FirstPersonMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("First Person Mesh"));
-
-	FirstPersonMesh->SetupAttachment(GetMesh());
-	FirstPersonMesh->SetOnlyOwnerSee(true);
-	FirstPersonMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
-	FirstPersonMesh->SetCollisionProfileName(FName("NoCollision"));
-
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("First Person Camera"));
-	FirstPersonCameraComponent->SetupAttachment(FirstPersonMesh, FName("head"));
-	FirstPersonCameraComponent->SetRelativeLocationAndRotation(FVector(-2.8f, 5.89f, 0.0f),
-	                                                           FRotator(0.0f, 90.0f, -90.0f));
+	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
+	FirstPersonCameraComponent->SetRelativeLocation(FVector(0.0f, 0.0f, 70.0f));
 	FirstPersonCameraComponent->bUsePawnControlRotation = true;
 	FirstPersonCameraComponent->bEnableFirstPersonFieldOfView = true;
 	FirstPersonCameraComponent->bEnableFirstPersonScale = true;
 	FirstPersonCameraComponent->FirstPersonFieldOfView = 70.0f;
 	FirstPersonCameraComponent->FirstPersonScale = 0.6f;
+
+	FirstPersonMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("First Person Mesh"));
+
+	FirstPersonMesh->SetupAttachment(FirstPersonCameraComponent);
+	FirstPersonMesh->SetRelativeLocationAndRotation(FVector(-10.0f, 0.0f, -160.0f),
+	                                                FRotator(0.0f, -90.0f, 0.0f));
+	FirstPersonMesh->SetOnlyOwnerSee(true);
+	FirstPersonMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
+	FirstPersonMesh->SetCollisionProfileName(FName("NoCollision"));
 
 	GetMesh()->SetOwnerNoSee(true);
 	GetMesh()->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::WorldSpaceRepresentation;
@@ -56,7 +58,12 @@ void APlayerCharacter::BeginPlay()
 	Super::BeginPlay();
 
 	SlowMotionSubsystem = GetWorld()->GetSubsystem<UOSMKSlowMotionSubsystem>();
-	
+
+	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
+	{
+		OnCharacterDeath.AddUniqueDynamic(GS, &AOSMKGameState::PlayerDeath);
+	}
+
 	ResetAmmo();
 }
 
@@ -75,13 +82,40 @@ void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 	}
 }
 
+FVector APlayerCharacter::GetHeadWorldLocation() const
+{
+	const USkeletalMeshComponent* MeshComp = GetMesh();
+	if (!IsValid(MeshComp))
+	{
+		return GetActorLocation() + FVector(0.0f, 0.0f, HeadFallbackHeight);
+	}
+
+	const FVector BoneLocation = MeshComp->GetBoneLocation(HeadSocketName);
+
+	return BoneLocation.IsNearlyZero()
+		       ? GetActorLocation() + FVector(0.0f, 0.0f, HeadFallbackHeight)
+		       : BoneLocation;
+}
+
 void APlayerCharacter::Die()
 {
 	Super::Die();
 
 	DisableInput(Cast<APlayerController>(GetController()));
-	
-	SetActorHiddenInGame(true);
+
+	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
+	GetMesh()->SetSimulatePhysics(true);
+	GetMesh()->WakeAllRigidBodies();
+
+	if (!PendingImpulseDirection.IsZero())
+	{
+		GetMesh()->AddImpulseAtLocation(PendingImpulseDirection * ImpulseStrength, PendingHitLocation);
+	}
+}
+
+void APlayerCharacter::PrepareForReplay()
+{
+	GetMesh()->SetOwnerNoSee(false);
 }
 
 void APlayerCharacter::MoveInput(const FInputActionValue& Value)
@@ -167,7 +201,7 @@ void APlayerCharacter::Fire()
 
 	if (LoadedAmmo.IsEmpty())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("No Loaded Ammo"));
+		UE_LOG(LogCharacter, Warning, TEXT("No Loaded Ammo"));
 		return;
 	}
 
@@ -186,7 +220,7 @@ void APlayerCharacter::Fire()
 
 	GetWorldTimerManager().SetTimer(RestoreTimerHandle, this, &ThisClass::StopSlowMotion, PostAutoFireDelay, false);
 
-	UE_LOG(LogTemp, Warning, TEXT("Fired!"));
+	UE_LOG(LogCharacter, Warning, TEXT("Fired!"));
 }
 
 void APlayerCharacter::StopSlowMotion()

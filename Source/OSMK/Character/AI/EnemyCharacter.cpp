@@ -40,13 +40,18 @@ void AEnemyCharacter::EquipPistol()
 void AEnemyCharacter::Fire()
 {
 	FHitResult Hit;
-	if (TrySweep(PlayerCharacter, Hit, 10000.0f))
+	if (TrySweep(PlayerCharacter, Hit, MaxFireDistance))
 	{
-		UE_LOG(LogEnemy, Warning, TEXT("Hit: %s"), *Hit.GetActor()->GetName());
+		UE_LOG(LogEnemy, Warning, TEXT("Hit: %s"), *GetNameSafe(Hit.GetActor()));
 
 		if (APlayerCharacter* Player = Cast<APlayerCharacter>(Hit.GetActor()))
 		{
-			Player->ApplyDamage();
+			const FVector MuzzleLocation = IsValid(PistolMesh)
+				                               ? PistolMesh->GetSocketLocation(MuzzleSocketName)
+				                               : GetActorLocation();
+			const FVector ImpulseDirection = (Hit.ImpactPoint - MuzzleLocation).GetSafeNormal();
+
+			Player->ApplyDamage(Hit.ImpactPoint, ImpulseDirection);
 		}
 	}
 	
@@ -79,20 +84,26 @@ bool AEnemyCharacter::CanAttackTarget(AActor* TargetActor)
 void AEnemyCharacter::Die()
 {
 	Super::Die();
-	
+
 	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
 	GetMesh()->SetCollisionResponseToChannel(IgnoreCollisionChannel, ECR_Ignore);
 	GetMesh()->SetSimulatePhysics(true);
-	
 	GetMesh()->WakeAllRigidBodies();
+
+	if (!PendingImpulseDirection.IsZero())
+	{
+		GetMesh()->AddImpulseAtLocation(PendingImpulseDirection * ImpulseStrength, PendingHitLocation);
+	}
 
 	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
 	{
-		GS->NotifyEnemyKilled();
+		GS->NotifyEnemyKilled(this);
 	}
+}
 
-	FTimerHandle TimerHandle;
-	GetWorldTimerManager().SetTimer(TimerHandle, this, &ThisClass::DestroyCharacter, 2.0f, false);
+void AEnemyCharacter::FinalizeDeathAfterReplay()
+{
+	GetWorldTimerManager().SetTimer(DestroyTimerHandle, this, &ThisClass::DestroyCharacter, DestroyDelay, false);
 }
 
 void AEnemyCharacter::DestroyCharacter()

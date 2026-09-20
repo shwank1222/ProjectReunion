@@ -20,50 +20,51 @@ class OSMK_API ABulletBase : public AActor
 public:
 	ABulletBase();
 
+	virtual void Destroyed() override;
+
 protected:
 	virtual void BeginPlay() override;
 
-public:
-	virtual void Destroyed() override;
-	
-protected:
 	UFUNCTION()
 	virtual void OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse,
 	                         const FHitResult& Hit);
+
 	UFUNCTION()
 	virtual void OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
 	                            bool bFromSweep, const FHitResult& SweepResult);
 
 	static void TriggerGimmick(AActor* OtherActor);
-	
+
 	void SpawnBulletHoleDecal(const FVector& Location, const FVector& ImpactNormal) const;
-	
+
 	void SpawnBulletHitEffect(const FVector& Location, const FVector& ImpactNormal) const;
 	void SpawnBloodEffect(const FVector& Location, const FVector& ImpactNormal) const;
-	
+
 	void SpawnEffect(UNiagaraSystem* Effect, const FVector& Location, const FVector& ImpactNormal) const;
 
+private:
+	void EnemyAttack(AActor* OtherActor, const FHitResult& Hit) const;
+
+protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<UMeshComponent> MeshComponent;
-	
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<UNiagaraComponent> TrailEffect;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TObjectPtr<UNiagaraSystem> BulletHitEffect;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TObjectPtr<UNiagaraSystem> BloodEffect;
-	
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
-	TObjectPtr<UMaterialInterface> BulletHoleDecal;
+	TObjectPtr<UMeshComponent> MeshComponent = nullptr;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<UProjectileMovementComponent> ProjectileMovement;
+	TObjectPtr<UNiagaraComponent> TrailEffect = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UNiagaraSystem> BulletHitEffect = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UNiagaraSystem> BloodEffect = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
+	TObjectPtr<UMaterialInterface> BulletHoleDecal = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UProjectileMovementComponent> ProjectileMovement = nullptr;
 
 private:
-	static void EnemyAttack(AActor* OtherActor);
-	
 	UPROPERTY(EditDefaultsOnly)
 	float Lifespan = 3.0f;
 };

@@ -62,7 +62,7 @@ void ABulletBase::OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherAc
 	}
 
 	TriggerGimmick(OtherActor);
-	EnemyAttack(OtherActor);
+	EnemyAttack(OtherActor, Hit);
 
 	if (!Cast<AEnemyCharacter>(OtherActor))
 	{
@@ -86,7 +86,7 @@ void ABulletBase::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 	}
 
 	TriggerGimmick(OtherActor);
-	EnemyAttack(OtherActor);
+	EnemyAttack(OtherActor, SweepResult);
 
 	if (!Cast<AEnemyCharacter>(OtherActor))
 	{
@@ -136,10 +136,17 @@ void ABulletBase::SpawnEffect(UNiagaraSystem* Effect, const FVector& Location, c
 	UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), Effect, Location, Rotation, FVector::OneVector);
 }
 
-void ABulletBase::EnemyAttack(AActor* OtherActor)
+void ABulletBase::EnemyAttack(AActor* OtherActor, const FHitResult& Hit) const
 {
-	if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(OtherActor))
+	AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(OtherActor);
+	if (!IsValid(Enemy))
 	{
-		Enemy->ApplyDamage();
+		return;
 	}
+
+	const FVector ImpulseDirection = IsValid(ProjectileMovement)
+		                                 ? ProjectileMovement->Velocity.GetSafeNormal()
+		                                 : GetActorForwardVector();
+
+	Enemy->ApplyDamage(Hit.ImpactPoint, ImpulseDirection);
 }

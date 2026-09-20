@@ -6,7 +6,9 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyCountChanged);
 
-class UOSMKCutsceneManager;
+class AOSMKCharacterBase;
+class AEnemyCharacter;
+class AReplayCameraActor;
 
 UENUM(BlueprintType)
 enum class EOSMKStageState : uint8
@@ -23,9 +25,6 @@ class OSMK_API AOSMKGameState : public AGameState
 {
 	GENERATED_BODY()
 
-protected:
-	virtual void BeginPlay() override;
-	
 public:
 	UFUNCTION(BlueprintCallable)
 	void EndScoutingPhase();
@@ -34,7 +33,7 @@ public:
 	void SetEnemyCount(int32 Count);
 
 	UFUNCTION(BlueprintCallable)
-	void NotifyEnemyKilled();
+	void NotifyEnemyKilled(AOSMKCharacterBase* KilledEnemy);
 
 	UFUNCTION(BlueprintCallable)
 	void NotifyProjectileDestroyed();
@@ -42,16 +41,36 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ResetStageState();
 
-private:
-	void CheckStageResult();
-	
-public:
-	UPROPERTY(BlueprintAssignable)
-	FOnEnemyCountChanged OnEnemyCountChanged;
 	UFUNCTION()
 	void PlayerDeath();
-	
+
+protected:
+	virtual void BeginPlay() override;
+
+private:
+	void StartClearReplay();
+	void StartFailReplay();
+	void SpawnReplayCameraActor();
+
+	AEnemyCharacter* FindNearestEnemy(const FVector& FromLocation) const;
+
+	UFUNCTION()
+	void StageClear();
+
+	UFUNCTION()
+	void StageFailed();
+
+	UFUNCTION()
+	void OnReplayClearFinished();
+
+	UFUNCTION()
+	void OnReplayFailedFinished();
+
+public:
 	static constexpr int32 MaxBulletSlots = 6;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnEnemyCountChanged OnEnemyCountChanged;
 
 	UPROPERTY(BlueprintReadOnly)
 	EOSMKStageState CurrentStageState = EOSMKStageState::Scouting;
@@ -59,17 +78,16 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	int32 EnemyCount = 0;
 
+protected:
+	UPROPERTY(EditDefaultsOnly, Category = "Replay")
+	TSubclassOf<AReplayCameraActor> ReplayCameraActorClass = nullptr;
+
 private:
-	UFUNCTION()
-	void StageClear();
-	
-	UFUNCTION()
-	void StageFailed();
-	
-	void UnbindCutsceneManagerDelegates() const;
-	
-	int32 DestroyedProjectileCount = 0;
-	
 	UPROPERTY()
-	TObjectPtr<UOSMKCutsceneManager> CutsceneManager;
+	TObjectPtr<AOSMKCharacterBase> LastKilledTarget = nullptr;
+
+	UPROPERTY()
+	TObjectPtr<AReplayCameraActor> SpawnedReplayCameraActor = nullptr;
+
+	int32 DestroyedProjectileCount = 0;
 };

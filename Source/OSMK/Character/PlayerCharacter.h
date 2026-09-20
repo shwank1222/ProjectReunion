@@ -29,21 +29,31 @@ public:
 	virtual void BeginPlay() override;
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
-	UFUNCTION(Blueprintpure)
+	UFUNCTION(BlueprintPure)
 	FORCEINLINE USkeletalMeshComponent* GetFirstPersonMesh() const { return FirstPersonMesh; }
 
-	UFUNCTION(Blueprintpure)
+	UFUNCTION(BlueprintPure)
 	FORCEINLINE UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
+
+	FVector GetHeadWorldLocation() const;
 
 protected:
 	virtual void Die() override;
+	virtual void PrepareForReplay() override;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<USkeletalMeshComponent> FirstPersonMesh;
+	TObjectPtr<USkeletalMeshComponent> FirstPersonMesh = nullptr;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<UCameraComponent> FirstPersonCameraComponent;
+	TObjectPtr<UCameraComponent> FirstPersonCameraComponent = nullptr;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<USkeletalMeshComponent> FirstPersonPistol;
+	TObjectPtr<USkeletalMeshComponent> FirstPersonPistol = nullptr;
+
+	UPROPERTY(EditDefaultsOnly)
+	FName HeadSocketName = FName("head");
+
+	static constexpr float HeadFallbackHeight = 65.0f;
 
 #pragma region Input
 
@@ -59,23 +69,27 @@ private:
 	void StopSlowMotion();
 
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> MoveAction;
+	TObjectPtr<UInputAction> MoveAction = nullptr;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> LookAction;
+	TObjectPtr<UInputAction> LookAction = nullptr;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
-	TObjectPtr<UInputAction> FireAction;
-	
+	TObjectPtr<UInputAction> FireAction = nullptr;
+
 	UPROPERTY(EditDefaultsOnly)
 	float AutoFireDuration = 0.5f;
+
 	UPROPERTY(EditDefaultsOnly)
 	float PostAutoFireDelay = 0.5f;
-	
+
 	FTimerHandle AutoFireTimerHandle;
 	FTimerHandle RestoreTimerHandle;
-	
+
 	uint8 bIsFiring : 1 = false;
 	uint8 bIsFired : 1 = false;
-	
+
+
 #pragma endregion
 
 #pragma region Weapon
@@ -109,27 +123,29 @@ private:
 	FBulletData* GetBulletData(const FName RowName) const;
 	
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	TObjectPtr<USoundBase> HeartPulseSound;
-	
+	TObjectPtr<USoundBase> HeartPulseSound = nullptr;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	float MuzzleOffset = 10.0f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	float MaxAimDistance = 10000.0f;
-	
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon", meta = (ClampMin = "1"))
 	int32 MaxAmmoCount = 6;
-	
+
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	TObjectPtr<UDataTable> BulletDataTable;
+	TObjectPtr<UDataTable> BulletDataTable = nullptr;
 
 	UPROPERTY(VisibleAnywhere, Category = "Weapon")
 	TArray<FBulletData> LoadedAmmo;
-	
+
 	UPROPERTY()
-	TObjectPtr<UAudioComponent> HeartPulseSoundComponent;
+	TObjectPtr<UAudioComponent> HeartPulseSoundComponent = nullptr;
 
 #pragma endregion
-	
+
 private:
 	UPROPERTY()
-	TObjectPtr<UOSMKSlowMotionSubsystem> SlowMotionSubsystem;
+	TObjectPtr<UOSMKSlowMotionSubsystem> SlowMotionSubsystem = nullptr;
 };

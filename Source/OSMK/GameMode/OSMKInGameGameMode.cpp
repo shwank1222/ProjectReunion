@@ -324,7 +324,7 @@ void AOSMKInGameGameMode::HandleStageClear()
 		GS->CurrentStageState = EOSMKStageState::Clear;
 	}
 
-	GetWorldTimerManager().SetTimer(StageResultTimerHandle, this, &AOSMKInGameGameMode::ShowStageClearWidget, 1.5f, false);
+	ShowStageClearWidget();
 }
 
 void AOSMKInGameGameMode::HandleStageFail()
@@ -345,7 +345,7 @@ void AOSMKInGameGameMode::HandleStageFail()
 		HUD->SetHUDVisible(false);
 	}
 
-	GetWorldTimerManager().SetTimer(StageResultTimerHandle, this, &AOSMKInGameGameMode::ShowStageFailWidget, 1.5f, false);
+	ShowStageFailWidget();
 }
 
 void AOSMKInGameGameMode::ShowStageClearWidget()

@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "OSMKCharacterBase.h"
@@ -6,27 +6,41 @@
 #include "NiagaraComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "PhysicsEngine/BodyInstance.h"
 
 DEFINE_LOG_CATEGORY(LogCharacter);
 
 AOSMKCharacterBase::AOSMKCharacterBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
-	
+
 	PistolMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("PistolMesh"));
 	PistolMesh->SetupAttachment(GetMesh(), FName("HandGrip_R"));
-	
+
 	MuzzleEffect = CreateDefaultSubobject<UNiagaraComponent>(TEXT("MuzzleEffect"));
 	MuzzleEffect->SetupAttachment(PistolMesh, MuzzleSocketName);
 }
 
-void AOSMKCharacterBase::ApplyDamage()
+void AOSMKCharacterBase::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (bIsRecording)
+	{
+		RecordFrame();
+	}
+}
+
+void AOSMKCharacterBase::ApplyDamage(const FVector& HitLocation, const FVector& ImpulseDirection)
 {
 	if (bIsDead)
 	{
 		return;
 	}
-	
+
+	PendingHitLocation = HitLocation;
+	PendingImpulseDirection = ImpulseDirection;
+
 	Die();
 }
 
@@ -36,22 +50,85 @@ void AOSMKCharacterBase::Die()
 	{
 		return;
 	}
-	
+
 	OnCharacterDeath.Broadcast();
-	
 	GetCharacterMovement()->DisableMovement();
-	
 	bIsDead = true;
+}
+
+void AOSMKCharacterBase::StartRecording()
+{
+	RecordedFrames.Empty();
+	bIsRecording = true;
+}
+
+void AOSMKCharacterBase::StopRecording()
+{
+	bIsRecording = false;
+}
+
+void AOSMKCharacterBase::PreparePlayback()
+{
+	GetMesh()->WakeAllRigidBodies();
+}
+
+void AOSMKCharacterBase::PlaybackFrame(int32 FrameIndex)
+{
+	if (!RecordedFrames.IsValidIndex(FrameIndex))
+	{
+		return;
+	}
+
+	USkeletalMeshComponent* MeshComp = GetMesh();
+	if (!IsValid(MeshComp))
+	{
+		return;
+	}
+
+	const TArray<FTransform>& Frame = RecordedFrames[FrameIndex];
+	const int32 BodyCount = FMath::Min(MeshComp->Bodies.Num(), Frame.Num());
+
+	for (int32 i = 0; i < BodyCount; i++)
+	{
+		FBodyInstance* Body = MeshComp->Bodies[i];
+		if (Body)
+		{
+			Body->SetBodyTransform(Frame[i], ETeleportType::TeleportPhysics);
+			Body->SetLinearVelocity(FVector::ZeroVector, false);
+			Body->SetAngularVelocityInRadians(FVector::ZeroVector, false);
+		}
+	}
+}
+
+void AOSMKCharacterBase::RecordFrame()
+{
+	const USkeletalMeshComponent* MeshComp = GetMesh();
+	if (!IsValid(MeshComp))
+	{
+		return;
+	}
+
+	TArray<FTransform> Frame;
+	Frame.Reserve(MeshComp->Bodies.Num());
+
+	for (FBodyInstance* Body : MeshComp->Bodies)
+	{
+		Frame.Add(Body ? Body->GetUnrealWorldTransform() : FTransform::Identity);
+	}
+
+	RecordedFrames.Add(MoveTemp(Frame));
 }
 
 void AOSMKCharacterBase::PlayFireMontage(const USkeletalMeshComponent* SkeletalMesh) const
 {
-	if (IsValid(FireAnimMontage))
+	if (!IsValid(SkeletalMesh) || !IsValid(FireAnimMontage))
 	{
-		if (UAnimInstance* FirstPersonAnimInstance = SkeletalMesh->GetAnimInstance())
-		{
-			FirstPersonAnimInstance->Montage_Play(FireAnimMontage);
-		}
+		return;
+	}
+
+	if (UAnimInstance* AnimInstance = SkeletalMesh->GetAnimInstance())
+	{
+		AnimInstance->Montage_Play(FireAnimMontage);
 	}
 }
 
@@ -73,6 +150,6 @@ void AOSMKCharacterBase::PlayFireEffect() const
 		UE_LOG(LogCharacter, Warning, TEXT("Muzzle Effect Is Invalid"));
 		return;
 	}
-	
+
 	MuzzleEffect->Activate();
 }
