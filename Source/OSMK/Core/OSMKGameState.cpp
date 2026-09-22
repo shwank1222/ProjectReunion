@@ -5,8 +5,10 @@
 #include "Character/PlayerCharacter.h"
 #include "Character/AI/EnemyCharacter.h"
 #include "Character/ReplayCameraActor.h"
+#include "GameFramework/PlayerController.h"
 #include "GameMode/OSMKInGameGameMode.h"
 #include "Kismet/GameplayStatics.h"
+#include "UI/Ingame/OSMKIngameHUD.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogOSMKGameState, Log, All);
 
@@ -115,7 +117,6 @@ void AOSMKGameState::ResetStageState()
 
 void AOSMKGameState::PlayerDeath()
 {
-	// 다음 틱 전에 GameState 가 파괴되어도 안전하도록 WeakLambda 사용
 	GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this]()
 	{
 		StartFailReplay();
@@ -124,6 +125,8 @@ void AOSMKGameState::PlayerDeath()
 
 void AOSMKGameState::StartClearReplay()
 {
+	SetIngameHUDVisible(false);
+
 	SpawnReplayCameraActor();
 
 	if (!IsValid(SpawnedReplayCameraActor))
@@ -138,6 +141,8 @@ void AOSMKGameState::StartClearReplay()
 
 void AOSMKGameState::StartFailReplay()
 {
+	SetIngameHUDVisible(false);
+
 	APlayerCharacter* Player = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
 	SpawnReplayCameraActor();
@@ -154,6 +159,8 @@ void AOSMKGameState::StartFailReplay()
 
 void AOSMKGameState::SpawnReplayCameraActor()
 {
+	DestroyReplayCameraActor();
+
 	if (!IsValid(ReplayCameraActorClass))
 	{
 		UE_LOG(LogOSMKGameState, Error, TEXT("ReplayCameraActorClass is not set"));
@@ -172,7 +179,53 @@ void AOSMKGameState::SpawnReplayCameraActor()
 	                                                                SpawnParams);
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
+void AOSMKGameState::DestroyReplayCameraActor()
+{
+	if (IsValid(SpawnedReplayCameraActor))
+	{
+		SpawnedReplayCameraActor->Destroy();
+	}
+
+	SpawnedReplayCameraActor = nullptr;
+}
+
+void AOSMKGameState::EndReplayPresentation()
+{
+	DestroyReplayCameraActor();
+
+	UWorld* World = GetWorld();
+	if (!IsValid(World))
+	{
+		return;
+	}
+
+	if (UOSMKSlowMotionSubsystem* SlowMotion = World->GetSubsystem<UOSMKSlowMotionSubsystem>())
+	{
+		SlowMotion->RestoreTimeDilation();
+		SlowMotion->RestoreGimmickHighlight();
+	}
+}
+
+void AOSMKGameState::SetIngameHUDVisible(bool bVisible) const
+{
+	const UWorld* World = GetWorld();
+	if (!IsValid(World))
+	{
+		return;
+	}
+
+	const APlayerController* PC = World->GetFirstPlayerController();
+	if (!IsValid(PC))
+	{
+		return;
+	}
+
+	if (AOSMKIngameHUD* HUD = Cast<AOSMKIngameHUD>(PC->GetHUD()))
+	{
+		HUD->SetHUDVisible(bVisible);
+	}
+}
+
 void AOSMKGameState::StageClear()
 {
 	UWorld* World = GetWorld();
@@ -181,19 +234,12 @@ void AOSMKGameState::StageClear()
 		return;
 	}
 
-	if (UOSMKSlowMotionSubsystem* SlowMotion = World->GetSubsystem<UOSMKSlowMotionSubsystem>())
-	{
-		SlowMotion->RestoreTimeDilation();
-		SlowMotion->RestoreGimmickHighlight();
-	}
-
 	if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(World->GetAuthGameMode()))
 	{
 		GM->HandleStageClear();
 	}
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
 void AOSMKGameState::StageFailed()
 {
 	UWorld* World = GetWorld();
@@ -202,11 +248,6 @@ void AOSMKGameState::StageFailed()
 		return;
 	}
 
-	if (UOSMKSlowMotionSubsystem* SlowMotion = World->GetSubsystem<UOSMKSlowMotionSubsystem>())
-	{
-		SlowMotion->RestoreTimeDilation();
-		SlowMotion->RestoreGimmickHighlight();
-	}
 
 	if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(World->GetAuthGameMode()))
 	{
@@ -216,10 +257,23 @@ void AOSMKGameState::StageFailed()
 
 void AOSMKGameState::OnReplayClearFinished()
 {
+	APlayerCharacter* Player = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
+
+	if (IsValid(SpawnedReplayCameraActor) && IsValid(Player))
+	{
+		Player->PrepareForVictoryShot();
+		SpawnedReplayCameraActor->BeginHoldShot(Player, true);
+	}
+
 	StageClear();
 }
 
 void AOSMKGameState::OnReplayFailedFinished()
 {
+	if (IsValid(SpawnedReplayCameraActor))
+	{
+		SpawnedReplayCameraActor->BeginHoldShot(nullptr, false);
+	}
+
 	StageFailed();
 }

@@ -37,6 +37,8 @@ public:
 
 	FVector GetHeadWorldLocation() const;
 
+	void PrepareForVictoryShot();
+
 protected:
 	virtual void Die() override;
 	virtual void PrepareForReplay() override;

@@ -4,6 +4,7 @@
 #include "ReplayCameraActor.h"
 
 #include "Camera/CameraComponent.h"
+#include "Components/SkeletalMeshComponent.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "LevelInstance/LevelInstanceActor.h"
 #include "NiagaraFunctionLibrary.h"
@@ -34,6 +35,15 @@ AReplayCameraActor::AReplayCameraActor()
 void AReplayCameraActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+
+	if (bIsHoldingShot)
+	{
+		if (IsValid(TargetCharacter))
+		{
+			SetActorLocation(GetHoldPivotLocation());
+		}
+		return;
+	}
 
 	if (!bIsPlayingBack || !IsValid(TargetCharacter))
 	{
@@ -177,17 +187,7 @@ void AReplayCameraActor::SetupAngle(int32 AngleIndex)
 	}
 
 	const FVector PivotPos = TargetCharacter->GetActorLocation() + FVector(0.0f, 0.0f, CameraHeight);
-	SetActorLocation(PivotPos);
-
-	const FVector CameraPos = CalculateCameraPosition(AngleIndex);
-	const FVector ArmDir = (CameraPos - PivotPos).GetSafeNormal();
-
-	if (IsValid(SpringArmComponent))
-	{
-		SpringArmComponent->bDoCollisionTest = false;
-		SpringArmComponent->TargetArmLength = CameraDistance;
-		SpringArmComponent->SetWorldRotation(ArmDir.Rotation());
-	}
+	ApplyCameraPlacement(PivotPos, CalculateCameraPosition(AngleIndex));
 
 	if (IsValid(HitEffect))
 	{
@@ -203,6 +203,22 @@ void AReplayCameraActor::SetupAngle(int32 AngleIndex)
 			PC->SetViewTarget(this);
 		}
 	}
+}
+
+void AReplayCameraActor::ApplyCameraPlacement(const FVector& PivotPos, const FVector& CameraPos)
+{
+	SetActorLocation(PivotPos);
+
+	if (!IsValid(SpringArmComponent))
+	{
+		return;
+	}
+
+	const FVector ArmDir = (CameraPos - PivotPos).GetSafeNormal();
+
+	SpringArmComponent->bDoCollisionTest = false;
+	SpringArmComponent->TargetArmLength = CameraDistance;
+	SpringArmComponent->SetWorldRotation(ArmDir.Rotation());
 }
 
 FVector AReplayCameraActor::CalculateCameraPosition(int32 AngleIndex) const
@@ -227,6 +243,22 @@ FVector AReplayCameraActor::CalculateCameraPosition(int32 AngleIndex) const
 	default:
 		return TargetLocation;
 	}
+}
+
+FVector AReplayCameraActor::GetHoldPivotLocation() const
+{
+	if (!IsValid(TargetCharacter))
+	{
+		return GetActorLocation();
+	}
+
+	const USkeletalMeshComponent* MeshComp = TargetCharacter->GetMesh();
+	if (IsValid(MeshComp) && MeshComp->IsSimulatingPhysics())
+	{
+		return MeshComp->Bounds.Origin;
+	}
+
+	return TargetCharacter->GetActorLocation() + FVector(0.0f, 0.0f, CameraHeight);
 }
 
 TArray<FHitResult> AReplayCameraActor::GatherLineTraceActors(const FCollisionQueryParams& Params) const
@@ -335,5 +367,47 @@ void AReplayCameraActor::FinishReplay()
 	}
 
 	OnReplayFinished.Broadcast();
-	Destroy();
+}
+
+void AReplayCameraActor::BeginHoldShot(AOSMKCharacterBase* HoldTarget, bool bUseFrontAngle)
+{
+	bIsPlayingBack = false;
+	GetWorldTimerManager().ClearTimer(RecordingTimerHandle);
+
+	RestoreHiddenActors();
+
+	if (IsValid(HoldTarget))
+	{
+		TargetCharacter = HoldTarget;
+	}
+
+	if (!IsValid(TargetCharacter))
+	{
+		SetActorTickEnabled(false);
+		return;
+	}
+
+	bIsHoldingShot = true;
+	SetActorTickEnabled(true);
+
+	const FVector PivotPos = GetHoldPivotLocation();
+
+	if (bUseFrontAngle)
+	{
+		ApplyCameraPlacement(PivotPos, PivotPos + TargetCharacter->GetActorForwardVector() * CameraDistance);
+	}
+	else
+	{
+		SetActorLocation(PivotPos);
+	}
+
+	HideActorsBetweenCameraAndTarget();
+
+	if (const UWorld* World = GetWorld())
+	{
+		if (APlayerController* PC = World->GetFirstPlayerController())
+		{
+			PC->SetViewTarget(this);
+		}
+	}
 }

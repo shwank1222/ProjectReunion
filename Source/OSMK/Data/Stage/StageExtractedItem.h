@@ -14,7 +14,7 @@ enum class EStageExtractField : uint8
 	Materials  = 1 << 4,
 	LevelAsset = 1 << 5,
 	SpringArm  = 1 << 6,
-	PCGExtent  = 1 << 7,
+	PCGParams  = 1 << 7,
 };
 ENUM_CLASS_FLAGS(EStageExtractField)
 
@@ -48,7 +48,7 @@ struct FStageExtractedItem
 	FVector SpringArmSocketOffset = FVector::ZeroVector;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "StageData")
-	FVector PCGExtent = FVector::ZeroVector;
+	TMap<FName, FString> PCGParams;
 };
 
 USTRUCT(BlueprintType)

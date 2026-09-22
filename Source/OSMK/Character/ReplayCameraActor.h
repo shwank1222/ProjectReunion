@@ -26,6 +26,8 @@ public:
 
 	void StartReplay(AOSMKCharacterBase* Target);
 
+	void BeginHoldShot(AOSMKCharacterBase* HoldTarget, bool bUseFrontAngle);
+
 	UFUNCTION(BlueprintCallable, Category = "Replay")
 	void SetReplayTarget(AOSMKCharacterBase* Target) { TargetCharacter = Target; }
 
@@ -37,7 +39,9 @@ public:
 
 private:
 	void SetupAngle(int32 AngleIndex);
+	void ApplyCameraPlacement(const FVector& PivotPos, const FVector& CameraPos);
 	FVector CalculateCameraPosition(int32 AngleIndex) const;
+	FVector GetHoldPivotLocation() const;
 
 	TArray<FHitResult> GatherLineTraceActors(const FCollisionQueryParams& Params) const;
 	TArray<AActor*> GatherSphereOverlapActors(const FCollisionQueryParams& Params) const;
@@ -96,6 +100,8 @@ private:
 	int32 CurrentPlaybackFrame = 0;
 
 	uint8 bIsPlayingBack : 1 = false;
+
+	uint8 bIsHoldingShot : 1 = false;
 
 	FTimerHandle RecordingTimerHandle;
 };

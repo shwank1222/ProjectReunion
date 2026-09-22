@@ -206,6 +206,11 @@ void AOSMKInGameGameMode::SetupScoutCamera(AActor* CameraActor)
 
 void AOSMKInGameGameMode::ClearStage()
 {
+	if (AOSMKGameState* GS = GetGameState<AOSMKGameState>())
+	{
+		GS->EndReplayPresentation();
+	}
+
 	for (AActor* Actor : SpawnedActors)
 	{
 		if (IsValid(Actor))
@@ -386,6 +391,11 @@ void AOSMKInGameGameMode::ShowStageFailWidget()
 
 void AOSMKInGameGameMode::ShowCredits()
 {
+	if (AOSMKGameState* GS = GetGameState<AOSMKGameState>())
+	{
+		GS->EndReplayPresentation();
+	}
+
 	if (!CreditsWidgetClass)
 	{
 		return;

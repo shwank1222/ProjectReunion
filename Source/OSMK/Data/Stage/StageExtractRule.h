@@ -41,12 +41,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Rule", meta = (ToolTip = "If true, only actors with exactly TargetClass match. If false, subclasses also match."))
 	bool bMatchExactClass = true;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Rule",
+		meta = (EditCondition = "Fields & EStageExtractField::PCGParams", EditConditionHides,
+			ToolTip = "Extra property paths to capture. The bounds box extent is captured automatically, so this is only for additional values. Use \"PropertyName\" for an actor property, or \"ComponentName.PropertyName\" for a component property."))
+	TArray<FName> PCGParamNames;
+
 #if WITH_EDITOR
 	virtual void ExtractFromWorld(UWorld* World, FName LevelName, UStageExtractedCache* Cache) const;
 
 protected:
 	virtual bool MatchesActor(const AActor* Actor) const;
 	virtual void FillItem(const AActor* Actor, FStageExtractedItem& OutItem) const;
+	void CaptureParam(const AActor* Actor, FName ParamPath, FStageExtractedItem& OutItem) const;
 #endif
 
 public:
@@ -57,5 +63,10 @@ protected:
 
 	virtual void SpawnItem(FStageSpawnContext& Ctx, const FStageExtractedItem& Item) const;
 	virtual void ConfigureSpawnedActor(AActor* SpawnedActor, const FStageExtractedItem& Item, FStageSpawnContext& Ctx) const;
-	void ApplyPCGExtent(AActor* SpawnedActor, const FStageExtractedItem& Item, FStageSpawnContext& Ctx) const;
+
+	void ApplyPCGParams(AActor* SpawnedActor, const FStageExtractedItem& Item) const;
+	void RegeneratePCG(AActor* SpawnedActor, FStageSpawnContext& Ctx) const;
+
+	static UObject* ResolveParamTarget(const AActor* Actor, FName ParamPath, FName& OutPropertyName);
+	static void RefreshAfterParamChange(UObject* Target);
 };

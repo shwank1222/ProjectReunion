@@ -118,6 +118,28 @@ void APlayerCharacter::PrepareForReplay()
 	GetMesh()->SetOwnerNoSee(false);
 }
 
+void APlayerCharacter::PrepareForVictoryShot()
+{
+	DisableInput(Cast<APlayerController>(GetController()));
+
+	GetMesh()->SetOwnerNoSee(false);
+
+	if (IsValid(PistolMesh))
+	{
+		PistolMesh->SetOwnerNoSee(false);
+	}
+
+	if (IsValid(FirstPersonMesh))
+	{
+		FirstPersonMesh->SetHiddenInGame(true);
+	}
+
+	if (IsValid(FirstPersonPistol))
+	{
+		FirstPersonPistol->SetHiddenInGame(true);
+	}
+}
+
 void APlayerCharacter::MoveInput(const FInputActionValue& Value)
 {
 	if (!GetController())

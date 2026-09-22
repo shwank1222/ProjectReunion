@@ -12,6 +12,29 @@
 #include "EngineUtils.h"
 #endif
 
+DEFINE_LOG_CATEGORY_STATIC(LogStageExtract, Log, All);
+
+#if WITH_EDITOR
+namespace
+{
+	const UBoxComponent* FindBoundsBoxComponent(const AActor* Actor)
+	{
+		TArray<UBoxComponent*> BoxComps;
+		Actor->GetComponents<UBoxComponent>(BoxComps);
+
+		for (const UBoxComponent* Box : BoxComps)
+		{
+			if (Box && Box->GetName().Contains(TEXT("FloorBounds")))
+			{
+				return Box;
+			}
+		}
+
+		return BoxComps.Num() > 0 ? BoxComps[0] : nullptr;
+	}
+}
+#endif
+
 #if WITH_EDITOR
 void UStageExtractRule::ExtractFromWorld(UWorld* World, FName LevelName, UStageExtractedCache* Cache) const
 {
@@ -90,30 +113,42 @@ void UStageExtractRule::FillItem(const AActor* Actor, FStageExtractedItem& OutIt
 		}
 	}
 
-	if (HasField(EStageExtractField::PCGExtent))
+	if (HasField(EStageExtractField::PCGParams))
 	{
-		TArray<UBoxComponent*> BoxComps;
-		Actor->GetComponents<UBoxComponent>(BoxComps);
-
-		UBoxComponent* Target = nullptr;
-		for (UBoxComponent* Box : BoxComps)
+		if (const UBoxComponent* Bounds = FindBoundsBoxComponent(Actor))
 		{
-			if (Box && Box->GetName().Contains(TEXT("FloorBounds")))
-			{
-				Target = Box;
-				break;
-			}
-		}
-		if (!Target && BoxComps.Num() > 0)
-		{
-			Target = BoxComps[0];
+			CaptureParam(Actor, FName(*(Bounds->GetName() + TEXT(".BoxExtent"))), OutItem);
 		}
 
-		if (Target)
+		for (const FName& ParamPath : PCGParamNames)
 		{
-			OutItem.PCGExtent = Target->GetUnscaledBoxExtent();
+			CaptureParam(Actor, ParamPath, OutItem);
 		}
 	}
+}
+
+void UStageExtractRule::CaptureParam(const AActor* Actor, FName ParamPath, FStageExtractedItem& OutItem) const
+{
+	FName PropertyName = NAME_None;
+	const UObject* Target = ResolveParamTarget(Actor, ParamPath, PropertyName);
+	if (!Target)
+	{
+		UE_LOG(LogStageExtract, Warning, TEXT("[%s] PCGParam '%s': target not found on %s"),
+			*RuleId.ToString(), *ParamPath.ToString(), *Actor->GetName());
+		return;
+	}
+
+	const FProperty* Prop = Target->GetClass()->FindPropertyByName(PropertyName);
+	if (!Prop)
+	{
+		UE_LOG(LogStageExtract, Warning, TEXT("[%s] PCGParam '%s': property '%s' not found on %s"),
+			*RuleId.ToString(), *ParamPath.ToString(), *PropertyName.ToString(), *Target->GetName());
+		return;
+	}
+
+	FString ValueText;
+	Prop->ExportText_InContainer(0, ValueText, Target, nullptr, nullptr, PPF_None);
+	OutItem.PCGParams.Add(ParamPath, ValueText);
 }
 #endif
 
@@ -167,7 +202,8 @@ void UStageExtractRule::SpawnItem(FStageSpawnContext& Ctx, const FStageExtracted
 	}
 
 	ConfigureSpawnedActor(Spawned, Item, Ctx);
-	ApplyPCGExtent(Spawned, Item, Ctx);
+	ApplyPCGParams(Spawned, Item);
+	RegeneratePCG(Spawned, Ctx);
 
 	if (Ctx.TrackActor)
 	{
@@ -224,39 +260,53 @@ void UStageExtractRule::ConfigureSpawnedActor(AActor* SpawnedActor, const FStage
 	}
 }
 
-void UStageExtractRule::ApplyPCGExtent(AActor* SpawnedActor, const FStageExtractedItem& Item, FStageSpawnContext& Ctx) const
+void UStageExtractRule::ApplyPCGParams(AActor* SpawnedActor, const FStageExtractedItem& Item) const
 {
-	if (!SpawnedActor || !HasField(EStageExtractField::PCGExtent))
+	if (!SpawnedActor || !HasField(EStageExtractField::PCGParams))
 	{
 		return;
 	}
 
-	TArray<UBoxComponent*> BoxComps;
-	SpawnedActor->GetComponents<UBoxComponent>(BoxComps);
-
-	UBoxComponent* Target = nullptr;
-	for (UBoxComponent* Box : BoxComps)
+	for (const TPair<FName, FString>& Param : Item.PCGParams)
 	{
-		if (Box && Box->GetName().Contains(TEXT("FloorBounds")))
+		FName PropertyName = NAME_None;
+		UObject* Target = ResolveParamTarget(SpawnedActor, Param.Key, PropertyName);
+		if (!Target)
 		{
-			Target = Box;
-			break;
+			UE_LOG(LogStageExtract, Warning, TEXT("[%s] PCGParam '%s': target not found on %s"),
+				*RuleId.ToString(), *Param.Key.ToString(), *SpawnedActor->GetName());
+			continue;
 		}
-	}
-	if (!Target && BoxComps.Num() > 0)
-	{
-		Target = BoxComps[0];
-	}
 
-	if (!Target)
-	{
-		return;
-	}
+		const FProperty* Prop = Target->GetClass()->FindPropertyByName(PropertyName);
+		if (!Prop)
+		{
+			UE_LOG(LogStageExtract, Warning, TEXT("[%s] PCGParam '%s': property '%s' not found on %s"),
+				*RuleId.ToString(), *Param.Key.ToString(), *PropertyName.ToString(), *Target->GetName());
+			continue;
+		}
 
-	Target->SetBoxExtent(Item.PCGExtent, true);
+		void* ValuePtr = Prop->ContainerPtrToValuePtr<void>(Target);
+		if (!Prop->ImportText_Direct(*Param.Value, ValuePtr, Target, PPF_None))
+		{
+			UE_LOG(LogStageExtract, Warning, TEXT("[%s] PCGParam '%s': failed to import '%s'"),
+				*RuleId.ToString(), *Param.Key.ToString(), *Param.Value);
+			continue;
+		}
+
+		RefreshAfterParamChange(Target);
+	}
 
 	SpawnedActor->RerunConstructionScripts();
 	SpawnedActor->SetActorTransform(Item.Transform);
+}
+
+void UStageExtractRule::RegeneratePCG(AActor* SpawnedActor, FStageSpawnContext& Ctx) const
+{
+	if (!SpawnedActor || !HasField(EStageExtractField::PCGParams))
+	{
+		return;
+	}
 
 	TArray<UPCGComponent*> PCGComps;
 	SpawnedActor->GetComponents<UPCGComponent>(PCGComps);
@@ -279,5 +329,67 @@ void UStageExtractRule::ApplyPCGExtent(AActor* SpawnedActor, const FStageExtract
 		PCG->OnPCGGraphGeneratedDelegate.AddUObject(Waiter, &UStageExtractPCGWaiter::HandlePCGGenerated);
 
 		PCG->GenerateLocal(true);
+	}
+}
+
+UObject* UStageExtractRule::ResolveParamTarget(const AActor* Actor, FName ParamPath, FName& OutPropertyName)
+{
+	OutPropertyName = NAME_None;
+
+	if (!Actor || ParamPath == NAME_None)
+	{
+		return nullptr;
+	}
+
+	FString ComponentName;
+	FString PropertyName;
+	if (!ParamPath.ToString().Split(TEXT("."), &ComponentName, &PropertyName))
+	{
+		OutPropertyName = ParamPath;
+		return const_cast<AActor*>(Actor);
+	}
+
+	OutPropertyName = FName(*PropertyName);
+
+	TArray<UActorComponent*> Components;
+	Actor->GetComponents(Components);
+
+	for (UActorComponent* Comp : Components)
+	{
+		if (Comp && Comp->GetName() == ComponentName)
+		{
+			return Comp;
+		}
+	}
+
+	for (UActorComponent* Comp : Components)
+	{
+		if (!Comp)
+		{
+			continue;
+		}
+
+		const FString InstanceName = Comp->GetName();
+		if (InstanceName.Contains(ComponentName) || ComponentName.Contains(InstanceName))
+		{
+			return Comp;
+		}
+	}
+
+	return nullptr;
+}
+
+void UStageExtractRule::RefreshAfterParamChange(UObject* Target)
+{
+	if (UBoxComponent* Box = Cast<UBoxComponent>(Target))
+	{
+		Box->SetBoxExtent(Box->GetUnscaledBoxExtent(), true);
+		return;
+	}
+
+	if (USceneComponent* SceneComp = Cast<USceneComponent>(Target))
+	{
+		SceneComp->UpdateBounds();
+		SceneComp->MarkRenderStateDirty();
 	}
 }
