@@ -140,6 +140,17 @@ void APlayerCharacter::PrepareForVictoryShot()
 	}
 }
 
+void APlayerCharacter::CancelPendingFireTimers()
+{
+	GetWorldTimerManager().ClearTimer(AutoFireTimerHandle);
+	GetWorldTimerManager().ClearTimer(RestoreTimerHandle);
+
+	StopHeartPulseSound();
+
+	bIsFiring = false;
+	bIsFired = false;
+}
+
 void APlayerCharacter::MoveInput(const FInputActionValue& Value)
 {
 	if (!GetController())

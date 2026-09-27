@@ -97,7 +97,8 @@ private:
 	TArray<TObjectPtr<UPrimitiveComponent>> HiddenComponents;
 
 	int32 CurrentAngleIndex = 0;
-	int32 CurrentPlaybackFrame = 0;
+
+	double PlaybackStartRealTime = 0.0;
 
 	uint8 bIsPlayingBack : 1 = false;
 

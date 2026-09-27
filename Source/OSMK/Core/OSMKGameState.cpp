@@ -126,6 +126,7 @@ void AOSMKGameState::PlayerDeath()
 void AOSMKGameState::StartClearReplay()
 {
 	SetIngameHUDVisible(false);
+	CancelPlayerFireTimers();
 
 	SpawnReplayCameraActor();
 
@@ -142,6 +143,7 @@ void AOSMKGameState::StartClearReplay()
 void AOSMKGameState::StartFailReplay()
 {
 	SetIngameHUDVisible(false);
+	CancelPlayerFireTimers();
 
 	APlayerCharacter* Player = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
@@ -189,20 +191,11 @@ void AOSMKGameState::DestroyReplayCameraActor()
 	SpawnedReplayCameraActor = nullptr;
 }
 
-void AOSMKGameState::EndReplayPresentation()
+void AOSMKGameState::CancelPlayerFireTimers() const
 {
-	DestroyReplayCameraActor();
-
-	UWorld* World = GetWorld();
-	if (!IsValid(World))
+	if (APlayerCharacter* Player = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)))
 	{
-		return;
-	}
-
-	if (UOSMKSlowMotionSubsystem* SlowMotion = World->GetSubsystem<UOSMKSlowMotionSubsystem>())
-	{
-		SlowMotion->RestoreTimeDilation();
-		SlowMotion->RestoreGimmickHighlight();
+		Player->CancelPendingFireTimers();
 	}
 }
 
@@ -234,6 +227,12 @@ void AOSMKGameState::StageClear()
 		return;
 	}
 
+	if (UOSMKSlowMotionSubsystem* SlowMotion = World->GetSubsystem<UOSMKSlowMotionSubsystem>())
+	{
+		SlowMotion->RestoreTimeDilation();
+		SlowMotion->RestoreGimmickHighlight();
+	}
+
 	if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(World->GetAuthGameMode()))
 	{
 		GM->HandleStageClear();
@@ -248,6 +247,11 @@ void AOSMKGameState::StageFailed()
 		return;
 	}
 
+	if (UOSMKSlowMotionSubsystem* SlowMotion = World->GetSubsystem<UOSMKSlowMotionSubsystem>())
+	{
+		SlowMotion->RestoreTimeDilation();
+		SlowMotion->RestoreGimmickHighlight();
+	}
 
 	if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(World->GetAuthGameMode()))
 	{

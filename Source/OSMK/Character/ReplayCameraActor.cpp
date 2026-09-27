@@ -50,16 +50,26 @@ void AReplayCameraActor::Tick(float DeltaTime)
 		return;
 	}
 
-	if (CurrentPlaybackFrame >= TargetCharacter->GetRecordedFrameCount())
+	const UWorld* World = GetWorld();
+	if (!IsValid(World))
 	{
+		return;
+	}
+
+	const float RecordedDuration = TargetCharacter->GetRecordedDuration();
+	const float Elapsed = static_cast<float>(World->GetRealTimeSeconds() - PlaybackStartRealTime);
+
+	if (Elapsed >= RecordedDuration)
+	{
+		TargetCharacter->PlaybackAtTime(RecordedDuration);
+
 		bIsPlayingBack = false;
 		SetActorTickEnabled(false);
 		OnAngleComplete();
 		return;
 	}
 
-	TargetCharacter->PlaybackFrame(CurrentPlaybackFrame);
-	CurrentPlaybackFrame++;
+	TargetCharacter->PlaybackAtTime(Elapsed);
 }
 
 void AReplayCameraActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -352,7 +362,11 @@ void AReplayCameraActor::OnAngleComplete()
 		TargetCharacter->PreparePlayback();
 	}
 
-	CurrentPlaybackFrame = 0;
+	if (const UWorld* World = GetWorld())
+	{
+		PlaybackStartRealTime = World->GetRealTimeSeconds();
+	}
+
 	bIsPlayingBack = true;
 	SetActorTickEnabled(true);
 }

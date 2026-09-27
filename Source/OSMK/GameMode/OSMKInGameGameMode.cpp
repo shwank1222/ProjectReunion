@@ -208,7 +208,7 @@ void AOSMKInGameGameMode::ClearStage()
 {
 	if (AOSMKGameState* GS = GetGameState<AOSMKGameState>())
 	{
-		GS->EndReplayPresentation();
+		GS->DestroyReplayCameraActor();
 	}
 
 	for (AActor* Actor : SpawnedActors)
@@ -393,7 +393,7 @@ void AOSMKInGameGameMode::ShowCredits()
 {
 	if (AOSMKGameState* GS = GetGameState<AOSMKGameState>())
 	{
-		GS->EndReplayPresentation();
+		GS->DestroyReplayCameraActor();
 	}
 
 	if (!CreditsWidgetClass)
