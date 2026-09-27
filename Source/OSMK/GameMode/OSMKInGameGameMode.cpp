@@ -318,33 +318,11 @@ void AOSMKInGameGameMode::ActivateEnemies()
 
 void AOSMKInGameGameMode::HandleStageClear()
 {
-	AOSMKGameState* GS = GetGameState<AOSMKGameState>();
-	if (GS && GS->CurrentStageState != EOSMKStageState::InProgress)
-	{
-		return;
-	}
-
-	if (GS)
-	{
-		GS->CurrentStageState = EOSMKStageState::Clear;
-	}
-
 	ShowStageClearWidget();
 }
 
 void AOSMKInGameGameMode::HandleStageFail()
 {
-	AOSMKGameState* GS = GetGameState<AOSMKGameState>();
-	if (GS && GS->CurrentStageState != EOSMKStageState::InProgress)
-	{
-		return;
-	}
-
-	if (GS)
-	{
-		GS->CurrentStageState = EOSMKStageState::Failed;
-	}
-
 	if (AOSMKIngameHUD* HUD = Cast<AOSMKIngameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
 	{
 		HUD->SetHUDVisible(false);

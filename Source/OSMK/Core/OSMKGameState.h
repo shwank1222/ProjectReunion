@@ -55,7 +55,9 @@ private:
 	void SpawnReplayCameraActor();
 
 	void SetIngameHUDVisible(bool bVisible) const;
-	void CancelPlayerFireTimers() const;
+	void LockPlayerForReplay() const;
+
+	bool TryLockOutcome();
 
 	AEnemyCharacter* FindNearestEnemy(const FVector& FromLocation) const;
 

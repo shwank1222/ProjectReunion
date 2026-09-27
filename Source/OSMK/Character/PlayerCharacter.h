@@ -39,7 +39,7 @@ public:
 
 	void PrepareForVictoryShot();
 
-	void CancelPendingFireTimers();
+	void LockForReplay();
 
 protected:
 	virtual void Die() override;

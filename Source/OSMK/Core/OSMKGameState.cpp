@@ -125,8 +125,13 @@ void AOSMKGameState::PlayerDeath()
 
 void AOSMKGameState::StartClearReplay()
 {
+	if (!TryLockOutcome())
+	{
+		return;
+	}
+
 	SetIngameHUDVisible(false);
-	CancelPlayerFireTimers();
+	LockPlayerForReplay();
 
 	SpawnReplayCameraActor();
 
@@ -142,8 +147,13 @@ void AOSMKGameState::StartClearReplay()
 
 void AOSMKGameState::StartFailReplay()
 {
+	if (!TryLockOutcome())
+	{
+		return;
+	}
+
 	SetIngameHUDVisible(false);
-	CancelPlayerFireTimers();
+	LockPlayerForReplay();
 
 	APlayerCharacter* Player = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 
@@ -191,11 +201,22 @@ void AOSMKGameState::DestroyReplayCameraActor()
 	SpawnedReplayCameraActor = nullptr;
 }
 
-void AOSMKGameState::CancelPlayerFireTimers() const
+bool AOSMKGameState::TryLockOutcome()
+{
+	if (CurrentStageState != EOSMKStageState::InProgress)
+	{
+		return false;
+	}
+
+	CurrentStageState = EOSMKStageState::Recap;
+	return true;
+}
+
+void AOSMKGameState::LockPlayerForReplay() const
 {
 	if (APlayerCharacter* Player = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0)))
 	{
-		Player->CancelPendingFireTimers();
+		Player->LockForReplay();
 	}
 }
 
@@ -221,6 +242,13 @@ void AOSMKGameState::SetIngameHUDVisible(bool bVisible) const
 
 void AOSMKGameState::StageClear()
 {
+	if (CurrentStageState != EOSMKStageState::Recap)
+	{
+		return;
+	}
+
+	CurrentStageState = EOSMKStageState::Clear;
+
 	UWorld* World = GetWorld();
 	if (!IsValid(World))
 	{
@@ -241,6 +269,13 @@ void AOSMKGameState::StageClear()
 
 void AOSMKGameState::StageFailed()
 {
+	if (CurrentStageState != EOSMKStageState::Recap)
+	{
+		return;
+	}
+
+	CurrentStageState = EOSMKStageState::Failed;
+
 	UWorld* World = GetWorld();
 	if (!IsValid(World))
 	{
