@@ -49,6 +49,18 @@ struct FStageExtractedItem
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "StageData")
 	TMap<FName, FString> PCGParams;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "StageData|Brush")
+	bool bHasBrushBounds = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "StageData|Brush")
+	FVector BrushBoxCenter = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "StageData|Brush")
+	FVector BrushBoxExtent = FVector::ZeroVector;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "StageData|Brush")
+	FName BrushCollisionProfile = NAME_None;
 };
 
 USTRUCT(BlueprintType)

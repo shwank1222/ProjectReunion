@@ -64,7 +64,7 @@ protected:
 	virtual void SpawnItem(FStageSpawnContext& Ctx, const FStageExtractedItem& Item) const;
 	virtual void ConfigureSpawnedActor(AActor* SpawnedActor, const FStageExtractedItem& Item, FStageSpawnContext& Ctx) const;
 
-	void ApplyPCGParams(AActor* SpawnedActor, const FStageExtractedItem& Item) const;
+	bool ApplyPCGParams(AActor* SpawnedActor, const FStageExtractedItem& Item, bool bComponentParams) const;
 	void RegeneratePCG(AActor* SpawnedActor, FStageSpawnContext& Ctx) const;
 
 	static UObject* ResolveParamTarget(const AActor* Actor, FName ParamPath, FName& OutPropertyName);

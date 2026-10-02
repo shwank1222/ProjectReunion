@@ -1,6 +1,7 @@
 #include "Data/Stage/StageExtractRule.h"
 #include "Data/Stage/StageExtractedCache.h"
 #include "Data/Stage/StageExtractPCGWaiter.h"
+#include "Data/Stage/StageExtractVolumeHelper.h"
 #include "Engine/World.h"
 #include "GameFramework/Actor.h"
 #include "Components/StaticMeshComponent.h"
@@ -113,6 +114,8 @@ void UStageExtractRule::FillItem(const AActor* Actor, FStageExtractedItem& OutIt
 		}
 	}
 
+	StageExtractVolume::CaptureBrushBounds(Actor, OutItem);
+
 	if (HasField(EStageExtractField::PCGParams))
 	{
 		if (const UBoxComponent* Bounds = FindBoundsBoxComponent(Actor))
@@ -192,17 +195,23 @@ void UStageExtractRule::SpawnItem(FStageSpawnContext& Ctx, const FStageExtracted
 		return;
 	}
 
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-
-	AActor* Spawned = Ctx.World->SpawnActor<AActor>(ClassToSpawn, Item.Transform, SpawnParams);
+	AActor* Spawned = Ctx.World->SpawnActorDeferred<AActor>(ClassToSpawn, Item.Transform, nullptr, nullptr,
+		ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn);
 	if (!Spawned)
 	{
 		return;
 	}
 
+	ApplyPCGParams(Spawned, Item, false);
+	Spawned->FinishSpawning(Item.Transform);
+	StageExtractVolume::ApplyBrushBounds(Spawned, Item);
+
 	ConfigureSpawnedActor(Spawned, Item, Ctx);
-	ApplyPCGParams(Spawned, Item);
+	if (ApplyPCGParams(Spawned, Item, true))
+	{
+		Spawned->RerunConstructionScripts();
+		Spawned->SetActorTransform(Item.Transform);
+	}
 	RegeneratePCG(Spawned, Ctx);
 
 	if (Ctx.TrackActor)
@@ -260,15 +269,23 @@ void UStageExtractRule::ConfigureSpawnedActor(AActor* SpawnedActor, const FStage
 	}
 }
 
-void UStageExtractRule::ApplyPCGParams(AActor* SpawnedActor, const FStageExtractedItem& Item) const
+bool UStageExtractRule::ApplyPCGParams(AActor* SpawnedActor, const FStageExtractedItem& Item, bool bComponentParams) const
 {
 	if (!SpawnedActor || !HasField(EStageExtractField::PCGParams))
 	{
-		return;
+		return false;
 	}
+
+	bool bApplied = false;
 
 	for (const TPair<FName, FString>& Param : Item.PCGParams)
 	{
+		const bool bIsComponentParam = Param.Key.ToString().Contains(TEXT("."));
+		if (bIsComponentParam != bComponentParams)
+		{
+			continue;
+		}
+
 		FName PropertyName = NAME_None;
 		UObject* Target = ResolveParamTarget(SpawnedActor, Param.Key, PropertyName);
 		if (!Target)
@@ -295,10 +312,10 @@ void UStageExtractRule::ApplyPCGParams(AActor* SpawnedActor, const FStageExtract
 		}
 
 		RefreshAfterParamChange(Target);
+		bApplied = true;
 	}
 
-	SpawnedActor->RerunConstructionScripts();
-	SpawnedActor->SetActorTransform(Item.Transform);
+	return bApplied;
 }
 
 void UStageExtractRule::RegeneratePCG(AActor* SpawnedActor, FStageSpawnContext& Ctx) const
