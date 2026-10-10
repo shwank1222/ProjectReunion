@@ -8,4 +8,8 @@ class FOSMKEditorModule : public IModuleInterface
 public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
+
+private:
+	TSharedPtr<class IPropertyTypeIdentifier> PropertyPickerIdentifier;
+	TSharedPtr<class IPropertyTypeIdentifier> FunctionPickerIdentifier;
 };
