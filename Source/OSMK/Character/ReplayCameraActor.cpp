@@ -8,6 +8,8 @@
 #include "GameFramework/SpringArmComponent.h"
 #include "LevelInstance/LevelInstanceActor.h"
 #include "NiagaraFunctionLibrary.h"
+#include "Misc/App.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 #include "Character/OSMKCharacterBase.h"
 #include "Core/OSMKSlowMotionSubsystem.h"
@@ -40,7 +42,8 @@ void AReplayCameraActor::Tick(float DeltaTime)
 	{
 		if (IsValid(TargetCharacter))
 		{
-			SetActorLocation(GetHoldPivotLocation());
+			SetActorLocation(FMath::VInterpTo(GetActorLocation(), GetHoldPivotLocation(), FApp::GetDeltaTime(),
+			                                  HoldFollowInterpSpeed));
 		}
 		return;
 	}
@@ -202,6 +205,11 @@ void AReplayCameraActor::SetupAngle(int32 AngleIndex)
 	if (IsValid(HitEffect))
 	{
 		UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), HitEffect, TargetCharacter->GetLastHitLocation());
+	}
+
+	if (IsValid(FireSound))
+	{
+		UGameplayStatics::PlaySoundAtLocation(this, FireSound, TargetCharacter->GetLastHitLocation());
 	}
 
 	HideActorsBetweenCameraAndTarget();
@@ -408,7 +416,7 @@ void AReplayCameraActor::BeginHoldShot(AOSMKCharacterBase* HoldTarget, bool bUse
 
 	if (bUseFrontAngle)
 	{
-		ApplyCameraPlacement(PivotPos, PivotPos + TargetCharacter->GetActorForwardVector() * CameraDistance);
+		ApplyCameraPlacement(PivotPos, PivotPos - TargetCharacter->GetActorForwardVector() * CameraDistance);
 	}
 	else
 	{

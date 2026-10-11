@@ -68,6 +68,9 @@ protected:
 	TObjectPtr<UNiagaraSystem> HitEffect = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Replay")
+	TObjectPtr<USoundBase> FireSound = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Replay")
 	float CameraDistance = 200.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Replay")
@@ -81,6 +84,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Replay")
 	float CameraProbeRadius = 50.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Replay")
+	float HoldFollowInterpSpeed = 2.0f;
 
 private:
 	static constexpr int32 ReplayAngleCount = 3;
