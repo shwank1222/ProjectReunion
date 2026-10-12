@@ -59,6 +59,8 @@ void AOSMKCharacterBase::Die()
 void AOSMKCharacterBase::StartRecording()
 {
 	RecordedFrames.Empty();
+	RecordedFrameTimes.Empty();
+	RecordingStartRealTime = 0.0;
 	bIsRecording = true;
 }
 
@@ -69,10 +71,27 @@ void AOSMKCharacterBase::StopRecording()
 
 void AOSMKCharacterBase::PreparePlayback()
 {
+	PlaybackCursor = 0;
 	GetMesh()->WakeAllRigidBodies();
 }
 
-void AOSMKCharacterBase::PlaybackFrame(int32 FrameIndex)
+void AOSMKCharacterBase::PlaybackAtTime(float ElapsedSeconds)
+{
+	if (RecordedFrameTimes.IsEmpty())
+	{
+		return;
+	}
+
+	while (PlaybackCursor + 1 < RecordedFrameTimes.Num()
+		&& RecordedFrameTimes[PlaybackCursor + 1] <= ElapsedSeconds)
+	{
+		++PlaybackCursor;
+	}
+
+	ApplyFrame(PlaybackCursor);
+}
+
+void AOSMKCharacterBase::ApplyFrame(int32 FrameIndex)
 {
 	if (!RecordedFrames.IsValidIndex(FrameIndex))
 	{
@@ -103,9 +122,15 @@ void AOSMKCharacterBase::PlaybackFrame(int32 FrameIndex)
 void AOSMKCharacterBase::RecordFrame()
 {
 	const USkeletalMeshComponent* MeshComp = GetMesh();
-	if (!IsValid(MeshComp))
+	const UWorld* World = GetWorld();
+	if (!IsValid(MeshComp) || !IsValid(World))
 	{
 		return;
+	}
+
+	if (RecordedFrames.IsEmpty())
+	{
+		RecordingStartRealTime = World->GetRealTimeSeconds();
 	}
 
 	TArray<FTransform> Frame;
@@ -117,6 +142,7 @@ void AOSMKCharacterBase::RecordFrame()
 	}
 
 	RecordedFrames.Add(MoveTemp(Frame));
+	RecordedFrameTimes.Add(static_cast<float>(World->GetRealTimeSeconds() - RecordingStartRealTime));
 }
 
 void AOSMKCharacterBase::PlayFireMontage(const USkeletalMeshComponent* SkeletalMesh) const

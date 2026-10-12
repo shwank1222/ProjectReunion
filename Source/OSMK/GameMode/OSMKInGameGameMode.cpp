@@ -208,7 +208,7 @@ void AOSMKInGameGameMode::ClearStage()
 {
 	if (AOSMKGameState* GS = GetGameState<AOSMKGameState>())
 	{
-		GS->EndReplayPresentation();
+		GS->DestroyReplayCameraActor();
 	}
 
 	for (AActor* Actor : SpawnedActors)
@@ -318,33 +318,11 @@ void AOSMKInGameGameMode::ActivateEnemies()
 
 void AOSMKInGameGameMode::HandleStageClear()
 {
-	AOSMKGameState* GS = GetGameState<AOSMKGameState>();
-	if (GS && GS->CurrentStageState != EOSMKStageState::InProgress)
-	{
-		return;
-	}
-
-	if (GS)
-	{
-		GS->CurrentStageState = EOSMKStageState::Clear;
-	}
-
 	ShowStageClearWidget();
 }
 
 void AOSMKInGameGameMode::HandleStageFail()
 {
-	AOSMKGameState* GS = GetGameState<AOSMKGameState>();
-	if (GS && GS->CurrentStageState != EOSMKStageState::InProgress)
-	{
-		return;
-	}
-
-	if (GS)
-	{
-		GS->CurrentStageState = EOSMKStageState::Failed;
-	}
-
 	if (AOSMKIngameHUD* HUD = Cast<AOSMKIngameHUD>(GetWorld()->GetFirstPlayerController()->GetHUD()))
 	{
 		HUD->SetHUDVisible(false);
@@ -393,7 +371,7 @@ void AOSMKInGameGameMode::ShowCredits()
 {
 	if (AOSMKGameState* GS = GetGameState<AOSMKGameState>())
 	{
-		GS->EndReplayPresentation();
+		GS->DestroyReplayCameraActor();
 	}
 
 	if (!CreditsWidgetClass)

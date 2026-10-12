@@ -44,7 +44,7 @@ public:
 	UFUNCTION()
 	void PlayerDeath();
 
-	void EndReplayPresentation();
+	void DestroyReplayCameraActor();
 
 protected:
 	virtual void BeginPlay() override;
@@ -53,9 +53,11 @@ private:
 	void StartClearReplay();
 	void StartFailReplay();
 	void SpawnReplayCameraActor();
-	void DestroyReplayCameraActor();
 
 	void SetIngameHUDVisible(bool bVisible) const;
+	void LockPlayerForReplay() const;
+
+	bool TryLockOutcome();
 
 	AEnemyCharacter* FindNearestEnemy(const FVector& FromLocation) const;
 

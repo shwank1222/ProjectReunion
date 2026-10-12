@@ -10,6 +10,7 @@
 #include "Components/CapsuleComponent.h"
 #include "Core/OSMKGameState.h"
 #include "Core/OSMKSlowMotionSubsystem.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Weapons/Bullets/BulletBase.h"
@@ -120,8 +121,6 @@ void APlayerCharacter::PrepareForReplay()
 
 void APlayerCharacter::PrepareForVictoryShot()
 {
-	DisableInput(Cast<APlayerController>(GetController()));
-
 	GetMesh()->SetOwnerNoSee(false);
 
 	if (IsValid(PistolMesh))
@@ -138,6 +137,20 @@ void APlayerCharacter::PrepareForVictoryShot()
 	{
 		FirstPersonPistol->SetHiddenInGame(true);
 	}
+}
+
+void APlayerCharacter::LockForReplay()
+{
+	GetWorldTimerManager().ClearTimer(AutoFireTimerHandle);
+	GetWorldTimerManager().ClearTimer(RestoreTimerHandle);
+
+	StopHeartPulseSound();
+
+	bIsFiring = false;
+	bIsFired = false;
+
+	DisableInput(Cast<APlayerController>(GetController()));
+	GetCharacterMovement()->StopMovementImmediately();
 }
 
 void APlayerCharacter::MoveInput(const FInputActionValue& Value)

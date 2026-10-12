@@ -4,6 +4,7 @@
 #include "DetailLayoutBuilder.h"
 #include "Engine/DataTable.h"
 #include "Data/StageData.h"
+#include "Core/OSMKGameState.h"
 #include "Widgets/Input/SNumericEntryBox.h"
 #include "Widgets/Text/STextBlock.h"
 
@@ -62,9 +63,9 @@ void FStageLevelConfigCustomization::CustomizeChildren(
 				SNew(SNumericEntryBox<int32>)
 				.Value(this, &FStageLevelConfigCustomization::GetBulletCount, RowName)
 				.MinValue(0)
-				.MaxValue(6)
+				.MaxValue(AOSMKGameState::MaxBulletSlots)
 				.MinSliderValue(0)
-				.MaxSliderValue(6)
+				.MaxSliderValue(AOSMKGameState::MaxBulletSlots)
 				.AllowSpin(true)
 				.OnValueCommitted(this, &FStageLevelConfigCustomization::SetBulletCount, RowName)
 			];
@@ -118,6 +119,6 @@ void FStageLevelConfigCustomization::SetBulletCount(int32 NewValue, ETextCommit:
 
 	StructHandle->NotifyPreChange();
 	FStageLevelConfig* Config = static_cast<FStageLevelConfig*>(StructData);
-	Config->BulletCounts.FindOrAdd(RowName) = FMath::Clamp(NewValue, 0, 6);
+	Config->BulletCounts.FindOrAdd(RowName) = FMath::Clamp(NewValue, 0, AOSMKGameState::MaxBulletSlots);
 	StructHandle->NotifyPostChange(EPropertyChangeType::ValueSet);
 }

@@ -27,9 +27,13 @@ public:
 	void StartRecording();
 	void StopRecording();
 	void PreparePlayback();
-	void PlaybackFrame(int32 FrameIndex);
 
-	FORCEINLINE int32 GetRecordedFrameCount() const { return RecordedFrames.Num(); }
+	void PlaybackAtTime(float ElapsedSeconds);
+
+	FORCEINLINE float GetRecordedDuration() const
+	{
+		return RecordedFrameTimes.IsEmpty() ? 0.0f : RecordedFrameTimes.Last();
+	}
 	FORCEINLINE const FVector& GetLastHitLocation() const { return PendingHitLocation; }
 
 	virtual void PrepareForReplay() {}
@@ -47,6 +51,7 @@ protected:
 
 private:
 	void RecordFrame();
+	void ApplyFrame(int32 FrameIndex);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -65,7 +70,7 @@ protected:
 	TObjectPtr<USoundBase> FireSound = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Death")
-	float ImpulseStrength = 50000.0f;
+	float ImpulseStrength = 1.0f;
 
 	UPROPERTY(VisibleAnywhere)
 	uint8 bIsDead : 1 = false;
@@ -77,4 +82,10 @@ private:
 	uint8 bIsRecording : 1 = false;
 
 	TArray<TArray<FTransform>> RecordedFrames;
+
+	TArray<float> RecordedFrameTimes;
+
+	double RecordingStartRealTime = 0.0;
+
+	int32 PlaybackCursor = 0;
 };

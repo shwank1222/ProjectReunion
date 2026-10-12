@@ -39,6 +39,8 @@ public:
 
 	void PrepareForVictoryShot();
 
+	void LockForReplay();
+
 protected:
 	virtual void Die() override;
 	virtual void PrepareForReplay() override;
