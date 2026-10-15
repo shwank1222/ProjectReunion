@@ -15,6 +15,8 @@ class ACutsceneActor;
 struct FInputActionValue;
 class UInputAction;
 class UCameraComponent;
+class UCameraShakeBase;
+class APlayerCameraManager;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnLoadedAmmoChanged);
 
@@ -146,6 +148,52 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UAudioComponent> HeartPulseSoundComponent = nullptr;
+
+#pragma endregion
+
+#pragma region CameraShake
+
+private:
+	void UpdateWalkCameraShake();
+	void StopWalkCameraShake();
+	void StartFireRecoil();
+	void UpdateFireRecoil();
+	void StopFireRecoil();
+
+	static constexpr float WalkShakeCheckInterval = 0.1f;
+
+	FTimerHandle WalkShakeTimerHandle;
+	FTimerHandle RecoilTimerHandle;
+
+	UPROPERTY(EditDefaultsOnly, Category = "CameraShake")
+	TSubclassOf<UCameraShakeBase> WalkCameraShake = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "CameraShake", meta = (ClampMin = "0.0"))
+	float WalkShakeMinSpeed = 10.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "CameraShake", meta = (ClampMin = "0.0"))
+	float WalkShakeScale = 1.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "CameraShake|Recoil")
+	float FireRecoilPitch = 5.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "CameraShake|Recoil", meta = (ClampMin = "0.0"))
+	float FireRecoilYaw = 0.5f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "CameraShake|Recoil", meta = (ClampMin = "0.0"))
+	float FireRecoilKickDuration = 0.05f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "CameraShake|Recoil", meta = (ClampMin = "0.0"))
+	float FireRecoilRecoverDuration = 0.25f;
+
+	FRotator RecoilPeak = FRotator::ZeroRotator;
+	float RecoilElapsed = 0.0f;
+	bool bRecoilActive = false;
+
+	UPROPERTY(Transient)
+	TObjectPtr<UCameraShakeBase> ActiveWalkShake = nullptr;
+
+	TWeakObjectPtr<APlayerCameraManager> WalkShakeCameraManager;
 
 #pragma endregion
 
