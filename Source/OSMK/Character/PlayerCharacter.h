@@ -96,6 +96,11 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "SlowMotion", meta = (ClampMin = "0.0"))
 	float SlowFireSoundFadeTime = 0.2f;
 
+	UPROPERTY(EditDefaultsOnly, Category = "SlowMotion", meta = (ClampMin = "0.0", ClampMax = "1.0"))
+	float SlowFireLookScale = 0.2f;
+
+	uint8 bSlowFireActive : 1 = false;
+
 	FTimerHandle AutoFireTimerHandle;
 	FTimerHandle RestoreTimerHandle;
 

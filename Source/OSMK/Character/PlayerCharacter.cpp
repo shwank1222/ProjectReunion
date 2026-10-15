@@ -266,6 +266,7 @@ void APlayerCharacter::LockForReplay()
 	}
 
 	UGameplayStatics::SetGlobalPitchModulation(this, 1.0f, SlowFireSoundFadeTime);
+	bSlowFireActive = false;
 
 	GetWorldTimerManager().ClearTimer(WalkShakeTimerHandle);
 	StopWalkCameraShake();
@@ -298,7 +299,7 @@ void APlayerCharacter::LookInput(const FInputActionValue& Value)
 		return;
 	}
 
-	const FVector2D LookVector = Value.Get<FVector2D>();
+	const FVector2D LookVector = Value.Get<FVector2D>() * (bSlowFireActive ? SlowFireLookScale : 1.0f);
 
 	AddControllerYawInput(LookVector.X);
 	AddControllerPitchInput(LookVector.Y);
@@ -338,6 +339,7 @@ void APlayerCharacter::OnHoldTriggered()
 		SlowMotionSubsystem->ApplySlowMotion(0.2f, 10000.0f);
 		SlowMotionSubsystem->ApplyGimmickHighlight();
 		UGameplayStatics::SetGlobalPitchModulation(this, SlowFireSoundPitch, SlowFireSoundFadeTime);
+		bSlowFireActive = true;
 		
 		PlayHeartPulseSound();
 	}
@@ -396,6 +398,7 @@ void APlayerCharacter::StopSlowMotion()
 	}
 
 	UGameplayStatics::SetGlobalPitchModulation(this, 1.0f, SlowFireSoundFadeTime);
+	bSlowFireActive = false;
 
 	bIsFired = false;
 }
