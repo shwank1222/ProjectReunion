@@ -13,23 +13,22 @@ public:
 	virtual void Initialize(FSubsystemCollectionBase& Collection) override;
 	virtual void Deinitialize() override;
 
-	void PlayBGM(USoundBase* NewBGM, float FadeInDuration = 1.0f);
-	void StopBGM(float FadeOutDuration = 1.0f);
+	void SetCombatLayer(bool bCombat);
 
 private:
 	void OnWorldChanged(UWorld* OldWorld, const UWorld::InitializationValues IVS);
-	void FadeIn(float Duration);
-	void FadeOut(float Duration, TFunction<void()> OnComplete = nullptr);
+	bool IsLayerPlaying() const;
+	void StartLayerBGM(USoundBase* CalmSound, USoundBase* CombatSound, float FadeInDuration);
+	float GetLayerCrossfadeDuration() const;
 
 private:
 	UPROPERTY()
-	class UAudioComponent* BGMAudioComponent = nullptr;
+	class UAudioComponent* CalmLayerComponent = nullptr;
 
 	UPROPERTY()
-	USoundBase* PendingBGM = nullptr;
+	class UAudioComponent* CombatLayerComponent = nullptr;
 
-	float PendingFadeInDuration = 1.0f;
+	bool bCombatLayer = false;
 
-	FTimerHandle FadeTimerHandle;
 	FDelegateHandle WorldChangedHandle;
 };
