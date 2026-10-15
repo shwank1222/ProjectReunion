@@ -18,7 +18,7 @@ public:
 	void SetIconHidden(bool bHidden);
 	void RestoreFromDrag();
 	void OnDragEnded();
-	void SetGrabSettings(float InHeldScale, float InMoveDuration);
+	void SetGrabSettings(float InHeldScale, float InMoveDuration, USoundBase* InGrabSound);
 
 	FOnBulletItemHovered OnBulletItemHovered;
 	FOnBulletItemHovered OnBulletItemUnhovered;
@@ -59,6 +59,9 @@ private:
 	int32 CurrentCount = 0;
 	float HeldBulletScale = 1.0f;
 	float GrabMoveDuration = 0.12f;
+
+	UPROPERTY()
+	TObjectPtr<USoundBase> GrabSound = nullptr;
 
 	FTimerHandle HoverTimerHandle;
 };

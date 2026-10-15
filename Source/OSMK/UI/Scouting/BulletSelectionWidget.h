@@ -87,6 +87,7 @@ private:
 	void OnBulletUnhovered(FName RowName);
 
 	void HandleBulletDropped(FName RowName, const FVector2D& CursorScreenPos, bool bOnCylinder);
+	void PlayBulletReleaseSound();
 	void StartCursorFly(FName BulletName, const FVector2D& CursorScreenPos, int32 SlotIndex, EBulletFlyMode Mode);
 	// void StartPopFly(int32 SlotIndex);
 	void SetItemIconHidden(FName RowName, bool bHidden);
@@ -225,6 +226,15 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "ConnectionLine", meta = (ClampMin = "1.0"))
 	float ArrowSize = 8.f;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase> BulletGrabSound = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase> ShellLoadSound = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Sound")
+	TObjectPtr<USoundBase> BulletReleaseSound = nullptr;
 
 private:
 	UPROPERTY(meta = (BindWidgetOptional))
