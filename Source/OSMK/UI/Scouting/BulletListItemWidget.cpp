@@ -5,6 +5,7 @@
 #include "BulletTooltipWidget.h"
 #include "Blueprint/DragDropOperation.h"
 #include "Blueprint/WidgetBlueprintLibrary.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/Button.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
@@ -74,6 +75,12 @@ void UBulletListItemWidget::OnDragEnded()
 	SetCursor(CurrentCount > 0 ? HoverCursor.GetValue() : EMouseCursor::Default);
 }
 
+void UBulletListItemWidget::SetGrabSettings(float InHeldScale, float InMoveDuration)
+{
+	HeldBulletScale = InHeldScale;
+	GrabMoveDuration = InMoveDuration;
+}
+
 void UBulletListItemWidget::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
 {
 	Super::NativeOnMouseEnter(InGeometry, InMouseEvent);
@@ -118,7 +125,8 @@ void UBulletListItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, co
 	}
 
 	DragOperation->BulletRowName = RowName;
-	DragOperation->Pivot = EDragPivot::CenterLeft;
+	// DragOperation->Pivot = EDragPivot::CenterLeft;
+	DragOperation->Pivot = EDragPivot::MouseDown;
 	DragOperation->SourceItem = this;
 
 	if (DragVisualClass)
@@ -127,6 +135,19 @@ void UBulletListItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, co
 		if (DragVisual && Img_Icon)
 		{
 			DragVisual->InitVisual(Cast<UTexture2D>(Img_Icon->GetBrush().GetResourceObject()));
+
+			const float ViewportScale = UWidgetLayoutLibrary::GetViewportScale(this);
+			if (ViewportScale > KINDA_SMALL_NUMBER)
+			{
+				const FVector2D ItemAbs = InGeometry.GetAbsolutePosition();
+				const FVector2D CursorAbs = InMouseEvent.GetScreenSpacePosition();
+				const FGeometry& IconGeometry = Img_Icon->GetCachedGeometry();
+				const FVector2D IconAbsSize = IconGeometry.GetAbsoluteSize();
+				// const FVector2D IconGrabPointAbs = FVector2D(IconGeometry.GetAbsolutePosition()) + FVector2D(0.0f, IconAbsSize.Y * 0.5f);
+				// DragVisual->SetGrabStart((IconGrabPointAbs - ItemAbs) / ViewportScale, (CursorAbs - ItemAbs) / ViewportScale, IconAbsSize / ViewportScale, HeldBulletScale, GrabMoveDuration);
+				const FVector2D IconTopLeftAbs = FVector2D(IconGeometry.GetAbsolutePosition());
+				DragVisual->SetGrabStart((IconTopLeftAbs - ItemAbs) / ViewportScale, (CursorAbs - ItemAbs) / ViewportScale, IconAbsSize / ViewportScale, HeldBulletScale, GrabMoveDuration);
+			}
 		}
 		DragOperation->DefaultDragVisual = DragVisual;
 	}
