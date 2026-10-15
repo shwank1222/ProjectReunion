@@ -18,6 +18,7 @@ public:
 	void SetIconHidden(bool bHidden);
 	void RestoreFromDrag();
 	void OnDragEnded();
+	void SetGrabSettings(float InHeldScale, float InMoveDuration);
 
 	FOnBulletItemHovered OnBulletItemHovered;
 	FOnBulletItemHovered OnBulletItemUnhovered;
@@ -56,6 +57,8 @@ private:
 	FName RowName = NAME_None;
 	int32 PreDragCount = 0;
 	int32 CurrentCount = 0;
+	float HeldBulletScale = 1.0f;
+	float GrabMoveDuration = 0.12f;
 
 	FTimerHandle HoverTimerHandle;
 };

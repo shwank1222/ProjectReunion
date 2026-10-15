@@ -5,14 +5,36 @@
 #include "Core/OSMKGameState.h"
 #include "BulletSelectionWidget.generated.h"
 
-struct FResetFlyEntry
+// struct FResetFlyEntry
+// {
+// 	class UImage* Image = nullptr;
+// 	FVector2D StartPos = FVector2D::ZeroVector;
+// 	FVector2D EndPos = FVector2D::ZeroVector;
+// 	FVector2D StartSize = FVector2D::ZeroVector;
+// 	FVector2D EndSize = FVector2D::ZeroVector;
+// 	float Progress = 0.0f;
+// };
+
+struct FSlotShellAnim
 {
-	class UImage* Image = nullptr;
-	FVector2D StartPos = FVector2D::ZeroVector;
-	FVector2D EndPos = FVector2D::ZeroVector;
-	FVector2D StartSize = FVector2D::ZeroVector;
-	FVector2D EndSize = FVector2D::ZeroVector;
-	float Progress = 0.0f;
+	FVector2D StartScale = FVector2D(1.0f, 1.0f);
+	FVector2D EndScale = FVector2D(1.0f, 1.0f);
+	FVector2D CurrentScale = FVector2D(1.0f, 1.0f);
+	float StartOpacity = 1.0f;
+	float EndOpacity = 1.0f;
+	float CurrentOpacity = 1.0f;
+	float Duration = 0.0f;
+	float Elapsed = 0.0f;
+	float NextFadeDuration = -1.0f;
+	bool bActive = false;
+};
+
+enum class EShellAction : uint8
+{
+	None,
+	Load,
+	Pop,
+	Reset,
 };
 
 enum class EBulletFlyMode : uint8
@@ -66,10 +88,20 @@ private:
 
 	void HandleBulletDropped(FName RowName, const FVector2D& CursorScreenPos, bool bOnCylinder);
 	void StartCursorFly(FName BulletName, const FVector2D& CursorScreenPos, int32 SlotIndex, EBulletFlyMode Mode);
-	void StartPopFly(int32 SlotIndex);
+	// void StartPopFly(int32 SlotIndex);
 	void SetItemIconHidden(FName RowName, bool bHidden);
 	void SetInteractable(bool bEnabled);
-	void FinishReset();
+	// void FinishReset();
+
+	bool IsBusy() const;
+	class UImage* GetSlotImage(int32 SlotIndex) const;
+	FVector2D GetShellInitialScale(int32 SlotIndex) const;
+	void StartSlotAnim(int32 SlotIndex, const FVector2D& EndScale, float EndOpacity, float Duration);
+	void StartSlotUnload(int32 SlotIndex);
+	void StartShellLoad(FName BulletName, int32 SlotIndex);
+	void TickSlotAnims(float DeltaTime);
+	void CompleteShellAction();
+	void ResetSlotRenderState();
 
 	FVector2D LocalPositionOf(const class UWidget* Widget) const;
 
@@ -141,6 +173,38 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Fly")
 	float FlyingBulletUprightAngle = 90.0f;
 
+	// 총알을 쥐고 있을 때 크기 배율
+	UPROPERTY(EditDefaultsOnly, Category = "BulletAnim|Grab", meta = (ClampMin = "0.0"))
+	float HeldBulletScale = 1.0f;
+
+	// 인벤토리 아이콘 위치/크기 > 커서 위치/크기 보정되는 시간
+	UPROPERTY(EditDefaultsOnly, Category = "BulletAnim|Grab", meta = (ClampMin = "0.0"))
+	float GrabMoveDuration = 0.12f;
+
+	// 탄창에 넣을 때 탄피가 처음 나타나는 크기 배율 & 탄빼기 페이드아웃 끝 크기로도 사용
+	UPROPERTY(EditDefaultsOnly, Category = "BulletAnim|Load", meta = (ClampMin = "0.0"))
+	float ShellInitialScale = 2.0f;
+
+	// 탄피가 초기 크기에서 슬롯 크기로 보정되는 시간
+	UPROPERTY(EditDefaultsOnly, Category = "BulletAnim|Load", meta = (ClampMin = "0.0"))
+	float ShellFitDuration = 0.15f;
+
+	// 빼기/전부 빼기 버튼 호버 시 탄피 크기 배율
+	UPROPERTY(EditDefaultsOnly, Category = "BulletAnim|Unload", meta = (ClampMin = "0.0"))
+	float UnloadHoverScale = 1.3f;
+
+	// 호버 스케일로 보정되는 시간
+	UPROPERTY(EditDefaultsOnly, Category = "BulletAnim|Unload", meta = (ClampMin = "0.0"))
+	float UnloadHoverDuration = 0.1f;
+
+	// 탄빼기 탄피가 호버 크기에서 초기 크기로 줄어드는 시간
+	UPROPERTY(EditDefaultsOnly, Category = "BulletAnim|Unload", meta = (ClampMin = "0.0"))
+	float UnloadShrinkDuration = 0.15f;
+
+	// 크기 조정이 끝난 뒤 페이드아웃되는 시간
+	UPROPERTY(EditDefaultsOnly, Category = "BulletAnim|Unload", meta = (ClampMin = "0.0"))
+	float UnloadFadeOutDuration = 0.1f;
+
 	UPROPERTY(EditDefaultsOnly, Category = "ConnectionLine", meta = (ClampMin = "0.1"))
 	float LineDrawSpeed = 1.5f;
 
@@ -166,11 +230,14 @@ private:
 	UPROPERTY(meta = (BindWidgetOptional))
 	class UImage* Img_FlyingBullet = nullptr;
 	
-	UPROPERTY()
-	TArray<class UImage*> ResetFlyImages;
-	
-	TArray<FResetFlyEntry> ResetFlyEntries;
+	// UPROPERTY()
+	// TArray<class UImage*> ResetFlyImages;
+
+	// TArray<FResetFlyEntry> ResetFlyEntries;
 	TArray<FName> SlotBullets;
+
+	FSlotShellAnim SlotAnims[AOSMKGameState::MaxBulletSlots];
+	EShellAction PendingShellAction = EShellAction::None;
 	
 	TMap<FName, class UBulletListItemWidget*> ListItemWidgets;
 
