@@ -72,6 +72,13 @@ void APlayerCharacter::BeginPlay()
 	GetWorldTimerManager().SetTimer(WalkShakeTimerHandle, this, &ThisClass::UpdateWalkCameraShake, WalkShakeCheckInterval, true);
 }
 
+void APlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	UGameplayStatics::SetGlobalPitchModulation(this, 1.0f, 0.0f);
+
+	Super::EndPlay(EndPlayReason);
+}
+
 void APlayerCharacter::UpdateWalkCameraShake()
 {
 	const APlayerController* PC = Cast<APlayerController>(GetController());
@@ -258,6 +265,8 @@ void APlayerCharacter::LockForReplay()
 		SlowMotionSubsystem->RestoreGimmickHighlight();
 	}
 
+	UGameplayStatics::SetGlobalPitchModulation(this, 1.0f, SlowFireSoundFadeTime);
+
 	GetWorldTimerManager().ClearTimer(WalkShakeTimerHandle);
 	StopWalkCameraShake();
 	StopFireRecoil();
@@ -328,6 +337,7 @@ void APlayerCharacter::OnHoldTriggered()
 	{
 		SlowMotionSubsystem->ApplySlowMotion(0.2f, 10000.0f);
 		SlowMotionSubsystem->ApplyGimmickHighlight();
+		UGameplayStatics::SetGlobalPitchModulation(this, SlowFireSoundPitch, SlowFireSoundFadeTime);
 		
 		PlayHeartPulseSound();
 	}
@@ -381,9 +391,11 @@ void APlayerCharacter::StopSlowMotion()
 	{
 		SlowMotionSubsystem->RestoreTimeDilation();
 		SlowMotionSubsystem->RestoreGimmickHighlight();
-	
+
 		StopHeartPulseSound();
 	}
+
+	UGameplayStatics::SetGlobalPitchModulation(this, 1.0f, SlowFireSoundFadeTime);
 
 	bIsFired = false;
 }

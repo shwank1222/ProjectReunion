@@ -103,6 +103,9 @@ void UOSMKBGMSubsystem::StartLayerBGM(USoundBase* CalmSound, USoundBase* CombatS
 		return;
 	}
 
+	CalmLayerComponent->bIsUISound = false;
+	CombatLayerComponent->bIsUISound = false;
+
 	bCombatLayer = false;
 	CalmLayerComponent->FadeIn(FadeInDuration, 1.0f);
 	CombatLayerComponent->FadeIn(FadeInDuration, MutedLayerVolume);
