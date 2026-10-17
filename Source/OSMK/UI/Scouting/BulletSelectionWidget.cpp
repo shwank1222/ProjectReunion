@@ -83,41 +83,44 @@ void UBulletSelectionWidget::NativeTick(const FGeometry& MyGeometry, float InDel
 		}
 	}
 
-	if (ResetFlyEntries.Num() > 0)
-	{
-		bool bAllDone = true;
+	// if (ResetFlyEntries.Num() > 0)
+	// {
+	// 	bool bAllDone = true;
+	//
+	// 	for (FResetFlyEntry& Entry : ResetFlyEntries)
+	// 	{
+	// 		Entry.Progress += InDeltaTime * 3.0f;
+	// 		Entry.Progress = FMath::Min(Entry.Progress, 1.0f);
+	//
+	// 		if (Entry.Image)
+	// 		{
+	// 			FVector2D Pos  = FMath::Lerp(Entry.StartPos,  Entry.EndPos,  Entry.Progress);
+	// 			FVector2D Size = FMath::Lerp(Entry.StartSize, Entry.EndSize, Entry.Progress);
+	//
+	// 			FWidgetTransform T;
+	// 			T.Translation = Pos;
+	// 			FVector2D ImgSize = Entry.Image->GetCachedGeometry().GetLocalSize();
+	// 			if (!ImgSize.IsNearlyZero())
+	// 			{
+	// 				T.Scale = Size / ImgSize;
+	// 			}
+	// 			Entry.Image->SetRenderTransform(T);
+	// 		}
+	//
+	// 		if (Entry.Progress < 1.0f)
+	// 		{
+	// 			bAllDone = false;
+	// 		}
+	// 	}
+	//
+	// 	if (bAllDone)
+	// 	{
+	// 		FinishReset();
+	// 	}
+	// }
 
-		for (FResetFlyEntry& Entry : ResetFlyEntries)
-		{
-			Entry.Progress += InDeltaTime * 3.0f;
-			Entry.Progress = FMath::Min(Entry.Progress, 1.0f);
+	TickSlotAnims(InDeltaTime);
 
-			if (Entry.Image)
-			{
-				FVector2D Pos  = FMath::Lerp(Entry.StartPos,  Entry.EndPos,  Entry.Progress);
-				FVector2D Size = FMath::Lerp(Entry.StartSize, Entry.EndSize, Entry.Progress);
-
-				FWidgetTransform T;
-				T.Translation = Pos;
-				FVector2D ImgSize = Entry.Image->GetCachedGeometry().GetLocalSize();
-				if (!ImgSize.IsNearlyZero())
-				{
-					T.Scale = Size / ImgSize;
-				}
-				Entry.Image->SetRenderTransform(T);
-			}
-
-			if (Entry.Progress < 1.0f)
-			{
-				bAllDone = false;
-			}
-		}
-
-		if (bAllDone)
-		{
-			FinishReset();
-		}
-	}
 	if (bIsDrawingLine)
 	{
 		if (LoopDelayRemaining > 0.f)
@@ -144,7 +147,7 @@ void UBulletSelectionWidget::NativeTick(const FGeometry& MyGeometry, float InDel
 		Invalidate(EInvalidateWidgetReason::Paint);
 	}
 
-	if (!bIsFlying && ResetFlyEntries.Num() == 0 &&	CylinderPanel && !FMath::IsNearlyEqual(CurrentRotationAngle, TargetRotationAngle, 0.1f))
+	if (!IsBusy() && CylinderPanel &&!FMath::IsNearlyEqual(CurrentRotationAngle, TargetRotationAngle, 0.1f))
 	{
 		CurrentRotationAngle = FMath::FInterpTo(CurrentRotationAngle, TargetRotationAngle, InDeltaTime, 10.0f);
 		CylinderPanel->SetRenderTransformAngle(CurrentRotationAngle);
@@ -266,6 +269,7 @@ void UBulletSelectionWidget::PopulateBulletList()
 
 		Item->Init(RowName, Row->BulletIcon.LoadSynchronous(), Row->BulletName, Row->BulletDescription);
 		Item->SetCount(Available);
+		Item->SetGrabSettings(HeldBulletScale, GrabMoveDuration);
 		Item->OnBulletItemHovered.BindUObject(this, &UBulletSelectionWidget::OnBulletHovered);
 		Item->OnBulletItemUnhovered.BindUObject(this, &UBulletSelectionWidget::OnBulletUnhovered);
 		List_Bullets->AddChild(Item);
@@ -341,7 +345,7 @@ int32 UBulletSelectionWidget::NativePaint(const FPaintArgs& Args, const FGeometr
 
 void UBulletSelectionWidget::OnBulletHovered(FName RowName)
 {
-	if (bIsFlying || ResetFlyEntries.Num() > 0 || !SlotBullets.Contains(NAME_None))
+	if (IsBusy() || !SlotBullets.Contains(NAME_None))
 	{
 		return;
 	}
@@ -422,46 +426,46 @@ void UBulletSelectionWidget::StartCursorFly(FName BulletName, const FVector2D& C
 	}
 }
 
-void UBulletSelectionWidget::StartPopFly(int32 SlotIndex)
-{
-	UImage* SlotArray[MaxBulletSlots] = { BulletSlot_1, BulletSlot_2, BulletSlot_3, BulletSlot_4, BulletSlot_5, BulletSlot_6 };
-	if (SlotIndex < 0 || SlotIndex >= MaxBulletSlots)
-	{
-		return;
-	}
-
-	const FName BulletName = SlotBullets[SlotIndex];
-	UImage* SlotImage = SlotArray[SlotIndex];
-	UBulletListItemWidget** ItemPtr = ListItemWidgets.Find(BulletName);
-
-	if (SlotImage && ItemPtr)
-	{
-		FlyStartPos  = LocalPositionOf(SlotImage);
-		FlyEndPos    = LocalPositionOf(*ItemPtr);
-		FlyStartSize = SlotImage->GetCachedGeometry().GetLocalSize();
-		FlyEndSize   = (*ItemPtr)->GetCachedGeometry().GetLocalSize();
-	}
-
-	PendingBulletName = BulletName;
-	PendingSlotIndex  = SlotIndex;
-	FlyMode           = EBulletFlyMode::PopFromCylinder;
-	FlyAngle          = 0.0f;
-	bIsFlying         = true;
-	FlyProgress       = 0.0f;
-	SetInteractable(false);
-
-	if (Img_FlyingBullet && BulletDataTable)
-	{
-		if (FBulletData* Row = BulletDataTable->FindRow<FBulletData>(BulletName, TEXT("")))
-		{
-			UTexture2D* Icon = Row->BulletIcon.LoadSynchronous();
-			Img_FlyingBullet->SetBrushFromTexture(Icon);
-			Img_FlyingBullet->SetRenderTransformPivot(FVector2D(0.5f, 0.5f));
-			Img_FlyingBullet->SetVisibility(ESlateVisibility::HitTestInvisible);
-			FlyTextureSize = Icon ? FVector2D(Icon->GetSizeX(), Icon->GetSizeY()) : FVector2D::ZeroVector;
-		}
-	}
-}
+// void UBulletSelectionWidget::StartPopFly(int32 SlotIndex)
+// {
+// 	UImage* SlotArray[MaxBulletSlots] = { BulletSlot_1, BulletSlot_2, BulletSlot_3, BulletSlot_4, BulletSlot_5, BulletSlot_6 };
+// 	if (SlotIndex < 0 || SlotIndex >= MaxBulletSlots)
+// 	{
+// 		return;
+// 	}
+//
+// 	const FName BulletName = SlotBullets[SlotIndex];
+// 	UImage* SlotImage = SlotArray[SlotIndex];
+// 	UBulletListItemWidget** ItemPtr = ListItemWidgets.Find(BulletName);
+//
+// 	if (SlotImage && ItemPtr)
+// 	{
+// 		FlyStartPos  = LocalPositionOf(SlotImage);
+// 		FlyEndPos    = LocalPositionOf(*ItemPtr);
+// 		FlyStartSize = SlotImage->GetCachedGeometry().GetLocalSize();
+// 		FlyEndSize   = (*ItemPtr)->GetCachedGeometry().GetLocalSize();
+// 	}
+//
+// 	PendingBulletName = BulletName;
+// 	PendingSlotIndex  = SlotIndex;
+// 	FlyMode           = EBulletFlyMode::PopFromCylinder;
+// 	FlyAngle          = 0.0f;
+// 	bIsFlying         = true;
+// 	FlyProgress       = 0.0f;
+// 	SetInteractable(false);
+//
+// 	if (Img_FlyingBullet && BulletDataTable)
+// 	{
+// 		if (FBulletData* Row = BulletDataTable->FindRow<FBulletData>(BulletName, TEXT("")))
+// 		{
+// 			UTexture2D* Icon = Row->BulletIcon.LoadSynchronous();
+// 			Img_FlyingBullet->SetBrushFromTexture(Icon);
+// 			Img_FlyingBullet->SetRenderTransformPivot(FVector2D(0.5f, 0.5f));
+// 			Img_FlyingBullet->SetVisibility(ESlateVisibility::HitTestInvisible);
+// 			FlyTextureSize = Icon ? FVector2D(Icon->GetSizeX(), Icon->GetSizeY()) : FVector2D::ZeroVector;
+// 		}
+// 	}
+// }
 
 void UBulletSelectionWidget::SetItemIconHidden(FName RowName, bool bHidden)
 {
@@ -471,32 +475,234 @@ void UBulletSelectionWidget::SetItemIconHidden(FName RowName, bool bHidden)
 	}
 }
 
-void UBulletSelectionWidget::FinishReset()
+// void UBulletSelectionWidget::FinishReset()
+// {
+// 	if (Canvas_FlyOverlay)
+// 	{
+// 		Canvas_FlyOverlay->ClearChildren();
+// 	}
+// 	ResetFlyEntries.Empty();
+// 	ResetFlyImages.Empty();
+//
+// 	for (int32 i = 0; i < MaxBulletSlots; i++)
+// 	{
+// 		SlotBullets[i] = NAME_None;
+// 	}
+// 	TargetRotationAngle = 0.0f;
+// 	UpdateSlotImages();
+// 	for (auto& Pair : ListItemWidgets)
+// 	{
+// 		Pair.Value->SetCount(GetAvailableCount(Pair.Key));
+// 	}
+// 	RefreshConfirmButton();
+// 	SetInteractable(true);
+// }
+
+bool UBulletSelectionWidget::IsBusy() const
 {
-	if (Canvas_FlyOverlay)
+	return bIsFlying || PendingShellAction != EShellAction::None;
+}
+
+UImage* UBulletSelectionWidget::GetSlotImage(int32 SlotIndex) const
+{
+	if (SlotIndex < 0 || SlotIndex >= MaxBulletSlots)
 	{
-		Canvas_FlyOverlay->ClearChildren();
+		return nullptr;
 	}
-	ResetFlyEntries.Empty();
-	ResetFlyImages.Empty();
+
+	UImage* SlotArray[MaxBulletSlots] = { BulletSlot_1, BulletSlot_2, BulletSlot_3, BulletSlot_4, BulletSlot_5, BulletSlot_6 };
+	return SlotArray[SlotIndex];
+}
+
+FVector2D UBulletSelectionWidget::GetShellInitialScale(int32 SlotIndex) const
+{
+	return FVector2D(ShellInitialScale, ShellInitialScale);
+}
+
+void UBulletSelectionWidget::StartSlotAnim(int32 SlotIndex, const FVector2D& EndScale, float EndOpacity, float Duration)
+{
+	if (!GetSlotImage(SlotIndex))
+	{
+		return;
+	}
+
+	FSlotShellAnim& Anim = SlotAnims[SlotIndex];
+	Anim.StartScale   = Anim.CurrentScale;
+	Anim.EndScale     = EndScale;
+	Anim.StartOpacity = Anim.CurrentOpacity;
+	Anim.EndOpacity   = EndOpacity;
+	Anim.Duration     = Duration;
+	Anim.Elapsed      = 0.0f;
+	Anim.NextFadeDuration = -1.0f;
+	Anim.bActive      = true;
+}
+
+void UBulletSelectionWidget::StartSlotUnload(int32 SlotIndex)
+{
+	StartSlotAnim(SlotIndex, GetShellInitialScale(SlotIndex), 1.0f, UnloadShrinkDuration);
+	SlotAnims[SlotIndex].NextFadeDuration = UnloadFadeOutDuration;
+}
+
+void UBulletSelectionWidget::StartShellLoad(FName BulletName, int32 SlotIndex)
+{
+	PendingBulletName  = BulletName;
+	PendingSlotIndex   = SlotIndex;
+	PendingShellAction = EShellAction::Load;
+	SetInteractable(false);
+
+	UImage* SlotImage = GetSlotImage(SlotIndex);
+	if (!SlotImage)
+	{
+		return;
+	}
+
+	if (BulletDataTable)
+	{
+		if (FBulletData* Row = BulletDataTable->FindRow<FBulletData>(BulletName, TEXT("")))
+		{
+			SlotImage->SetBrushFromTexture(Row->CylinderIcon.LoadSynchronous());
+			SlotImage->SetColorAndOpacity(FLinearColor::White);
+		}
+	}
+
+	FSlotShellAnim& Anim = SlotAnims[SlotIndex];
+	Anim.CurrentScale   = GetShellInitialScale(SlotIndex);
+	Anim.CurrentOpacity = 1.0f;
+	SlotImage->SetRenderScale(Anim.CurrentScale);
+	SlotImage->SetRenderOpacity(Anim.CurrentOpacity);
+
+	StartSlotAnim(SlotIndex, FVector2D(1.0f, 1.0f), 1.0f, ShellFitDuration);
+}
+
+void UBulletSelectionWidget::TickSlotAnims(float DeltaTime)
+{
+	bool bAnyActive = false;
 
 	for (int32 i = 0; i < MaxBulletSlots; i++)
 	{
-		SlotBullets[i] = NAME_None;
+		FSlotShellAnim& Anim = SlotAnims[i];
+		if (!Anim.bActive)
+		{
+			continue;
+		}
+
+		Anim.Elapsed += DeltaTime;
+		const float Alpha = Anim.Duration > 0.0f ? FMath::Min(Anim.Elapsed / Anim.Duration, 1.0f) : 1.0f;
+		Anim.CurrentScale   = FMath::Lerp(Anim.StartScale, Anim.EndScale, Alpha);
+		Anim.CurrentOpacity = FMath::Lerp(Anim.StartOpacity, Anim.EndOpacity, Alpha);
+
+		if (UImage* SlotImage = GetSlotImage(i))
+		{
+			SlotImage->SetRenderScale(Anim.CurrentScale);
+			SlotImage->SetRenderOpacity(Anim.CurrentOpacity);
+		}
+
+		if (Alpha >= 1.0f && Anim.NextFadeDuration >= 0.0f)
+		{
+			Anim.StartScale   = Anim.CurrentScale;
+			Anim.EndScale     = Anim.CurrentScale;
+			Anim.StartOpacity = Anim.CurrentOpacity;
+			Anim.EndOpacity   = 0.0f;
+			Anim.Duration     = Anim.NextFadeDuration;
+			Anim.Elapsed      = 0.0f;
+			Anim.NextFadeDuration = -1.0f;
+			bAnyActive = true;
+		}
+		else if (Alpha >= 1.0f)
+		{
+			Anim.bActive = false;
+		}
+		else
+		{
+			bAnyActive = true;
+		}
 	}
-	TargetRotationAngle = 0.0f;
-	UpdateSlotImages();
-	for (auto& Pair : ListItemWidgets)
+
+	if (!bAnyActive && PendingShellAction != EShellAction::None)
 	{
-		Pair.Value->SetCount(GetAvailableCount(Pair.Key));
+		CompleteShellAction();
 	}
+}
+
+void UBulletSelectionWidget::CompleteShellAction()
+{
+	const EShellAction Action = PendingShellAction;
+	PendingShellAction = EShellAction::None;
+
+	switch (Action)
+	{
+	case EShellAction::Load:
+		SlotBullets[PendingSlotIndex] = PendingBulletName;
+		TargetRotationAngle += 60.0f;
+		break;
+
+	case EShellAction::Pop:
+		SlotBullets[PendingSlotIndex] = NAME_None;
+		TargetRotationAngle -= 60.0f;
+		break;
+
+	case EShellAction::Reset:
+		for (int32 i = 0; i < MaxBulletSlots; i++)
+		{
+			SlotBullets[i] = NAME_None;
+		}
+		TargetRotationAngle = 0.0f;
+		break;
+
+	default:
+		break;
+	}
+
+	ResetSlotRenderState();
+	UpdateSlotImages();
+
+	if (Action == EShellAction::Reset)
+	{
+		for (auto& Pair : ListItemWidgets)
+		{
+			Pair.Value->SetCount(GetAvailableCount(Pair.Key));
+		}
+	}
+	else
+	{
+		UpdateListItemCount(PendingBulletName);
+	}
+
+	if (Action == EShellAction::Load)
+	{
+		SetItemIconHidden(PendingBulletName, false);
+	}
+
 	RefreshConfirmButton();
 	SetInteractable(true);
+
+	if (Btn_Pop && Btn_Pop->IsHovered())
+	{
+		OnPopHovered();
+	}
+	else if (Btn_Reset && Btn_Reset->IsHovered())
+	{
+		OnResetHovered();
+	}
+}
+
+void UBulletSelectionWidget::ResetSlotRenderState()
+{
+	for (int32 i = 0; i < MaxBulletSlots; i++)
+	{
+		SlotAnims[i] = FSlotShellAnim();
+
+		if (UImage* SlotImage = GetSlotImage(i))
+		{
+			SlotImage->SetRenderScale(FVector2D(1.0f, 1.0f));
+			SlotImage->SetRenderOpacity(1.0f);
+		}
+	}
 }
 
 void UBulletSelectionWidget::HandleBulletDropped(FName RowName, const FVector2D& CursorScreenPos, bool bOnCylinder)
 {
-	if (bIsFlying || ResetFlyEntries.Num() > 0)
+	if (IsBusy())
 	{
 		UpdateListItemCount(RowName);
 		SetItemIconHidden(RowName, false);
@@ -509,7 +715,8 @@ void UBulletSelectionWidget::HandleBulletDropped(FName RowName, const FVector2D&
 		{
 			if (SlotBullets[i].IsNone())
 			{
-				StartCursorFly(RowName, CursorScreenPos, i, EBulletFlyMode::LoadToCylinder);
+				// StartCursorFly(RowName, CursorScreenPos, i, EBulletFlyMode::LoadToCylinder);
+				StartShellLoad(RowName, i);
 				return;
 			}
 		}
@@ -520,18 +727,24 @@ void UBulletSelectionWidget::HandleBulletDropped(FName RowName, const FVector2D&
 
 void UBulletSelectionWidget::OnPopClicked()
 {
-	if (bIsFlying || ResetFlyEntries.Num() > 0)
+	if (IsBusy())
 	{
 		return;
 	}
 
-	OnPopUnhovered();
+	// OnPopUnhovered();
 
 	for (int32 i = MaxBulletSlots - 1; i >= 0; i--)
 	{
 		if (!SlotBullets[i].IsNone())
 		{
-			StartPopFly(i);
+			// StartPopFly(i);
+			PendingBulletName  = SlotBullets[i];
+			PendingSlotIndex   = i;
+			PendingShellAction = EShellAction::Pop;
+			// StartSlotAnim(i, GetShellInitialScale(i), 0.0f, UnloadFadeOutDuration);
+			StartSlotUnload(i);
+			SetInteractable(false);
 			return;
 		}
 	}
@@ -539,7 +752,7 @@ void UBulletSelectionWidget::OnPopClicked()
 
 void UBulletSelectionWidget::OnPopHovered()
 {
-	if (bIsFlying || ResetFlyEntries.Num() > 0)
+	if (IsBusy())
 	{
 		return;
 	}
@@ -549,7 +762,8 @@ void UBulletSelectionWidget::OnPopHovered()
 	{
 		if (!SlotBullets[i].IsNone() && SlotArray[i])
 		{
-			SlotArray[i]->SetColorAndOpacity(FLinearColor::Red);
+			// SlotArray[i]->SetColorAndOpacity(FLinearColor::Red);
+			StartSlotAnim(i, FVector2D(UnloadHoverScale), 1.0f, UnloadHoverDuration);
 			return;
 		}
 	}
@@ -557,6 +771,11 @@ void UBulletSelectionWidget::OnPopHovered()
 
 void UBulletSelectionWidget::OnPopUnhovered()
 {
+	if (IsBusy())
+	{
+		return;
+	}
+
 	UImage* SlotArray[MaxBulletSlots] = { BulletSlot_1, BulletSlot_2, BulletSlot_3, BulletSlot_4, BulletSlot_5, BulletSlot_6 };
 	for (int32 i = 0; i < MaxBulletSlots; i++)
 	{
@@ -564,81 +783,106 @@ void UBulletSelectionWidget::OnPopUnhovered()
 		{
 			SlotArray[i]->SetColorAndOpacity(SlotBullets[i].IsNone() ? FLinearColor(1.f, 1.f, 1.f, 0.f) : FLinearColor::White);
 		}
+
+		if (!SlotBullets[i].IsNone())
+		{
+			StartSlotAnim(i, FVector2D(1.0f, 1.0f), 1.0f, UnloadHoverDuration);
+		}
 	}
 }
 
 void UBulletSelectionWidget::OnResetClicked()
 {
-	if (bIsFlying || ResetFlyEntries.Num() > 0)
+	if (IsBusy())
 	{
 		return;
 	}
 
-	OnResetUnhovered();
+	// OnResetUnhovered();
+	//
+	// if (!Canvas_FlyOverlay || !BulletDataTable)
+	// {
+	// 	FinishReset();
+	// 	return;
+	// }
+	//
+	// UImage* SlotArray[MaxBulletSlots] = { BulletSlot_1, BulletSlot_2, BulletSlot_3, BulletSlot_4, BulletSlot_5, BulletSlot_6 };
+	// bool bHasAny = false;
+	//
+	// for (int32 i = 0; i < MaxBulletSlots; i++)
+	// {
+	// 	if (SlotBullets[i].IsNone())
+	// 	{
+	// 		continue;
+	// 	}
+	//
+	// 	FBulletData* Row = BulletDataTable->FindRow<FBulletData>(SlotBullets[i], TEXT(""));
+	// 	if (!Row)
+	// 	{
+	// 		continue;
+	// 	}
+	//
+	// 	UBulletListItemWidget** ItemPtr = ListItemWidgets.Find(SlotBullets[i]);
+	//
+	// 	UImage* NewImg = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
+	// 	if (!NewImg)
+	// 	{
+	// 		continue;
+	// 	}
+	//
+	// 	NewImg->SetBrushFromTexture(Row->BulletIcon.LoadSynchronous());
+	// 	UCanvasPanelSlot* CanvasSlot = Canvas_FlyOverlay->AddChildToCanvas(NewImg);
+	// 	if (CanvasSlot)
+	// 	{
+	// 		CanvasSlot->SetAnchors(FAnchors(0.f, 0.f, 0.f, 0.f));
+	// 		CanvasSlot->SetPosition(FVector2D::ZeroVector);
+	// 		CanvasSlot->SetSize(FVector2D(64.f, 64.f));
+	// 	}
+	//
+	// 	FResetFlyEntry Entry;
+	// 	Entry.Image    = NewImg;
+	// 	Entry.Progress = 0.0f;
+	//
+	// 	if (SlotArray[i] && ItemPtr)
+	// 	{
+	// 		Entry.StartPos  = GetCachedGeometry().AbsoluteToLocal(SlotArray[i]->GetCachedGeometry().GetAbsolutePosition());
+	// 		Entry.EndPos    = GetCachedGeometry().AbsoluteToLocal((*ItemPtr)->GetCachedGeometry().GetAbsolutePosition());
+	// 		Entry.StartSize = SlotArray[i]->GetCachedGeometry().GetLocalSize();
+	// 		Entry.EndSize   = (*ItemPtr)->GetCachedGeometry().GetLocalSize();
+	// 	}
+	//
+	// 	ResetFlyEntries.Add(Entry);
+	// 	ResetFlyImages.Add(NewImg);
+	// 	bHasAny = true;
+	// }
+	//
+	// if (bHasAny)
+	// {
+	// 	SetInteractable(false);
+	// }
+	// else
+	// {
+	// 	FinishReset();
+	// }
 
-	if (!Canvas_FlyOverlay || !BulletDataTable)
-	{
-		FinishReset();
-		return;
-	}
-
-	UImage* SlotArray[MaxBulletSlots] = { BulletSlot_1, BulletSlot_2, BulletSlot_3, BulletSlot_4, BulletSlot_5, BulletSlot_6 };
 	bool bHasAny = false;
 
 	for (int32 i = 0; i < MaxBulletSlots; i++)
 	{
-		if (SlotBullets[i].IsNone())
+		if (SlotBullets[i].IsNone() || !GetSlotImage(i))
 		{
 			continue;
 		}
 
-		FBulletData* Row = BulletDataTable->FindRow<FBulletData>(SlotBullets[i], TEXT(""));
-		if (!Row)
-		{
-			continue;
-		}
-
-		UBulletListItemWidget** ItemPtr = ListItemWidgets.Find(SlotBullets[i]);
-
-		UImage* NewImg = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass());
-		if (!NewImg)
-		{
-			continue;
-		}
-
-		NewImg->SetBrushFromTexture(Row->BulletIcon.LoadSynchronous());
-		UCanvasPanelSlot* CanvasSlot = Canvas_FlyOverlay->AddChildToCanvas(NewImg);
-		if (CanvasSlot)
-		{
-			CanvasSlot->SetAnchors(FAnchors(0.f, 0.f, 0.f, 0.f));
-			CanvasSlot->SetPosition(FVector2D::ZeroVector);
-			CanvasSlot->SetSize(FVector2D(64.f, 64.f));
-		}
-
-		FResetFlyEntry Entry;
-		Entry.Image    = NewImg;
-		Entry.Progress = 0.0f;
-
-		if (SlotArray[i] && ItemPtr)
-		{
-			Entry.StartPos  = GetCachedGeometry().AbsoluteToLocal(SlotArray[i]->GetCachedGeometry().GetAbsolutePosition());
-			Entry.EndPos    = GetCachedGeometry().AbsoluteToLocal((*ItemPtr)->GetCachedGeometry().GetAbsolutePosition());
-			Entry.StartSize = SlotArray[i]->GetCachedGeometry().GetLocalSize();
-			Entry.EndSize   = (*ItemPtr)->GetCachedGeometry().GetLocalSize();
-		}
-
-		ResetFlyEntries.Add(Entry);
-		ResetFlyImages.Add(NewImg);
+		// StartSlotAnim(i, GetShellInitialScale(i), 0.0f, UnloadFadeOutDuration);
+		StartSlotUnload(i);
 		bHasAny = true;
 	}
 
 	if (bHasAny)
 	{
+		PendingShellAction = EShellAction::Reset;
 		SetInteractable(false);
-	}
-	else
-	{
-		FinishReset();
 	}
 }
 
@@ -725,7 +969,7 @@ void UBulletSelectionWidget::OnConfirmClicked()
 
 void UBulletSelectionWidget::OnResetHovered()
 {
-	if (bIsFlying || ResetFlyEntries.Num() > 0)
+	if (IsBusy())
 	{
 		return;
 	}
@@ -735,19 +979,30 @@ void UBulletSelectionWidget::OnResetHovered()
 	{
 		if (!SlotBullets[i].IsNone() && SlotArray[i])
 		{
-			SlotArray[i]->SetColorAndOpacity(FLinearColor::Red);
+			// SlotArray[i]->SetColorAndOpacity(FLinearColor::Red);
+			StartSlotAnim(i, FVector2D(UnloadHoverScale), 1.0f, UnloadHoverDuration);
 		}
 	}
 }
 
 void UBulletSelectionWidget::OnResetUnhovered()
 {
+	if (IsBusy())
+	{
+		return;
+	}
+
 	UImage* SlotArray[MaxBulletSlots] = { BulletSlot_1, BulletSlot_2, BulletSlot_3, BulletSlot_4, BulletSlot_5, BulletSlot_6 };
 	for (int32 i = 0; i < MaxBulletSlots; i++)
 	{
 		if (SlotArray[i])
 		{
 			SlotArray[i]->SetColorAndOpacity(SlotBullets[i].IsNone() ? FLinearColor(1.f, 1.f, 1.f, 0.f) : FLinearColor::White);
+		}
+
+		if (!SlotBullets[i].IsNone())
+		{
+			StartSlotAnim(i, FVector2D(1.0f, 1.0f), 1.0f, UnloadHoverDuration);
 		}
 	}
 }
