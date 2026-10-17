@@ -191,7 +191,7 @@ void UBulletSelectionWidget::NativeConstruct()
 
 	if (Btn_Confirm)
 	{
-		Btn_Confirm->SetVisibility(ESlateVisibility::Hidden);
+		//Btn_Confirm->SetVisibility(ESlateVisibility::Hidden);
 		Btn_Confirm->OnClicked.AddDynamic(this, &UBulletSelectionWidget::OnConfirmClicked);
 	}
 
@@ -895,17 +895,19 @@ void UBulletSelectionWidget::RefreshConfirmButton()
 
 	const bool bAllFilled = !SlotBullets.Contains(NAME_None);
 
+	Btn_Confirm->SetIsEnabled(bAllFilled);
+	
 	if (bAllFilled)
 	{
-		Btn_Confirm->SetVisibility(ESlateVisibility::Visible);
-		if (Img_Action)
-		{
-			Img_Action->SetVisibility(ESlateVisibility::HitTestInvisible);
-		}
-		if (Txt_Action)
-		{
-			Txt_Action->SetVisibility(ESlateVisibility::HitTestInvisible);
-		}
+		//Btn_Confirm->SetVisibility(ESlateVisibility::Visible);
+		//if (Img_Action)
+		//{
+		//	Img_Action->SetVisibility(ESlateVisibility::HitTestInvisible);
+		//}
+		//if (Txt_Action)
+		//{
+		//	Txt_Action->SetVisibility(ESlateVisibility::HitTestInvisible);
+		//}
 		if (Anim_Confirm)
 		{
 			PlayAnimation(Anim_Confirm, 0.f, 0);
@@ -913,15 +915,15 @@ void UBulletSelectionWidget::RefreshConfirmButton()
 	}
 	else
 	{
-		Btn_Confirm->SetVisibility(ESlateVisibility::Hidden);
-		if (Img_Action)
-		{
-			Img_Action->SetVisibility(ESlateVisibility::Hidden);
-		}
-		if (Txt_Action)
-		{
-			Txt_Action->SetVisibility(ESlateVisibility::Hidden);
-		}
+		//Btn_Confirm->SetVisibility(ESlateVisibility::Hidden);
+		//if (Img_Action)
+		//{
+		//	Img_Action->SetVisibility(ESlateVisibility::Hidden);
+		//}
+		//if (Txt_Action)
+		//{
+		//	Txt_Action->SetVisibility(ESlateVisibility::Hidden);
+		//}
 		if (Anim_Confirm)
 		{
 			StopAnimation(Anim_Confirm);

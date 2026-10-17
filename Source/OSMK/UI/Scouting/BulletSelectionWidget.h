@@ -137,11 +137,11 @@ protected:
 	UPROPERTY(meta = (BindWidget))
 	class UButton* Btn_Confirm = nullptr;
 
-	UPROPERTY(meta = (BindWidget))
-	class UImage* Img_Action = nullptr;
+	//UPROPERTY(meta = (BindWidget))
+	//class UImage* Img_Action = nullptr;
 
-	UPROPERTY(meta = (BindWidget))
-	class UTextBlock* Txt_Action = nullptr;
+	//UPROPERTY(meta = (BindWidget))
+	//class UTextBlock* Txt_Action = nullptr;
 
 	UPROPERTY(Transient, meta = (BindWidgetAnim))
 	TObjectPtr<UWidgetAnimation> Anim_Confirm = nullptr;
