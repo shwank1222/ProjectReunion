@@ -8,9 +8,14 @@
 #include "Components/BoxComponent.h"
 #include "Engine/StaticMesh.h"
 #include "PCGComponent.h"
+#include "UObject/StructOnScope.h"
+#include "TimerManager.h"
 
 #if WITH_EDITOR
 #include "EngineUtils.h"
+#include "Engine/BlueprintGeneratedClass.h"
+#include "Engine/SimpleConstructionScript.h"
+#include "Engine/SCS_Node.h"
 #endif
 
 DEFINE_LOG_CATEGORY_STATIC(LogStageExtract, Log, All);
@@ -18,23 +23,154 @@ DEFINE_LOG_CATEGORY_STATIC(LogStageExtract, Log, All);
 #if WITH_EDITOR
 namespace
 {
-	const UBoxComponent* FindBoundsBoxComponent(const AActor* Actor)
+	struct FOptionTarget
 	{
-		TArray<UBoxComponent*> BoxComps;
-		Actor->GetComponents<UBoxComponent>(BoxComps);
+		FString Prefix;
+		const UClass* Class = nullptr;
+	};
 
-		for (const UBoxComponent* Box : BoxComps)
+	TArray<FOptionTarget> CollectOptionTargets(UClass* ActorClass)
+	{
+		TArray<FOptionTarget> Targets;
+		if (!ActorClass)
 		{
-			if (Box && Box->GetName().Contains(TEXT("FloorBounds")))
+			return Targets;
+		}
+
+		Targets.Add({ FString(), ActorClass });
+
+		if (const AActor* CDO = ActorClass->GetDefaultObject<AActor>())
+		{
+			TInlineComponentArray<UActorComponent*> Components;
+			CDO->GetComponents(Components);
+
+			for (const UActorComponent* Comp : Components)
 			{
-				return Box;
+				if (Comp)
+				{
+					Targets.Add({ Comp->GetName(), Comp->GetClass() });
+				}
 			}
 		}
 
-		return BoxComps.Num() > 0 ? BoxComps[0] : nullptr;
+		for (const UClass* Class = ActorClass; Class; Class = Class->GetSuperClass())
+		{
+			const UBlueprintGeneratedClass* BPClass = Cast<UBlueprintGeneratedClass>(Class);
+			if (!BPClass || !BPClass->SimpleConstructionScript)
+			{
+				continue;
+			}
+
+			for (const USCS_Node* Node : BPClass->SimpleConstructionScript->GetAllNodes())
+			{
+				if (Node && Node->ComponentClass)
+				{
+					Targets.Add({ Node->GetVariableName().ToString(), Node->ComponentClass });
+				}
+			}
+		}
+
+		return Targets;
+	}
+
+	FString MakeOptionPath(const FString& Prefix, const FString& Name)
+	{
+		return Prefix.IsEmpty() ? Name : Prefix + TEXT(".") + Name;
+	}
+
+	bool IsSyncableProperty(const FProperty* Prop)
+	{
+		return Prop->HasAnyPropertyFlags(CPF_Edit)
+			&& !Prop->HasAnyPropertyFlags(CPF_EditConst | CPF_Deprecated | CPF_Transient)
+			&& !Prop->IsA<FDelegateProperty>()
+			&& !Prop->IsA<FMulticastDelegateProperty>();
+	}
+
+	bool IsCallableFunction(const UFunction* Func)
+	{
+		return Func->HasAnyFunctionFlags(FUNC_BlueprintCallable)
+			&& !Func->HasAnyFunctionFlags(FUNC_Static | FUNC_Delegate | FUNC_EditorOnly);
+	}
+
+	bool IsGenericBaseMember(const UStruct* Owner)
+	{
+		return Owner == UObject::StaticClass()
+			|| Owner == AActor::StaticClass()
+			|| Owner == UActorComponent::StaticClass();
+	}
+
+	struct FClassOptions
+	{
+		TWeakObjectPtr<const UObject> DefaultObject;
+		TArray<FString> Properties;
+		TArray<FString> Functions;
+	};
+
+	const FClassOptions& GetClassOptions(UClass* ActorClass)
+	{
+		static TMap<TWeakObjectPtr<const UClass>, FClassOptions> Cache;
+		static const FClassOptions Empty;
+
+		if (!ActorClass)
+		{
+			return Empty;
+		}
+
+		const UObject* DefaultObject = ActorClass->GetDefaultObject();
+		FClassOptions& Entry = Cache.FindOrAdd(ActorClass);
+		if (Entry.DefaultObject.Get() == DefaultObject)
+		{
+			return Entry;
+		}
+
+		TSet<FString> Properties;
+		TSet<FString> Functions;
+
+		for (const FOptionTarget& Target : CollectOptionTargets(ActorClass))
+		{
+			for (TFieldIterator<FProperty> It(Target.Class); It; ++It)
+			{
+				if (!IsGenericBaseMember(It->GetOwnerStruct()) && IsSyncableProperty(*It))
+				{
+					Properties.Add(MakeOptionPath(Target.Prefix, It->GetName()));
+				}
+			}
+
+			for (TFieldIterator<UFunction> It(Target.Class); It; ++It)
+			{
+				if (!IsGenericBaseMember(It->GetOwnerClass()) && IsCallableFunction(*It))
+				{
+					Functions.Add(MakeOptionPath(Target.Prefix, It->GetName()));
+				}
+			}
+		}
+
+		Entry.DefaultObject = DefaultObject;
+		Entry.Properties = Properties.Array();
+		Entry.Properties.Sort();
+		Entry.Functions = Functions.Array();
+		Entry.Functions.Sort();
+		return Entry;
 	}
 }
 #endif
+
+void UStageExtractRule::PostLoad()
+{
+	Super::PostLoad();
+
+#if WITH_EDITORONLY_DATA
+	if (PCGParamNames_DEPRECATED.Num() > 0)
+	{
+		for (const FName& ParamPath : PCGParamNames_DEPRECATED)
+		{
+			SyncProperties.AddUnique(ParamPath);
+		}
+		PCGParamNames_DEPRECATED.Empty();
+		Fields |= static_cast<int32>(EStageExtractField::Properties);
+	}
+#endif
+}
 
 #if WITH_EDITOR
 void UStageExtractRule::ExtractFromWorld(UWorld* World, FName LevelName, UStageExtractedCache* Cache) const
@@ -65,6 +201,16 @@ void UStageExtractRule::ExtractFromWorld(UWorld* World, FName LevelName, UStageE
 	}
 
 	Cache->Write(RuleId, LevelName, Group);
+}
+
+TArray<FString> UStageExtractRule::GetPropertyOptions() const
+{
+	return GetClassOptions(TargetClass).Properties;
+}
+
+TArray<FString> UStageExtractRule::GetFunctionOptions() const
+{
+	return GetClassOptions(TargetClass).Functions;
 }
 
 bool UStageExtractRule::MatchesActor(const AActor* Actor) const
@@ -116,27 +262,22 @@ void UStageExtractRule::FillItem(const AActor* Actor, FStageExtractedItem& OutIt
 
 	StageExtractVolume::CaptureBrushBounds(Actor, OutItem);
 
-	if (HasField(EStageExtractField::PCGParams))
+	if (HasField(EStageExtractField::Properties))
 	{
-		if (const UBoxComponent* Bounds = FindBoundsBoxComponent(Actor))
+		for (const FName& ParamPath : SyncProperties)
 		{
-			CaptureParam(Actor, FName(*(Bounds->GetName() + TEXT(".BoxExtent"))), OutItem);
-		}
-
-		for (const FName& ParamPath : PCGParamNames)
-		{
-			CaptureParam(Actor, ParamPath, OutItem);
+			CaptureParam(Actor, ParamPath, OutItem.PropertyValues);
 		}
 	}
 }
 
-void UStageExtractRule::CaptureParam(const AActor* Actor, FName ParamPath, FStageExtractedItem& OutItem) const
+void UStageExtractRule::CaptureParam(const AActor* Actor, FName ParamPath, TMap<FName, FString>& OutParams) const
 {
 	FName PropertyName = NAME_None;
 	const UObject* Target = ResolveParamTarget(Actor, ParamPath, PropertyName);
 	if (!Target)
 	{
-		UE_LOG(LogStageExtract, Warning, TEXT("[%s] PCGParam '%s': target not found on %s"),
+		UE_LOG(LogStageExtract, Warning, TEXT("[%s] Param '%s': target not found on %s"),
 			*RuleId.ToString(), *ParamPath.ToString(), *Actor->GetName());
 		return;
 	}
@@ -144,14 +285,14 @@ void UStageExtractRule::CaptureParam(const AActor* Actor, FName ParamPath, FStag
 	const FProperty* Prop = Target->GetClass()->FindPropertyByName(PropertyName);
 	if (!Prop)
 	{
-		UE_LOG(LogStageExtract, Warning, TEXT("[%s] PCGParam '%s': property '%s' not found on %s"),
+		UE_LOG(LogStageExtract, Warning, TEXT("[%s] Param '%s': property '%s' not found on %s"),
 			*RuleId.ToString(), *ParamPath.ToString(), *PropertyName.ToString(), *Target->GetName());
 		return;
 	}
 
 	FString ValueText;
 	Prop->ExportText_InContainer(0, ValueText, Target, nullptr, nullptr, PPF_None);
-	OutItem.PCGParams.Add(ParamPath, ValueText);
+	OutParams.Add(ParamPath, ValueText);
 }
 #endif
 
@@ -202,17 +343,30 @@ void UStageExtractRule::SpawnItem(FStageSpawnContext& Ctx, const FStageExtracted
 		return;
 	}
 
-	ApplyPCGParams(Spawned, Item, false);
+	const bool bUseProperties = HasField(EStageExtractField::Properties);
+
+	if (bUseProperties)
+	{
+		ApplyParams(Spawned, Item.PropertyValues, false);
+	}
+
 	Spawned->FinishSpawning(Item.Transform);
 	StageExtractVolume::ApplyBrushBounds(Spawned, Item);
 
 	ConfigureSpawnedActor(Spawned, Item, Ctx);
-	if (ApplyPCGParams(Spawned, Item, true))
+	if (bUseProperties)
 	{
-		Spawned->RerunConstructionScripts();
-		Spawned->SetActorTransform(Item.Transform);
+		ApplyParams(Spawned, Item.PropertyValues, true);
 	}
-	RegeneratePCG(Spawned, Ctx);
+
+	if (HasField(EStageExtractField::Functions) && PostSpawnFunctions.Num() > 0)
+	{
+		SchedulePostSpawnFunctions(Spawned, Ctx);
+	}
+	else
+	{
+		WaitForPCGGeneration(Spawned, Ctx.BeginAsync, Ctx.EndAsync);
+	}
 
 	if (Ctx.TrackActor)
 	{
@@ -269,16 +423,16 @@ void UStageExtractRule::ConfigureSpawnedActor(AActor* SpawnedActor, const FStage
 	}
 }
 
-bool UStageExtractRule::ApplyPCGParams(AActor* SpawnedActor, const FStageExtractedItem& Item, bool bComponentParams) const
+bool UStageExtractRule::ApplyParams(AActor* SpawnedActor, const TMap<FName, FString>& Params, bool bComponentParams) const
 {
-	if (!SpawnedActor || !HasField(EStageExtractField::PCGParams))
+	if (!SpawnedActor)
 	{
 		return false;
 	}
 
 	bool bApplied = false;
 
-	for (const TPair<FName, FString>& Param : Item.PCGParams)
+	for (const TPair<FName, FString>& Param : Params)
 	{
 		const bool bIsComponentParam = Param.Key.ToString().Contains(TEXT("."));
 		if (bIsComponentParam != bComponentParams)
@@ -290,7 +444,7 @@ bool UStageExtractRule::ApplyPCGParams(AActor* SpawnedActor, const FStageExtract
 		UObject* Target = ResolveParamTarget(SpawnedActor, Param.Key, PropertyName);
 		if (!Target)
 		{
-			UE_LOG(LogStageExtract, Warning, TEXT("[%s] PCGParam '%s': target not found on %s"),
+			UE_LOG(LogStageExtract, Warning, TEXT("[%s] Param '%s': target not found on %s"),
 				*RuleId.ToString(), *Param.Key.ToString(), *SpawnedActor->GetName());
 			continue;
 		}
@@ -298,7 +452,7 @@ bool UStageExtractRule::ApplyPCGParams(AActor* SpawnedActor, const FStageExtract
 		const FProperty* Prop = Target->GetClass()->FindPropertyByName(PropertyName);
 		if (!Prop)
 		{
-			UE_LOG(LogStageExtract, Warning, TEXT("[%s] PCGParam '%s': property '%s' not found on %s"),
+			UE_LOG(LogStageExtract, Warning, TEXT("[%s] Param '%s': property '%s' not found on %s"),
 				*RuleId.ToString(), *Param.Key.ToString(), *PropertyName.ToString(), *Target->GetName());
 			continue;
 		}
@@ -306,7 +460,7 @@ bool UStageExtractRule::ApplyPCGParams(AActor* SpawnedActor, const FStageExtract
 		void* ValuePtr = Prop->ContainerPtrToValuePtr<void>(Target);
 		if (!Prop->ImportText_Direct(*Param.Value, ValuePtr, Target, PPF_None))
 		{
-			UE_LOG(LogStageExtract, Warning, TEXT("[%s] PCGParam '%s': failed to import '%s'"),
+			UE_LOG(LogStageExtract, Warning, TEXT("[%s] Param '%s': failed to import '%s'"),
 				*RuleId.ToString(), *Param.Key.ToString(), *Param.Value);
 			continue;
 		}
@@ -318,9 +472,95 @@ bool UStageExtractRule::ApplyPCGParams(AActor* SpawnedActor, const FStageExtract
 	return bApplied;
 }
 
-void UStageExtractRule::RegeneratePCG(AActor* SpawnedActor, FStageSpawnContext& Ctx) const
+void UStageExtractRule::SchedulePostSpawnFunctions(AActor* SpawnedActor, FStageSpawnContext& Ctx) const
 {
-	if (!SpawnedActor || !HasField(EStageExtractField::PCGParams))
+	if (!SpawnedActor || !Ctx.World)
+	{
+		return;
+	}
+
+	if (Ctx.BeginAsync)
+	{
+		Ctx.BeginAsync();
+	}
+
+	TWeakObjectPtr<const UStageExtractRule> WeakRule = this;
+	TWeakObjectPtr<AActor> WeakActor = SpawnedActor;
+	TFunction<void()> BeginAsync = Ctx.BeginAsync;
+	TFunction<void()> EndAsync = Ctx.EndAsync;
+
+	Ctx.World->GetTimerManager().SetTimerForNextTick([WeakRule, WeakActor, BeginAsync, EndAsync]()
+	{
+		const UStageExtractRule* Rule = WeakRule.Get();
+		AActor* Actor = WeakActor.Get();
+
+		if (!Rule || !Actor)
+		{
+			return;
+		}
+
+		Rule->CallPostSpawnFunctions(Actor);
+		WaitForPCGGeneration(Actor, BeginAsync, EndAsync);
+
+		if (EndAsync)
+		{
+			EndAsync();
+		}
+	});
+}
+
+void UStageExtractRule::CallPostSpawnFunctions(AActor* SpawnedActor) const
+{
+	if (!SpawnedActor)
+	{
+		return;
+	}
+
+	for (const FStageFunctionCall& Call : PostSpawnFunctions)
+	{
+		FName FunctionName = NAME_None;
+		UObject* Target = ResolveParamTarget(SpawnedActor, Call.Function, FunctionName);
+		UFunction* Func = Target ? Target->FindFunction(FunctionName) : nullptr;
+
+		if (!Func)
+		{
+			UE_LOG(LogStageExtract, Warning, TEXT("[%s] PostSpawnFunction '%s': not found on %s"),
+				*RuleId.ToString(), *Call.Function.ToString(), *SpawnedActor->GetName());
+			continue;
+		}
+
+		FStructOnScope ParamsScope(Func);
+		uint8* ParamsBuffer = ParamsScope.GetStructMemory();
+
+		int32 ArgIndex = 0;
+		for (TFieldIterator<FProperty> It(Func); It && It->HasAnyPropertyFlags(CPF_Parm); ++It)
+		{
+			const FProperty* Param = *It;
+			const bool bIsOutput = Param->HasAnyPropertyFlags(CPF_ReturnParm)
+				|| (Param->HasAnyPropertyFlags(CPF_OutParm) && !Param->HasAnyPropertyFlags(CPF_ReferenceParm));
+			if (bIsOutput)
+			{
+				continue;
+			}
+
+			if (Call.Arguments.IsValidIndex(ArgIndex) && !Call.Arguments[ArgIndex].IsEmpty())
+			{
+				if (!Param->ImportText_InContainer(*Call.Arguments[ArgIndex], ParamsBuffer, Target, PPF_None))
+				{
+					UE_LOG(LogStageExtract, Warning, TEXT("[%s] PostSpawnFunction '%s': failed to import argument %d '%s'"),
+						*RuleId.ToString(), *Call.Function.ToString(), ArgIndex, *Call.Arguments[ArgIndex]);
+				}
+			}
+			++ArgIndex;
+		}
+
+		Target->ProcessEvent(Func, ParamsBuffer);
+	}
+}
+
+void UStageExtractRule::WaitForPCGGeneration(AActor* SpawnedActor, const TFunction<void()>& BeginAsync, const TFunction<void()>& EndAsync)
+{
+	if (!SpawnedActor)
 	{
 		return;
 	}
@@ -330,22 +570,20 @@ void UStageExtractRule::RegeneratePCG(AActor* SpawnedActor, FStageSpawnContext& 
 
 	for (UPCGComponent* PCG : PCGComps)
 	{
-		if (!PCG)
+		if (!PCG || !PCG->IsGenerating())
 		{
 			continue;
 		}
 
-		if (Ctx.BeginAsync)
+		if (BeginAsync)
 		{
-			Ctx.BeginAsync();
+			BeginAsync();
 		}
 
 		UStageExtractPCGWaiter* Waiter = NewObject<UStageExtractPCGWaiter>(SpawnedActor);
 		Waiter->AddToRoot();
-		Waiter->OnComplete = Ctx.EndAsync;
+		Waiter->OnComplete = EndAsync;
 		PCG->OnPCGGraphGeneratedDelegate.AddUObject(Waiter, &UStageExtractPCGWaiter::HandlePCGGenerated);
-
-		PCG->GenerateLocal(true);
 	}
 }
 

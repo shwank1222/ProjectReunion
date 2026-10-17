@@ -1,5 +1,6 @@
 #include "Utility/Stage/StageDataExtractorLibrary.h"
 #include "Data/StageData.h"
+#include "Core/OSMKGameState.h"
 #include "Data/Stage/StageExtractRule.h"
 #include "Data/Stage/StageExtractedCache.h"
 #include "Engine/World.h"
@@ -68,6 +69,17 @@ void UStageDataExtractorLibrary::ExtractFromStageData(UStageData* StageData, TAr
 		if (TMap<FName, int32>* Found = ExistingCounts.Find(NewConfig.StageRowName))
 		{
 			NewConfig.BulletCounts = *Found;
+		}
+
+		if (StageData->BulletDataTable)
+		{
+			for (const FName& BulletRow : StageData->BulletDataTable->GetRowNames())
+			{
+				if (!NewConfig.BulletCounts.Contains(BulletRow))
+				{
+					NewConfig.BulletCounts.Add(BulletRow, AOSMKGameState::MaxBulletSlots);
+				}
+			}
 		}
 
 		StageData->StageConfigs.Add(NewConfig);

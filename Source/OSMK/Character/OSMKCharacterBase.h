@@ -70,7 +70,7 @@ protected:
 	TObjectPtr<USoundBase> FireSound = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Death")
-	float ImpulseStrength = 50000.0f;
+	float ImpulseStrength = 1.0f;
 
 	UPROPERTY(VisibleAnywhere)
 	uint8 bIsDead : 1 = false;

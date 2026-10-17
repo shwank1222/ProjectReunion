@@ -12,6 +12,7 @@ class UNiagaraSystem;
 class AOSMKCharacterBase;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReplayFinished);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReplayFinalAngleStarted);
 
 UCLASS()
 class OSMK_API AReplayCameraActor : public AActor
@@ -57,6 +58,9 @@ public:
 	UPROPERTY(BlueprintAssignable)
 	FOnReplayFinished OnReplayFinished;
 
+	UPROPERTY(BlueprintAssignable)
+	FOnReplayFinalAngleStarted OnReplayFinalAngleStarted;
+
 protected:
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<USpringArmComponent> SpringArmComponent = nullptr;
@@ -66,6 +70,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Replay")
 	TObjectPtr<UNiagaraSystem> HitEffect = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Replay")
+	TObjectPtr<USoundBase> FireSound = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Replay")
 	float CameraDistance = 200.0f;
@@ -81,6 +88,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Replay")
 	float CameraProbeRadius = 50.0f;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Replay")
+	float HoldFollowInterpSpeed = 2.0f;
 
 private:
 	static constexpr int32 ReplayAngleCount = 3;

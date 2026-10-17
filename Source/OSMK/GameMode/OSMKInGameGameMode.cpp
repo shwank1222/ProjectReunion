@@ -347,7 +347,7 @@ void AOSMKInGameGameMode::ShowStageClearWidget()
 		HUD->SetHUDVisible(false);
 	}
 
-	GetWorldTimerManager().SetTimer(StageResultTimerHandle, this, &AOSMKInGameGameMode::ProceedToNextStage, 2.0f, false);
+	GetWorldTimerManager().SetTimer(StageResultTimerHandle, this, &AOSMKInGameGameMode::ProceedToNextStage, 4.0f, false);
 }
 
 void AOSMKInGameGameMode::ShowStageFailWidget()

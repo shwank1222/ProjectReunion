@@ -3,8 +3,8 @@
 #include "CoreMinimal.h"
 #include "StageExtractedItem.generated.h"
 
-UENUM(BlueprintType, meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))
-enum class EStageExtractField : uint8
+UENUM(meta = (Bitflags, UseEnumValuesAsMaskValuesInEditor = "true"))
+enum class EStageExtractField : uint16
 {
 	None       = 0 UMETA(Hidden),
 	Transform  = 1 << 0,
@@ -14,7 +14,8 @@ enum class EStageExtractField : uint8
 	Materials  = 1 << 4,
 	LevelAsset = 1 << 5,
 	SpringArm  = 1 << 6,
-	PCGParams  = 1 << 7,
+	Properties = 1 << 7 UMETA(ToolTip = "Capture and restore the properties selected in SyncProperties."),
+	Functions  = 1 << 8 UMETA(ToolTip = "Call the functions selected in PostSpawnFunctions on the tick after spawning."),
 };
 ENUM_CLASS_FLAGS(EStageExtractField)
 
@@ -48,7 +49,7 @@ struct FStageExtractedItem
 	FVector SpringArmSocketOffset = FVector::ZeroVector;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "StageData")
-	TMap<FName, FString> PCGParams;
+	TMap<FName, FString> PropertyValues;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "StageData|Brush")
 	bool bHasBrushBounds = false;
