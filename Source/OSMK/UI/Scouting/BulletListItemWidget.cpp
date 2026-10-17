@@ -9,6 +9,7 @@
 #include "Components/Button.h"
 #include "Components/Image.h"
 #include "Components/TextBlock.h"
+#include "Kismet/GameplayStatics.h"
 
 void UBulletListItemWidget::NativeConstruct()
 {
@@ -75,10 +76,11 @@ void UBulletListItemWidget::OnDragEnded()
 	SetCursor(CurrentCount > 0 ? HoverCursor.GetValue() : EMouseCursor::Default);
 }
 
-void UBulletListItemWidget::SetGrabSettings(float InHeldScale, float InMoveDuration)
+void UBulletListItemWidget::SetGrabSettings(float InHeldScale, float InMoveDuration, USoundBase* InGrabSound)
 {
 	HeldBulletScale = InHeldScale;
 	GrabMoveDuration = InMoveDuration;
+	GrabSound = InGrabSound;
 }
 
 void UBulletListItemWidget::NativeOnMouseEnter(const FGeometry& InGeometry, const FPointerEvent& InMouseEvent)
@@ -150,6 +152,11 @@ void UBulletListItemWidget::NativeOnDragDetected(const FGeometry& InGeometry, co
 			}
 		}
 		DragOperation->DefaultDragVisual = DragVisual;
+
+		if (GrabSound)
+		{
+			UGameplayStatics::PlaySound2D(this, GrabSound);
+		}
 	}
 
 	OutOperation = DragOperation;

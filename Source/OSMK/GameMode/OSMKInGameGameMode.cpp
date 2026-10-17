@@ -15,6 +15,7 @@
 #include "UI/StageResult/StageClearWidget.h"
 #include "UI/Credits/CreditsWidget.h"
 #include "Kismet/GameplayStatics.h"
+#include "Core/OSMKBGMSubsystem.h"
 
 void AOSMKInGameGameMode::BeginPlay()
 {
@@ -37,6 +38,14 @@ void AOSMKInGameGameMode::BeginPlay()
 
 void AOSMKInGameGameMode::SpawnStage(int32 StageIndex)
 {
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UOSMKBGMSubsystem* BGM = GI->GetSubsystem<UOSMKBGMSubsystem>())
+		{
+			BGM->SetCombatLayer(false);
+		}
+	}
+
 	ClearStage();
 
 	CurrentStageIndex = StageIndex;

@@ -1,6 +1,7 @@
 #include "Core/OSMKGameState.h"
 
 #include "OSMKSlowMotionSubsystem.h"
+#include "OSMKBGMSubsystem.h"
 #include "Character/OSMKCharacterBase.h"
 #include "Character/PlayerCharacter.h"
 #include "Character/AI/EnemyCharacter.h"
@@ -20,6 +21,14 @@ void AOSMKGameState::BeginPlay()
 void AOSMKGameState::EndScoutingPhase()
 {
 	CurrentStageState = EOSMKStageState::InProgress;
+
+	if (UGameInstance* GI = GetGameInstance())
+	{
+		if (UOSMKBGMSubsystem* BGM = GI->GetSubsystem<UOSMKBGMSubsystem>())
+		{
+			BGM->SetCombatLayer(true);
+		}
+	}
 }
 
 void AOSMKGameState::SetEnemyCount(int32 Count)

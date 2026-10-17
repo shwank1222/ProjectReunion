@@ -6,6 +6,8 @@
 #include "EnhancedInputComponent.h"
 #include "NiagaraComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Camera/CameraShakeBase.h"
+#include "Camera/PlayerCameraManager.h"
 #include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Core/OSMKGameState.h"
@@ -66,6 +68,114 @@ void APlayerCharacter::BeginPlay()
 	}
 
 	ResetAmmo();
+
+	GetWorldTimerManager().SetTimer(WalkShakeTimerHandle, this, &ThisClass::UpdateWalkCameraShake, WalkShakeCheckInterval, true);
+}
+
+void APlayerCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	UGameplayStatics::SetGlobalPitchModulation(this, 1.0f, 0.0f);
+
+	Super::EndPlay(EndPlayReason);
+}
+
+void APlayerCharacter::UpdateWalkCameraShake()
+{
+	const APlayerController* PC = Cast<APlayerController>(GetController());
+	const UCharacterMovementComponent* Movement = GetCharacterMovement();
+	if (!WalkCameraShake || !PC || !PC->PlayerCameraManager || !Movement || !Movement->IsMovingOnGround())
+	{
+		StopWalkCameraShake();
+		return;
+	}
+
+	const float Speed = GetVelocity().Size2D();
+	if (Speed < WalkShakeMinSpeed)
+	{
+		StopWalkCameraShake();
+		return;
+	}
+
+	if (!IsValid(ActiveWalkShake) || !ActiveWalkShake->IsActive())
+	{
+		ActiveWalkShake = PC->PlayerCameraManager->StartCameraShake(WalkCameraShake);
+		WalkShakeCameraManager = PC->PlayerCameraManager;
+	}
+
+	if (IsValid(ActiveWalkShake))
+	{
+		const float MaxSpeed = Movement->GetMaxSpeed();
+		const float SpeedRatio = MaxSpeed > KINDA_SMALL_NUMBER ? FMath::Clamp(Speed / MaxSpeed, 0.0f, 1.0f) : 1.0f;
+		ActiveWalkShake->ShakeScale = WalkShakeScale * SpeedRatio;
+	}
+}
+
+void APlayerCharacter::StopWalkCameraShake()
+{
+	if (IsValid(ActiveWalkShake) && WalkShakeCameraManager.IsValid())
+	{
+		WalkShakeCameraManager->StopCameraShake(ActiveWalkShake, false);
+	}
+
+	ActiveWalkShake = nullptr;
+	WalkShakeCameraManager.Reset();
+}
+
+void APlayerCharacter::StartFireRecoil()
+{
+	if (!FirstPersonCameraComponent)
+	{
+		return;
+	}
+
+	RecoilPeak = FRotator(FireRecoilPitch, FMath::FRandRange(-FireRecoilYaw, FireRecoilYaw), 0.0f);
+	RecoilElapsed = 0.0f;
+	bRecoilActive = true;
+	FirstPersonCameraComponent->bUsePawnControlRotation = false;
+
+	GetWorldTimerManager().ClearTimer(RecoilTimerHandle);
+	RecoilTimerHandle = GetWorldTimerManager().SetTimerForNextTick(this, &ThisClass::UpdateFireRecoil);
+}
+
+void APlayerCharacter::UpdateFireRecoil()
+{
+	if (!bRecoilActive || !FirstPersonCameraComponent)
+	{
+		return;
+	}
+
+	RecoilElapsed += GetWorld()->GetDeltaSeconds();
+
+	float Alpha = 0.0f;
+	if (RecoilElapsed < FireRecoilKickDuration)
+	{
+		Alpha = FMath::InterpEaseOut(0.0f, 1.0f, RecoilElapsed / FireRecoilKickDuration, 2.0f);
+	}
+	else if (RecoilElapsed < FireRecoilKickDuration + FireRecoilRecoverDuration)
+	{
+		Alpha = FMath::InterpEaseInOut(1.0f, 0.0f, (RecoilElapsed - FireRecoilKickDuration) / FireRecoilRecoverDuration, 2.0f);
+	}
+	else
+	{
+		StopFireRecoil();
+		return;
+	}
+
+	FirstPersonCameraComponent->SetWorldRotation(GetControlRotation() + RecoilPeak * Alpha);
+
+	RecoilTimerHandle = GetWorldTimerManager().SetTimerForNextTick(this, &ThisClass::UpdateFireRecoil);
+}
+
+void APlayerCharacter::StopFireRecoil()
+{
+	GetWorldTimerManager().ClearTimer(RecoilTimerHandle);
+	bRecoilActive = false;
+	RecoilElapsed = 0.0f;
+
+	if (FirstPersonCameraComponent)
+	{
+		FirstPersonCameraComponent->bUsePawnControlRotation = true;
+	}
 }
 
 void APlayerCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -101,6 +211,10 @@ FVector APlayerCharacter::GetHeadWorldLocation() const
 void APlayerCharacter::Die()
 {
 	Super::Die();
+
+	GetWorldTimerManager().ClearTimer(WalkShakeTimerHandle);
+	StopWalkCameraShake();
+	StopFireRecoil();
 
 	DisableInput(Cast<APlayerController>(GetController()));
 
@@ -146,6 +260,18 @@ void APlayerCharacter::LockForReplay()
 
 	StopHeartPulseSound();
 
+	if (IsValid(SlowMotionSubsystem))
+	{
+		SlowMotionSubsystem->RestoreGimmickHighlight();
+	}
+
+	UGameplayStatics::SetGlobalPitchModulation(this, 1.0f, SlowFireSoundFadeTime);
+	bSlowFireActive = false;
+
+	GetWorldTimerManager().ClearTimer(WalkShakeTimerHandle);
+	StopWalkCameraShake();
+	StopFireRecoil();
+
 	bIsFiring = false;
 	bIsFired = false;
 
@@ -173,7 +299,7 @@ void APlayerCharacter::LookInput(const FInputActionValue& Value)
 		return;
 	}
 
-	const FVector2D LookVector = Value.Get<FVector2D>();
+	const FVector2D LookVector = Value.Get<FVector2D>() * (bSlowFireActive ? SlowFireLookScale : 1.0f);
 
 	AddControllerYawInput(LookVector.X);
 	AddControllerPitchInput(LookVector.Y);
@@ -212,6 +338,8 @@ void APlayerCharacter::OnHoldTriggered()
 	{
 		SlowMotionSubsystem->ApplySlowMotion(0.2f, 10000.0f);
 		SlowMotionSubsystem->ApplyGimmickHighlight();
+		UGameplayStatics::SetGlobalPitchModulation(this, SlowFireSoundPitch, SlowFireSoundFadeTime);
+		bSlowFireActive = true;
 		
 		PlayHeartPulseSound();
 	}
@@ -245,6 +373,7 @@ void APlayerCharacter::Fire()
 	PlayFireMontage(FirstPersonMesh);
 	PlayFireSound();
 	PlayFireEffect();
+	StartFireRecoil();
 
 	FireProjectile(BulletClassSoft.LoadSynchronous());
 
@@ -264,9 +393,12 @@ void APlayerCharacter::StopSlowMotion()
 	{
 		SlowMotionSubsystem->RestoreTimeDilation();
 		SlowMotionSubsystem->RestoreGimmickHighlight();
-	
+
 		StopHeartPulseSound();
 	}
+
+	UGameplayStatics::SetGlobalPitchModulation(this, 1.0f, SlowFireSoundFadeTime);
+	bSlowFireActive = false;
 
 	bIsFired = false;
 }

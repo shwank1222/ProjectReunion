@@ -269,7 +269,7 @@ void UBulletSelectionWidget::PopulateBulletList()
 
 		Item->Init(RowName, Row->BulletIcon.LoadSynchronous(), Row->BulletName, Row->BulletDescription);
 		Item->SetCount(Available);
-		Item->SetGrabSettings(HeldBulletScale, GrabMoveDuration);
+		Item->SetGrabSettings(HeldBulletScale, GrabMoveDuration, BulletGrabSound);
 		Item->OnBulletItemHovered.BindUObject(this, &UBulletSelectionWidget::OnBulletHovered);
 		Item->OnBulletItemUnhovered.BindUObject(this, &UBulletSelectionWidget::OnBulletUnhovered);
 		List_Bullets->AddChild(Item);
@@ -572,6 +572,11 @@ void UBulletSelectionWidget::StartShellLoad(FName BulletName, int32 SlotIndex)
 	SlotImage->SetRenderOpacity(Anim.CurrentOpacity);
 
 	StartSlotAnim(SlotIndex, FVector2D(1.0f, 1.0f), 1.0f, ShellFitDuration);
+
+	if (ShellLoadSound)
+	{
+		UGameplayStatics::PlaySound2D(this, ShellLoadSound);
+	}
 }
 
 void UBulletSelectionWidget::TickSlotAnims(float DeltaTime)
@@ -706,6 +711,7 @@ void UBulletSelectionWidget::HandleBulletDropped(FName RowName, const FVector2D&
 	{
 		UpdateListItemCount(RowName);
 		SetItemIconHidden(RowName, false);
+		PlayBulletReleaseSound();
 		return;
 	}
 
@@ -722,7 +728,16 @@ void UBulletSelectionWidget::HandleBulletDropped(FName RowName, const FVector2D&
 		}
 	}
 
+	PlayBulletReleaseSound();
 	StartCursorFly(RowName, CursorScreenPos, INDEX_NONE, EBulletFlyMode::ReturnToItem);
+}
+
+void UBulletSelectionWidget::PlayBulletReleaseSound()
+{
+	if (BulletReleaseSound)
+	{
+		UGameplayStatics::PlaySound2D(this, BulletReleaseSound);
+	}
 }
 
 void UBulletSelectionWidget::OnPopClicked()
