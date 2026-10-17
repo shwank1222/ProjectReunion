@@ -151,6 +151,7 @@ void AOSMKGameState::StartClearReplay()
 	}
 
 	SpawnedReplayCameraActor->OnReplayFinished.AddUniqueDynamic(this, &ThisClass::OnReplayClearFinished);
+	SpawnedReplayCameraActor->OnReplayFinalAngleStarted.AddUniqueDynamic(this, &ThisClass::OnReplayClearFinalAngleStarted);
 	SpawnedReplayCameraActor->StartReplay(LastKilledTarget);
 }
 
@@ -175,6 +176,7 @@ void AOSMKGameState::StartFailReplay()
 	}
 
 	SpawnedReplayCameraActor->OnReplayFinished.AddUniqueDynamic(this, &ThisClass::OnReplayFailedFinished);
+	SpawnedReplayCameraActor->OnReplayFinalAngleStarted.AddUniqueDynamic(this, &ThisClass::OnReplayFailedFinalAngleStarted);
 	SpawnedReplayCameraActor->StartReplay(Player);
 }
 
@@ -323,5 +325,15 @@ void AOSMKGameState::OnReplayFailedFinished()
 		SpawnedReplayCameraActor->BeginHoldShot(nullptr, false);
 	}
 
+	StageFailed();
+}
+
+void AOSMKGameState::OnReplayClearFinalAngleStarted()
+{
+	StageClear();
+}
+
+void AOSMKGameState::OnReplayFailedFinalAngleStarted()
+{
 	StageFailed();
 }

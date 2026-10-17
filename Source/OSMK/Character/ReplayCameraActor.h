@@ -12,6 +12,7 @@ class UNiagaraSystem;
 class AOSMKCharacterBase;
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReplayFinished);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReplayFinalAngleStarted);
 
 UCLASS()
 class OSMK_API AReplayCameraActor : public AActor
@@ -56,6 +57,9 @@ private:
 public:
 	UPROPERTY(BlueprintAssignable)
 	FOnReplayFinished OnReplayFinished;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnReplayFinalAngleStarted OnReplayFinalAngleStarted;
 
 protected:
 	UPROPERTY(VisibleAnywhere)

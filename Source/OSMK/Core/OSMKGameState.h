@@ -73,6 +73,12 @@ private:
 	UFUNCTION()
 	void OnReplayFailedFinished();
 
+	UFUNCTION()
+	void OnReplayClearFinalAngleStarted();
+
+	UFUNCTION()
+	void OnReplayFailedFinalAngleStarted();
+
 public:
 	static constexpr int32 MaxBulletSlots = 6;
 

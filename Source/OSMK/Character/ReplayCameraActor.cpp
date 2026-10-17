@@ -377,6 +377,11 @@ void AReplayCameraActor::OnAngleComplete()
 
 	bIsPlayingBack = true;
 	SetActorTickEnabled(true);
+
+	if (CurrentAngleIndex == ReplayAngleCount - 1)
+	{
+		OnReplayFinalAngleStarted.Broadcast();
+	}
 }
 
 void AReplayCameraActor::FinishReplay()
