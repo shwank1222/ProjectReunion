@@ -5,6 +5,7 @@
 #include "OSMKGameState.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnEnemyCountChanged);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnStageEvent, int32, StageIndex, FName, StageName);
 
 class AOSMKCharacterBase;
 class AEnemyCharacter;
@@ -43,6 +44,9 @@ public:
 
 	UFUNCTION()
 	void PlayerDeath();
+
+	void NotifyStageSpawned(int32 StageIndex, FName StageName);
+	void NotifyStageStarted();
 
 	void DestroyReplayCameraActor();
 
@@ -84,6 +88,18 @@ public:
 
 	UPROPERTY(BlueprintAssignable)
 	FOnEnemyCountChanged OnEnemyCountChanged;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnStageEvent OnStageSpawned;
+
+	UPROPERTY(BlueprintAssignable)
+	FOnStageEvent OnStageStarted;
+
+	UPROPERTY(BlueprintReadOnly)
+	int32 CurrentStageIndex = INDEX_NONE;
+
+	UPROPERTY(BlueprintReadOnly)
+	FName CurrentStageName = NAME_None;
 
 	UPROPERTY(BlueprintReadOnly)
 	EOSMKStageState CurrentStageState = EOSMKStageState::Scouting;

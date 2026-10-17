@@ -22,18 +22,20 @@ void AOSMKInGameGameMode::BeginPlay()
 	Super::BeginPlay();
 
 	CurrentStageIndex = 0;
-	SpawnStage(CurrentStageIndex);
 
-	if (!ScoutingWidgetClass)
+	if (ScoutingWidgetClass)
 	{
-		return;
+		ScoutingWidget = CreateWidget<UScoutingWidget>(GetWorld(), ScoutingWidgetClass);
+		if (ScoutingWidget)
+		{
+			ScoutingWidget->AddToViewport();
+		}
 	}
 
-	ScoutingWidget = CreateWidget<UScoutingWidget>(GetWorld(), ScoutingWidgetClass);
-	if (ScoutingWidget)
+	GetWorldTimerManager().SetTimerForNextTick(FTimerDelegate::CreateWeakLambda(this, [this]()
 	{
-		ScoutingWidget->AddToViewport();
-	}
+		SpawnStage(CurrentStageIndex);
+	}));
 }
 
 void AOSMKInGameGameMode::SpawnStage(int32 StageIndex)
@@ -181,6 +183,7 @@ void AOSMKInGameGameMode::OnAllRulesFinished()
 			}
 		}
 		GS->SetEnemyCount(EnemyCount);
+		GS->NotifyStageSpawned(CurrentStageIndex, CurrentLevelName);
 	}
 
 	GetWorldTimerManager().SetTimerForNextTick([this]()

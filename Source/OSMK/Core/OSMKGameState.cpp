@@ -31,6 +31,18 @@ void AOSMKGameState::EndScoutingPhase()
 	}
 }
 
+void AOSMKGameState::NotifyStageSpawned(int32 StageIndex, FName StageName)
+{
+	CurrentStageIndex = StageIndex;
+	CurrentStageName = StageName;
+	OnStageSpawned.Broadcast(StageIndex, StageName);
+}
+
+void AOSMKGameState::NotifyStageStarted()
+{
+	OnStageStarted.Broadcast(CurrentStageIndex, CurrentStageName);
+}
+
 void AOSMKGameState::SetEnemyCount(int32 Count)
 {
 	EnemyCount = Count;

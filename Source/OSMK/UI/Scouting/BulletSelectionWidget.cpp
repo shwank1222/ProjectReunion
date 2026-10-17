@@ -970,6 +970,11 @@ void UBulletSelectionWidget::OnConfirmClicked()
 		}
 	}
 
+	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
+	{
+		GS->NotifyStageStarted();
+	}
+
 	if (UUserWidget* ScoutingWidget = Cast<UUserWidget>(GetOuter()))
 	{
 		ScoutingWidget->RemoveFromParent();
