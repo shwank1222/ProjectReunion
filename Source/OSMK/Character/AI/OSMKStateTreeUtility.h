@@ -80,6 +80,9 @@ struct FStateTreeGetPlayerInfoInstanceData
 
 	UPROPERTY(EditAnywhere, Category = Output)
 	bool bCanKeepAttacking = false;
+
+	UPROPERTY(EditAnywhere, Category = Output)
+	bool bAlerted = false;
 };
 
 USTRUCT(meta = (DisplayName = "GetPlayerInfo"))

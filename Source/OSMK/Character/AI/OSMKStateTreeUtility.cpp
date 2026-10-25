@@ -75,7 +75,7 @@ EStateTreeRunStatus FStateTreeGetPlayerInfoTask::EnterState(FStateTreeExecutionC
 
 EStateTreeRunStatus FStateTreeGetPlayerInfoTask::Tick(FStateTreeExecutionContext& Context, const float DeltaTime) const
 {
-	auto& [Character, TargetActor, DistanceToTarget, bCanAttackTarget, bCanKeepAttacking] = Context.GetInstanceData(*this);
+	auto& [Character, TargetActor, DistanceToTarget, bCanAttackTarget, bCanKeepAttacking, bAlerted] = Context.GetInstanceData(*this);
 
 	if (!IsValid(Character) || !IsValid(TargetActor))
 	{
@@ -86,6 +86,7 @@ EStateTreeRunStatus FStateTreeGetPlayerInfoTask::Tick(FStateTreeExecutionContext
 
 	bCanAttackTarget = Character->CanAttackTarget(TargetActor);
 	bCanKeepAttacking = Character->CanAttackTarget(TargetActor, Character->GetAttackCancelMargin());
+	bAlerted = Character->UpdateAlert(TargetActor);
 	
 	return EStateTreeRunStatus::Running;
 }

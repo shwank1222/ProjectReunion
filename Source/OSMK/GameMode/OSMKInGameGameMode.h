@@ -41,6 +41,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ActivateEnemies();
 
+	void AlertEnemyGroup(int32 GroupId);
+
 	UFUNCTION()
 	void HandleStageClear();
 
@@ -55,6 +57,7 @@ protected:
 
 private:
 	void AdvanceRules();
+	void AssignEnemyGroups();
 	void OnAllRulesFinished();
 	void SetupScoutCamera(AActor* CameraActor);
 	void ShowStageClearWidget();
@@ -80,6 +83,9 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Stage")
 	class UStageData* StageData = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Enemy", meta = (ClampMin = "0.0"))
+	float EnemyGroupRadius = 800.0f;
 
 private:
 	UPROPERTY()
