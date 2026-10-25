@@ -3,6 +3,14 @@
 #include "Components/VerticalBox.h"
 #include "Data/KillFeedbackData.h"
 
+void UKillFeedbackListWidget::ClearKillFeedback()
+{
+	if (VBox_FeedbackList)
+	{
+		VBox_FeedbackList->ClearChildren();
+	}
+}
+
 void UKillFeedbackListWidget::AddKillFeedback()
 {
 	if (!KillFeedbackWidgetClass || !VBox_FeedbackList || !KillFeedbackDataTable)
