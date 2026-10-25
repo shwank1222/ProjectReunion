@@ -30,6 +30,17 @@ struct FStateTreeEquipPistolTask : public FStateTreeTaskCommonBase
 	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
 };
 
+USTRUCT(meta = (DisplayName = "Unequip Pistol"))
+struct FStateTreeUnequipPistolTask : public FStateTreeTaskCommonBase
+{
+	GENERATED_BODY()
+
+	using FInstanceDataType = FStateTreeEquipPistolInstanceData;
+	virtual const UStruct* GetInstanceDataType() const override { return FInstanceDataType::StaticStruct(); }
+
+	virtual EStateTreeRunStatus EnterState(FStateTreeExecutionContext& Context, const FStateTreeTransitionResult& Transition) const override;
+};
+
 USTRUCT()
 struct FStateTreeShootAtTargetInstanceData
 {
@@ -66,6 +77,9 @@ struct FStateTreeGetPlayerInfoInstanceData
 	
 	UPROPERTY(EditAnywhere, Category = Output)
 	bool bCanAttackTarget = false;
+
+	UPROPERTY(EditAnywhere, Category = Output)
+	bool bCanKeepAttacking = false;
 };
 
 USTRUCT(meta = (DisplayName = "GetPlayerInfo"))

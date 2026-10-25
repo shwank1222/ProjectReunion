@@ -17,12 +17,16 @@ public:
 	virtual void BeginPlay() override;
 	
 	void EquipPistol();
+
+	void UnequipPistol();
 	
 	void Fire();
 	
 	void ActivateEnemy() const;
 
-	bool CanAttackTarget(AActor* TargetActor);
+	bool CanAttackTarget(AActor* TargetActor, float ExtraRange = 0.0f);
+
+	FORCEINLINE float GetAttackCancelMargin() const { return AttackCancelMargin; }
 
 	virtual void FinalizeDeathAfterReplay() override;
 
@@ -44,11 +48,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
 	float AttackRange = 500.0f;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Aim")
-	float AimOffsetZ = 40.0f;
+	UPROPERTY(EditDefaultsOnly, Category = "Aim", meta = (ClampMin = "0.0"))
+	float AttackCancelMargin = 100.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Aim")
-	float MaxFireDistance = 10000.0f;
+	float AimOffsetZ = 40.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Death")
 	float DestroyDelay = 2.0f;

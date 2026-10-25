@@ -37,10 +37,21 @@ void AEnemyCharacter::EquipPistol()
 	bIsEquippedPistol = true;
 }
 
+void AEnemyCharacter::UnequipPistol()
+{
+	if (!bIsEquippedPistol)
+	{
+		return;
+	}
+
+	PistolMesh->SetHiddenInGame(true);
+	bIsEquippedPistol = false;
+}
+
 void AEnemyCharacter::Fire()
 {
 	FHitResult Hit;
-	if (TrySweep(PlayerCharacter, Hit, MaxFireDistance))
+	if (TrySweep(PlayerCharacter, Hit, AttackRange + AttackCancelMargin))
 	{
 		UE_LOG(LogEnemy, Warning, TEXT("Hit: %s"), *GetNameSafe(Hit.GetActor()));
 
@@ -68,15 +79,15 @@ void AEnemyCharacter::ActivateEnemy() const
 	}
 }
 
-bool AEnemyCharacter::CanAttackTarget(AActor* TargetActor)
+bool AEnemyCharacter::CanAttackTarget(AActor* TargetActor, const float ExtraRange)
 {
 	if (!IsValid(TargetActor))
 	{
 		return false;
 	}
-	
+
 	FHitResult Hit;
-	const bool bHit = TrySweep(TargetActor, Hit, AttackRange);
+	const bool bHit = TrySweep(TargetActor, Hit, AttackRange + ExtraRange);
 	
 	return bHit ? Hit.GetActor() == TargetActor : false;
 }
