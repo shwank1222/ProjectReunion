@@ -329,11 +329,11 @@ void APlayerCharacter::OnHoldTriggered()
 		return;
 	}
 
-	if (bIsFiring)
+	if (bIsFiring || bIsFired || !GetWorldTimerManager().IsTimerActive(AutoFireTimerHandle))
 	{
 		return;
 	}
-	
+
 	if (IsValid(SlowMotionSubsystem))
 	{
 		SlowMotionSubsystem->ApplySlowMotion(0.2f, 10000.0f);
