@@ -13,6 +13,8 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Feedback")
 	void AddKillFeedback();
 
+	void ClearKillFeedback();
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	class UVerticalBox* VBox_FeedbackList = nullptr;

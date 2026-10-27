@@ -20,4 +20,10 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Stage")
 	void SetMeshVisible(bool bVisible);
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Stage")
+	void HandleStageSpawned();
+	
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Stage")
+	void HandleStageStarted();
 };

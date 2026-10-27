@@ -31,6 +31,19 @@ void UBulletCountdownWidget::NativeDestruct()
 	Super::NativeDestruct();
 }
 
+void UBulletCountdownWidget::ResetCountdown()
+{
+	if (Anim_ZoomFade)
+	{
+		StopAnimation(Anim_ZoomFade);
+	}
+
+	if (Text_Countdown)
+	{
+		Text_Countdown->SetVisibility(ESlateVisibility::Hidden);
+	}
+}
+
 void UBulletCountdownWidget::OnPawnChanged(APawn* OldPawn, APawn* NewPawn)
 {
 	if (CachedPlayerCharacter.IsValid())
@@ -75,6 +88,7 @@ void UBulletCountdownWidget::HandleAmmoChanged()
 	if (Text_Countdown)
 	{
 		Text_Countdown->SetText(FText::AsNumber(FMath::Clamp(CurrentAmmoCount, 0, 5)));
+		Text_Countdown->SetVisibility(ESlateVisibility::HitTestInvisible);
 	}
 
 	if (Anim_ZoomFade)

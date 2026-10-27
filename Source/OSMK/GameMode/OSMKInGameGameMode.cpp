@@ -1,6 +1,7 @@
 #include "GameMode/OSMKInGameGameMode.h"
 
 #include "NavigationSystem.h"
+#include "NavigationPath.h"
 #include "GameFramework/Pawn.h"
 #include "Character/OSMKPlayerController.h"
 #include "UI/Scouting/ScoutingWidget.h"
@@ -192,6 +193,8 @@ void AOSMKInGameGameMode::OnAllRulesFinished()
 		{
 			NavSys->Build();
 		}
+
+		AssignEnemyGroups();
 	});
 }
 
@@ -312,6 +315,80 @@ void AOSMKInGameGameMode::PossessPlayerCharacter()
 	{
 		ScoutingWidget->RemoveFromParent();
 		ScoutingWidget = nullptr;
+	}
+}
+
+void AOSMKInGameGameMode::AssignEnemyGroups()
+{
+	TArray<AEnemyCharacter*> Enemies;
+	for (AActor* Actor : SpawnedActors)
+	{
+		if (AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(Actor))
+		{
+			Enemy->SetAlertGroupId(INDEX_NONE);
+			Enemies.Add(Enemy);
+		}
+	}
+
+	const float RadiusSq = FMath::Square(EnemyGroupRadius);
+	int32 NextGroupId = 0;
+
+	auto IsWithinGroupPath = [this, RadiusSq](const AEnemyCharacter* A, const AEnemyCharacter* B)
+	{
+		if (FVector::DistSquared(A->GetActorLocation(), B->GetActorLocation()) > RadiusSq)
+		{
+			return false;
+		}
+
+		const UNavigationPath* Path = UNavigationSystemV1::FindPathToLocationSynchronously(GetWorld(), A->GetActorLocation(), B->GetActorLocation());
+		return Path && Path->IsValid() && !Path->IsPartial() && Path->GetPathLength() <= EnemyGroupRadius;
+	};
+
+	for (AEnemyCharacter* Seed : Enemies)
+	{
+		if (Seed->GetAlertGroupId() != INDEX_NONE)
+		{
+			continue;
+		}
+
+		const int32 GroupId = NextGroupId++;
+		Seed->SetAlertGroupId(GroupId);
+
+		TArray<AEnemyCharacter*> Queue = { Seed };
+		while (Queue.Num() > 0)
+		{
+			const AEnemyCharacter* Current = Queue.Pop();
+			for (AEnemyCharacter* Other : Enemies)
+			{
+				if (Other->GetAlertGroupId() != INDEX_NONE)
+				{
+					continue;
+				}
+
+				if (IsWithinGroupPath(Current, Other))
+				{
+					Other->SetAlertGroupId(GroupId);
+					Queue.Add(Other);
+				}
+			}
+		}
+	}
+}
+
+void AOSMKInGameGameMode::AlertEnemyGroup(int32 GroupId)
+{
+	if (GroupId == INDEX_NONE)
+	{
+		return;
+	}
+
+	for (AActor* Actor : SpawnedActors)
+	{
+		AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(Actor);
+		if (IsValid(Enemy) && Enemy->GetAlertGroupId() == GroupId)
+		{
+			Enemy->ForceAlert();
+		}
 	}
 }
 

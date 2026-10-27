@@ -67,6 +67,19 @@ void AOSMKIngameHUD::HandleEnemyCountChanged()
 
 void AOSMKIngameHUD::SetHUDVisible(bool bVisible)
 {
+	if (!bVisible)
+	{
+		if (BulletCountdownWidgetInstance)
+		{
+			BulletCountdownWidgetInstance->ResetCountdown();
+		}
+
+		if (KillFeedbackListWidgetInstance)
+		{
+			KillFeedbackListWidgetInstance->ClearKillFeedback();
+		}
+	}
+
 	if (BulletSlotWidgetInstance)
 	{
 		BulletSlotWidgetInstance->SetVisibility(bVisible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);

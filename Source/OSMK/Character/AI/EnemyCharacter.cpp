@@ -6,6 +6,9 @@
 #include "OSMKAIController.h"
 #include "Character/PlayerCharacter.h"
 #include "Core/OSMKGameState.h"
+#include "GameMode/OSMKInGameGameMode.h"
+#include "NavigationPath.h"
+#include "NavigationSystem.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogEnemy, Log, All);
 
@@ -37,10 +40,21 @@ void AEnemyCharacter::EquipPistol()
 	bIsEquippedPistol = true;
 }
 
+void AEnemyCharacter::UnequipPistol()
+{
+	if (!bIsEquippedPistol)
+	{
+		return;
+	}
+
+	PistolMesh->SetHiddenInGame(true);
+	bIsEquippedPistol = false;
+}
+
 void AEnemyCharacter::Fire()
 {
 	FHitResult Hit;
-	if (TrySweep(PlayerCharacter, Hit, MaxFireDistance))
+	if (TrySweep(PlayerCharacter, Hit, AttackRange + AttackCancelMargin))
 	{
 		UE_LOG(LogEnemy, Warning, TEXT("Hit: %s"), *GetNameSafe(Hit.GetActor()));
 
@@ -68,15 +82,62 @@ void AEnemyCharacter::ActivateEnemy() const
 	}
 }
 
-bool AEnemyCharacter::CanAttackTarget(AActor* TargetActor)
+bool AEnemyCharacter::UpdateAlert(AActor* TargetActor)
+{
+	if (bAlerted || !IsValid(TargetActor))
+	{
+		return bAlerted;
+	}
+
+	const double Now = GetWorld()->GetTimeSeconds();
+	if (LastAlertCheckTime >= 0.0 && Now - LastAlertCheckTime < AlertCheckInterval)
+	{
+		return false;
+	}
+	LastAlertCheckTime = Now;
+
+	const UNavigationPath* Path = UNavigationSystemV1::FindPathToLocationSynchronously(this, GetActorLocation(), TargetActor->GetActorLocation(), this);
+	if (!Path || !Path->IsValid() || Path->IsPartial())
+	{
+		return false;
+	}
+
+	if (Path->GetPathLength() <= AlertPathDistance)
+	{
+		bAlerted = true;
+		AlertGroup();
+	}
+
+	return bAlerted;
+}
+
+void AEnemyCharacter::ForceAlert()
+{
+	if (bIsDead)
+	{
+		return;
+	}
+
+	bAlerted = true;
+}
+
+void AEnemyCharacter::AlertGroup() const
+{
+	if (AOSMKInGameGameMode* GM = Cast<AOSMKInGameGameMode>(GetWorld()->GetAuthGameMode()))
+	{
+		GM->AlertEnemyGroup(AlertGroupId);
+	}
+}
+
+bool AEnemyCharacter::CanAttackTarget(AActor* TargetActor, const float ExtraRange)
 {
 	if (!IsValid(TargetActor))
 	{
 		return false;
 	}
-	
+
 	FHitResult Hit;
-	const bool bHit = TrySweep(TargetActor, Hit, AttackRange);
+	const bool bHit = TrySweep(TargetActor, Hit, AttackRange + ExtraRange);
 	
 	return bHit ? Hit.GetActor() == TargetActor : false;
 }
@@ -94,6 +155,8 @@ void AEnemyCharacter::Die()
 	{
 		GetMesh()->AddImpulseAtLocation(PendingImpulseDirection * ImpulseStrength, PendingHitLocation);
 	}
+
+	AlertGroup();
 
 	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
 	{

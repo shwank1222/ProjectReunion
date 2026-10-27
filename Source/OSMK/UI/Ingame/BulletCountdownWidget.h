@@ -17,6 +17,8 @@ public:
 	virtual void NativeConstruct() override;
 	virtual void NativeDestruct() override;
 
+	void ResetCountdown();
+
 private:
 	UFUNCTION()
 	void OnPawnChanged(APawn* OldPawn, APawn* NewPawn);
