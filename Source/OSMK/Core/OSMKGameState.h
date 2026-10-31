@@ -39,6 +39,8 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void NotifyProjectileDestroyed();
 
+	void NotifyGimmickTriggered();
+
 	UFUNCTION(BlueprintCallable)
 	void ResetStageState();
 
@@ -62,6 +64,8 @@ private:
 	void LockPlayerForReplay() const;
 
 	bool TryLockOutcome();
+
+	void TryOutOfAmmoFail();
 
 	AEnemyCharacter* FindNearestEnemy(const FVector& FromLocation) const;
 
@@ -111,6 +115,9 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Replay")
 	TSubclassOf<AReplayCameraActor> ReplayCameraActorClass = nullptr;
 
+	UPROPERTY(EditDefaultsOnly, Category = "Gimmick", meta = (ClampMin = "0.0"))
+	float GimmickResolveDelay = 2.0f;
+
 private:
 	UPROPERTY()
 	TObjectPtr<AOSMKCharacterBase> LastKilledTarget = nullptr;
@@ -119,4 +126,8 @@ private:
 	TObjectPtr<AReplayCameraActor> SpawnedReplayCameraActor = nullptr;
 
 	int32 DestroyedProjectileCount = 0;
+
+	float LastGimmickTriggerTime = -1.0f;
+
+	FTimerHandle OutOfAmmoTimerHandle;
 };

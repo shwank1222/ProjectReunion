@@ -95,6 +95,34 @@ void AOSMKGameState::NotifyProjectileDestroyed()
 		return;
 	}
 
+	TryOutOfAmmoFail();
+}
+
+void AOSMKGameState::NotifyGimmickTriggered()
+{
+	if (const UWorld* World = GetWorld())
+	{
+		LastGimmickTriggerTime = World->GetTimeSeconds();
+	}
+}
+
+void AOSMKGameState::TryOutOfAmmoFail()
+{
+	if (CurrentStageState != EOSMKStageState::InProgress)
+	{
+		return;
+	}
+
+	if (LastGimmickTriggerTime >= 0.0f)
+	{
+		const float RemainingTime = LastGimmickTriggerTime + GimmickResolveDelay - GetWorld()->GetTimeSeconds();
+		if (RemainingTime > 0.0f)
+		{
+			GetWorldTimerManager().SetTimer(OutOfAmmoTimerHandle, this, &ThisClass::TryOutOfAmmoFail, RemainingTime, false);
+			return;
+		}
+	}
+
 	APlayerCharacter* Player = Cast<APlayerCharacter>(UGameplayStatics::GetPlayerCharacter(GetWorld(), 0));
 	if (!IsValid(Player))
 	{
@@ -142,6 +170,8 @@ void AOSMKGameState::ResetStageState()
 	CurrentStageState = EOSMKStageState::Scouting;
 	EnemyCount = 0;
 	DestroyedProjectileCount = 0;
+	LastGimmickTriggerTime = -1.0f;
+	GetWorldTimerManager().ClearTimer(OutOfAmmoTimerHandle);
 }
 
 void AOSMKGameState::PlayerDeath()

@@ -1,5 +1,6 @@
 #include "Interactable/Gimmick/GimmickBase.h"
 #include "Character/OSMKCharacterBase.h"
+#include "Core/OSMKGameState.h"
 
 DEFINE_LOG_CATEGORY(LogGimmick);
 
@@ -19,6 +20,11 @@ void AGimmickBase::Trigger()
 	}
 
 	bTriggered = true;
+
+	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
+	{
+		GS->NotifyGimmickTriggered();
+	}
 
 	OnTriggered();
 }
