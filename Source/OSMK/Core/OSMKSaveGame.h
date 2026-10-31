@@ -31,6 +31,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Control")
 	float MouseSensitivity = 1.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Control")
+	float SlowFireSensitivity = 0.5f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Settings|Language")
 	FString CurrentCulture = TEXT("en");
 

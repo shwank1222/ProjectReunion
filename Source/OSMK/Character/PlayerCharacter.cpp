@@ -10,7 +10,9 @@
 #include "Camera/PlayerCameraManager.h"
 #include "Components/AudioComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Core/OSMKGameInstance.h"
 #include "Core/OSMKGameState.h"
+#include "Core/OSMKSaveGame.h"
 #include "Core/OSMKSlowMotionSubsystem.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "Kismet/GameplayStatics.h"
@@ -299,7 +301,19 @@ void APlayerCharacter::LookInput(const FInputActionValue& Value)
 		return;
 	}
 
-	const FVector2D LookVector = Value.Get<FVector2D>() * (bSlowFireActive ? SlowFireLookScale : 1.0f);
+	float Sensitivity = 1.0f;
+	float SlowFireSensitivity = 0.5f;
+	if (const UOSMKGameInstance* GI = GetGameInstance<UOSMKGameInstance>())
+	{
+		if (const UOSMKSaveGame* SaveGame = GI->GetSettingSaveGame())
+		{
+			Sensitivity = SaveGame->MouseSensitivity;
+			SlowFireSensitivity = SaveGame->SlowFireSensitivity;
+		}
+	}
+
+	const float LookScale = bSlowFireActive ? Sensitivity * SlowFireSensitivity * SlowFireMaxLookScale : Sensitivity;
+	const FVector2D LookVector = Value.Get<FVector2D>() * LookScale;
 
 	AddControllerYawInput(LookVector.X);
 	AddControllerPitchInput(LookVector.Y);

@@ -20,10 +20,15 @@ void USettingsControlWidget::NativeOnOpenTab(UOSMKSaveGame* InSaveGame)
 	}
 
 	BackupSensitivity = InSaveGame->MouseSensitivity;
+	BackupSlowFireSensitivity = InSaveGame->SlowFireSensitivity;
 
 	if (SensitivitySlider)
 	{
 		SensitivitySlider->SetValue(BackupSensitivity);
+	}
+	if (SlowFireSensitivitySlider)
+	{
+		SlowFireSensitivitySlider->SetValue(BackupSlowFireSensitivity);
 	}
 }
 
@@ -38,20 +43,34 @@ void USettingsControlWidget::NativeOnConfirmSettings(UOSMKSaveGame* OutSaveGame)
 	{
 		OutSaveGame->MouseSensitivity = SensitivitySlider->GetValue();
 	}
+	if (SlowFireSensitivitySlider)
+	{
+		OutSaveGame->SlowFireSensitivity = SlowFireSensitivitySlider->GetValue();
+	}
 }
 
 void USettingsControlWidget::NativeOnCancelSettings()
 {
 	ApplySensitivitySettings(BackupSensitivity);
+
+	if (SlowFireSensitivitySlider)
+	{
+		SlowFireSensitivitySlider->SetValue(BackupSlowFireSensitivity);
+	}
 }
 
 void USettingsControlWidget::NativeOnResetToDefault()
 {
 	constexpr float DefaultSensitivity = 1.0f;
+	const float DefaultSlowFireSensitivity = GetDefault<UOSMKSaveGame>()->SlowFireSensitivity;
 
 	if (SensitivitySlider)
 	{
 		SensitivitySlider->SetValue(DefaultSensitivity);
+	}
+	if (SlowFireSensitivitySlider)
+	{
+		SlowFireSensitivitySlider->SetValue(DefaultSlowFireSensitivity);
 	}
 
 	ApplySensitivitySettings(DefaultSensitivity);

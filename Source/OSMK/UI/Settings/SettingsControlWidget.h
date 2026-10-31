@@ -25,11 +25,15 @@ protected:
 
 private:
 	void ApplySensitivitySettings(float Value);
-	
+
 protected:
 	UPROPERTY(BlueprintReadWrite, Category = "UI", meta = (BindWidget))
 	USliderWidget* SensitivitySlider = nullptr;
 
+	UPROPERTY(BlueprintReadWrite, Category = "UI", meta = (BindWidget))
+	USliderWidget* SlowFireSensitivitySlider = nullptr;
+
 private:
 	float BackupSensitivity = 1.0f;
+	float BackupSlowFireSensitivity = 0.5f;
 };
