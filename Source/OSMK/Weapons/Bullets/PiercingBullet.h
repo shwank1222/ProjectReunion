@@ -22,7 +22,7 @@ protected:
 private:
 	
 	UPROPERTY(EditDefaultsOnly)
-	int32 MaxPiercingCount = 2;
-	
+	int32 MaxPiercingCount = 99;
+
 	int32 RemainingPiercingCount = 2;
 };
