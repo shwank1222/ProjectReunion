@@ -35,6 +35,7 @@ public:
 		return RecordedFrameTimes.IsEmpty() ? 0.0f : RecordedFrameTimes.Last();
 	}
 	FORCEINLINE const FVector& GetLastHitLocation() const { return PendingHitLocation; }
+	FORCEINLINE bool IsDead() const { return bIsDead; }
 
 	virtual void PrepareForReplay() {}
 	virtual void FinalizeDeathAfterReplay() {}
