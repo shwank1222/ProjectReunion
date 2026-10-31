@@ -1,6 +1,7 @@
 #include "UI/Scouting/ScoutingWidget.h"
 #include "UI/Scouting/BulletSelectionWidget.h"
 #include "Components/Button.h"
+#include "Core/OSMKSlowMotionSubsystem.h"
 
 void UScoutingWidget::NativeConstruct()
 {
@@ -24,6 +25,8 @@ void UScoutingWidget::NativeConstruct()
 		Btn_Scout->OnClicked.AddDynamic(this, &UScoutingWidget::OnScoutClicked);
 		Btn_Scout->SetIsEnabled(false);
 	}
+
+	SetGimmickHighlight(true);
 }
 
 void UScoutingWidget::OnBulletPrepClicked()
@@ -40,6 +43,7 @@ void UScoutingWidget::OnBulletPrepClicked()
 	{
 		Btn_Scout->SetIsEnabled(true);
 	}
+	SetGimmickHighlight(false);
 	SetUserFocus(GetOwningPlayer());
 }
 
@@ -57,5 +61,27 @@ void UScoutingWidget::OnScoutClicked()
 	{
 		Btn_BulletPrep->SetIsEnabled(true);
 	}
+	SetGimmickHighlight(true);
 	SetUserFocus(GetOwningPlayer());
+}
+
+void UScoutingWidget::SetGimmickHighlight(bool bEnable) const
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	if (UOSMKSlowMotionSubsystem* SlowMotion = World->GetSubsystem<UOSMKSlowMotionSubsystem>())
+	{
+		if (bEnable)
+		{
+			SlowMotion->ApplyGimmickHighlight();
+		}
+		else
+		{
+			SlowMotion->RestoreGimmickHighlight();
+		}
+	}
 }

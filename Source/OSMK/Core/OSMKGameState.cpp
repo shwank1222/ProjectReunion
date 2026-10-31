@@ -22,6 +22,14 @@ void AOSMKGameState::EndScoutingPhase()
 {
 	CurrentStageState = EOSMKStageState::InProgress;
 
+	if (UWorld* World = GetWorld())
+	{
+		if (UOSMKSlowMotionSubsystem* SlowMotion = World->GetSubsystem<UOSMKSlowMotionSubsystem>())
+		{
+			SlowMotion->RestoreGimmickHighlight();
+		}
+	}
+
 	if (UGameInstance* GI = GetGameInstance())
 	{
 		if (UOSMKBGMSubsystem* BGM = GI->GetSubsystem<UOSMKBGMSubsystem>())

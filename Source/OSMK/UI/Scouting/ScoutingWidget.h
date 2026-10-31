@@ -18,6 +18,8 @@ protected:
 	UFUNCTION()
 	void OnScoutClicked();
 
+	void SetGimmickHighlight(bool bEnable) const;
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	class UBulletSelectionWidget* BulletSelectionWidget = nullptr;
