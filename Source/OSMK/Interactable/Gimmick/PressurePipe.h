@@ -9,6 +9,7 @@ class UArrowComponent;
 class UNiagaraSystem;
 class UNiagaraComponent;
 class USoundBase;
+class UAudioComponent;
 
 UCLASS()
 class OSMK_API APressurePipe : public AGimmickBase
@@ -20,6 +21,7 @@ public:
 	
 protected:
 	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 	
 #pragma region Components and Effects
 	
@@ -43,6 +45,9 @@ protected:
 	TObjectPtr<USoundBase> BurstSound;
 	
 	UPROPERTY()
+	TObjectPtr<UAudioComponent> BurstAudioComponent;
+	
+	UPROPERTY()
 	TObjectPtr<UNiagaraComponent> EffectComponent;
 	
 #pragma endregion
@@ -61,13 +66,16 @@ protected:
 	
 	virtual void OnTriggered() override;
 	
+	UFUNCTION(BlueprintCallable, Category = "Gimmick|PressurePipe")
+	void ActivateRelease();
+	
+	UFUNCTION(BlueprintCallable, Category = "Gimmick|PressurePipe")
+	void DeactivateRelease();
+	
 private:
 	
 	void Burst();
-	
-	void ActivateRelease();
-	void DeactivateRelease();
-	
+
 #pragma endregion
 	
 #pragma region Parameters
