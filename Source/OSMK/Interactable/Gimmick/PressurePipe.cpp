@@ -5,6 +5,7 @@
 #include "Components/SceneComponent.h"
 #include "NiagaraComponent.h"
 #include "Components/ArrowComponent.h"
+#include "Components/AudioComponent.h"
 
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
@@ -33,9 +34,11 @@ APressurePipe::APressurePipe()
 void APressurePipe::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	if (BurstCollision)
 	{
+		BurstCollision->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		
 		BurstCollision->OnComponentBeginOverlap.AddDynamic(
 			this,
 			&APressurePipe::OnBurstOverlap
@@ -46,6 +49,12 @@ void APressurePipe::BeginPlay()
 void APressurePipe::OnBurstOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
+	GIMMICK_LOG(
+	Warning,
+	TEXT("Overlap: OtherActor=%s, OtherComp=%s"),
+	*GetNameSafe(OtherActor),
+	*GetNameSafe(OtherComp));
+	
 	if (!OtherActor)
 	{
 		return;
@@ -93,6 +102,11 @@ void APressurePipe::ActivateRelease()
 	// Enable overlap collision.
 	BurstCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 
+	
+	GIMMICK_LOG(
+	Warning,
+	TEXT("Collision Enabled: %d"),
+	BurstCollision->GetCollisionEnabled());
 	// Spawn burst effect.
 	if (BurstEffect)
 	{
@@ -148,11 +162,13 @@ void APressurePipe::ActivateRelease()
 	// Play burst sound.
 	if (BurstSound)
 	{
-		UGameplayStatics::PlaySoundAtLocation(
+		BurstAudioComponent = UGameplayStatics::SpawnSoundAtLocation(
 			GetWorld(),
 			BurstSound,
 			BurstPoint->GetComponentLocation(),
-			VolumeMultiplier);
+			FRotator::ZeroRotator,
+			VolumeMultiplier
+		);
 	}
 	
 	GIMMICK_LOG(Log, "Pressure Pipe Release Activated.");
@@ -168,5 +184,22 @@ void APressurePipe::DeactivateRelease()
 		EffectComponent->Deactivate();
 		EffectComponent = nullptr;
 	}
+	
+	if (BurstAudioComponent)
+	{
+		BurstAudioComponent->Stop();
+		BurstAudioComponent = nullptr;
+	}
+	
 	GIMMICK_LOG(Log, "Pressure Pipe Release Deactivated.");
+}
+
+void APressurePipe::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	DeactivateRelease();
+	
+	GetWorldTimerManager().ClearTimer(BurstDelayTimerHandle);
+	GetWorldTimerManager().ClearTimer(BurstDurationTimerHandle);
+
+	Super::EndPlay(EndPlayReason);
 }
