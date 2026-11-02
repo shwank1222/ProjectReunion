@@ -46,22 +46,35 @@ void UOSMKSlowMotionSubsystem::RestoreTimeDilation()
 
 void UOSMKSlowMotionSubsystem::ApplyGimmickHighlight() const
 {
-	UpdatePostProcessMaterialValue(0, 1.0f);
+	SetGimmickHighlightWeight(1.0f);
 }
 
 void UOSMKSlowMotionSubsystem::RestoreGimmickHighlight() const
 {
-	UpdatePostProcessMaterialValue(0, 0.0f);
+	SetGimmickHighlightWeight(0.0f);
 }
 
-void UOSMKSlowMotionSubsystem::UpdatePostProcessMaterialValue(const int32 Index, const float Value) const
+void UOSMKSlowMotionSubsystem::SetGimmickHighlightWeight(const float Value) const
 {
-	if (APostProcessVolume* PostProcessVolume = Cast<APostProcessVolume>(
-		UGameplayStatics::GetActorOfClass(GetWorld(), APostProcessVolume::StaticClass())))
+	static const FSoftObjectPath HighlightMaterialPath(TEXT("/Game/_Materials/PostProcess/PPI_PostProcess.PPI_PostProcess"));
+
+	TArray<AActor*> Volumes;
+	UGameplayStatics::GetAllActorsOfClass(GetWorld(), APostProcessVolume::StaticClass(), Volumes);
+
+	for (AActor* Actor : Volumes)
 	{
-		if (!PostProcessVolume->Settings.WeightedBlendables.Array.IsEmpty())
+		APostProcessVolume* PostProcessVolume = Cast<APostProcessVolume>(Actor);
+		if (!PostProcessVolume)
 		{
-			PostProcessVolume->Settings.WeightedBlendables.Array[Index].Weight = Value;
+			continue;
+		}
+
+		for (FWeightedBlendable& Blendable : PostProcessVolume->Settings.WeightedBlendables.Array)
+		{
+			if (Blendable.Object && FSoftObjectPath(Blendable.Object) == HighlightMaterialPath)
+			{
+				Blendable.Weight = Value;
+			}
 		}
 	}
 }
