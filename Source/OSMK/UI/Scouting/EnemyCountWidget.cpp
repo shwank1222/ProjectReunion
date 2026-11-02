@@ -31,14 +31,8 @@ void UEnemyCountWidget::UpdateEnemyCount()
 		return;
 	}
 
-	const int32 CurrentEnemyCount = CachedGameState->EnemyCount;
-	if (CurrentEnemyCount > TotalEnemyCount)
-	{
-		TotalEnemyCount = CurrentEnemyCount;
-	}
-
 	if (Text_EnemyCount)
 	{
-		Text_EnemyCount->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), CurrentEnemyCount, TotalEnemyCount)));
+		Text_EnemyCount->SetText(FText::FromString(FString::Printf(TEXT("%d / %d"), CachedGameState->EnemyCount, CachedGameState->TotalEnemyCount)));
 	}
 }

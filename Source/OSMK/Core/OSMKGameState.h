@@ -114,6 +114,9 @@ public:
 	UPROPERTY(BlueprintReadOnly)
 	int32 EnemyCount = 0;
 
+	UPROPERTY(BlueprintReadOnly)
+	int32 TotalEnemyCount = 0;
+
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Replay")
 	TSubclassOf<AReplayCameraActor> ReplayCameraActorClass = nullptr;

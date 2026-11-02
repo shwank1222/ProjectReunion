@@ -25,5 +25,4 @@ protected:
 
 private:
 	TWeakObjectPtr<AOSMKGameState> CachedGameState = nullptr;
-	int32 TotalEnemyCount = 0;
 };

@@ -62,6 +62,7 @@ void AOSMKGameState::RegisterEnemy(AEnemyCharacter* Enemy)
 	RegisteredEnemies.Add(Enemy, &bAlreadyRegistered);
 	if (!bAlreadyRegistered)
 	{
+		TotalEnemyCount++;
 		UpdateEnemyCount();
 	}
 }
@@ -70,6 +71,7 @@ void AOSMKGameState::UnregisterEnemy(AEnemyCharacter* Enemy)
 {
 	if (RegisteredEnemies.Remove(Enemy) > 0)
 	{
+		TotalEnemyCount = FMath::Max(0, TotalEnemyCount - 1);
 		UpdateEnemyCount();
 	}
 }
@@ -77,6 +79,7 @@ void AOSMKGameState::UnregisterEnemy(AEnemyCharacter* Enemy)
 void AOSMKGameState::ClearRegisteredEnemies()
 {
 	RegisteredEnemies.Empty();
+	TotalEnemyCount = 0;
 	UpdateEnemyCount();
 }
 
