@@ -36,13 +36,13 @@ private:
 	AEnemyCharacter* FindRicochetTarget(const FVector& Origin, const FVector& BounceDirection, const AActor* IgnoreActor) const;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Ricochet")
-	float AimAssistRadius = 1500.0f;
+	float AimAssistRadius = 2250.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Ricochet", meta = (ClampMin = "0.0", ClampMax = "180.0"))
-	float AimAssistAngle = 25.0f;
+	float AimAssistAngle = 57.5f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Ricochet", meta = (ClampMin = "0.0", ClampMax = "1.0"))
-	float AimAssistStrength = 0.4f;
+	float AimAssistStrength = 0.7f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Ricochet", meta = (ClampMin = "0.0", ClampMax = "90.0"))
 	float MaxUpwardAngle = 15.0f;
