@@ -39,6 +39,11 @@ ABulletBase::ABulletBase()
 void ABulletBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (AActor* BulletOwner = GetOwner())
+	{
+		MeshComponent->IgnoreActorWhenMoving(BulletOwner, true);
+	}
 }
 
 void ABulletBase::Destroyed()
@@ -54,6 +59,11 @@ void ABulletBase::Destroyed()
 void ABulletBase::OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse,
                               const FHitResult& Hit)
 {
+	if (OtherActor && OtherActor == GetOwner())
+	{
+		return;
+	}
+
 	UE_LOG(LogBullet, Warning, TEXT("[%s] Hit"), *GetName());
 
 	if (IsValid(OtherActor))
@@ -78,6 +88,11 @@ void ABulletBase::OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherAc
 void ABulletBase::OnBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex,
                                  bool bFromSweep, const FHitResult& SweepResult)
 {
+	if (OtherActor && OtherActor == GetOwner())
+	{
+		return;
+	}
+
 	UE_LOG(LogBullet, Warning, TEXT("[%s] Overlap"), *GetName());
 
 	if (IsValid(OtherActor))

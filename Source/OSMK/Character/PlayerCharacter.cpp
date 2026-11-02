@@ -466,7 +466,7 @@ void APlayerCharacter::FireProjectile(const TSubclassOf<ABulletBase> BulletClass
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 	SpawnParams.TransformScaleMethod = ESpawnActorScaleMethod::OverrideRootScale;
-	SpawnParams.Owner = GetOwner();
+	SpawnParams.Owner = this;
 	SpawnParams.Instigator = GetInstigator();
 	
 	GetWorld()->SpawnActor<ABulletBase>(BulletClass, ProjectileTransform, SpawnParams);
