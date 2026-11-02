@@ -12,6 +12,11 @@ ABasicBullet::ABasicBullet()
 void ABasicBullet::OnBulletHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp,
 	FVector NormalImpulse, const FHitResult& Hit)
 {
+	if (OtherActor && OtherActor == GetOwner())
+	{
+		return;
+	}
+
 	Super::OnBulletHit(HitComponent, OtherActor, OtherComp, NormalImpulse, Hit);
 	
 	Destroy();
