@@ -42,9 +42,11 @@ void UStageExtractRule_ScoutCamera::ConfigureSpawnedActor(AActor* SpawnedActor, 
 		return;
 	}
 
-	if (HasField(EStageExtractField::SpringArm))
+	if (USpringArmComponent* SpringArm = SpawnedActor->FindComponentByClass<USpringArmComponent>())
 	{
-		if (USpringArmComponent* SpringArm = SpawnedActor->FindComponentByClass<USpringArmComponent>())
+		SpringArm->bDoCollisionTest = false;
+
+		if (HasField(EStageExtractField::SpringArm))
 		{
 			SpringArm->TargetArmLength = Item.SpringArmLength;
 			SpringArm->SocketOffset = Item.SpringArmSocketOffset;
