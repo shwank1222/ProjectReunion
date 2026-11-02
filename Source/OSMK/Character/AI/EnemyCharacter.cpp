@@ -5,6 +5,7 @@
 
 #include "OSMKAIController.h"
 #include "Character/PlayerCharacter.h"
+#include "Components/CapsuleComponent.h"
 #include "Core/OSMKGameState.h"
 #include "GameMode/OSMKInGameGameMode.h"
 #include "NavigationPath.h"
@@ -145,6 +146,8 @@ bool AEnemyCharacter::CanAttackTarget(AActor* TargetActor, const float ExtraRang
 void AEnemyCharacter::Die()
 {
 	Super::Die();
+
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	GetMesh()->SetCollisionProfileName(TEXT("Ragdoll"));
 	GetMesh()->SetCollisionResponseToChannel(IgnoreCollisionChannel, ECR_Ignore);
