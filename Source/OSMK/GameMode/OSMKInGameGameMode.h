@@ -59,6 +59,7 @@ private:
 	void AdvanceRules();
 	void AssignEnemyGroups();
 	void OnAllRulesFinished();
+	int32 CountStageEnemies() const;
 	void SetupScoutCamera(AActor* CameraActor);
 	void ShowStageClearWidget();
 	void ShowStageFailWidget();
