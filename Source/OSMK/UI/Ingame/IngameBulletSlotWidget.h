@@ -53,4 +53,5 @@ private:
 	float CurrentRotationAngle = 0.0f;
 	float TargetRotationAngle = 0.0f;
 	int32 PreviousAmmoCount = 0;
+	int32 FiredCount = 0;
 };
