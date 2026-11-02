@@ -79,10 +79,22 @@ void UIngameBulletSlotWidget::UpdateBullets()
 	}
 
 	const TArray<FBulletData> LoadedAmmo = CachedPlayerCharacter->GetLoadedAmmo();
-	
-	if (PreviousAmmoCount > 0 && LoadedAmmo.Num() < PreviousAmmoCount)
+
+	if (PreviousAmmoCount == 0 && LoadedAmmo.Num() > 0)
 	{
-		TargetRotationAngle += 60.0f;
+		FiredCount = 0;
+		CurrentRotationAngle = 0.0f;
+		TargetRotationAngle = 0.0f;
+		if (CylinderPanel)
+		{
+			CylinderPanel->SetRenderTransformAngle(0.0f);
+		}
+	}
+	else if (LoadedAmmo.Num() < PreviousAmmoCount)
+	{
+		const int32 NumFired = PreviousAmmoCount - LoadedAmmo.Num();
+		FiredCount += NumFired;
+		TargetRotationAngle += 60.0f * NumFired;
 	}
 	PreviousAmmoCount = LoadedAmmo.Num();
 
@@ -97,7 +109,7 @@ void UIngameBulletSlotWidget::UpdateBullets()
 			continue;
 		}
 
-		int32 TargetIndex = MaxSlots - 1 - i;
+		const int32 TargetIndex = i - FiredCount;
 
 		if (LoadedAmmo.IsValidIndex(TargetIndex))
 		{
