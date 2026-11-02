@@ -51,22 +51,61 @@ void AOSMKGameState::NotifyStageStarted()
 	OnStageStarted.Broadcast(CurrentStageIndex, CurrentStageName);
 }
 
-void AOSMKGameState::SetEnemyCount(int32 Count)
+void AOSMKGameState::RegisterEnemy(AEnemyCharacter* Enemy)
 {
-	EnemyCount = Count;
+	if (!IsValid(Enemy) || Enemy->IsDead())
+	{
+		return;
+	}
+
+	bool bAlreadyRegistered = false;
+	RegisteredEnemies.Add(Enemy, &bAlreadyRegistered);
+	if (!bAlreadyRegistered)
+	{
+		UpdateEnemyCount();
+	}
+}
+
+void AOSMKGameState::UnregisterEnemy(AEnemyCharacter* Enemy)
+{
+	if (RegisteredEnemies.Remove(Enemy) > 0)
+	{
+		UpdateEnemyCount();
+	}
+}
+
+void AOSMKGameState::ClearRegisteredEnemies()
+{
+	RegisteredEnemies.Empty();
+	UpdateEnemyCount();
+}
+
+void AOSMKGameState::ResetStageCounters()
+{
 	DestroyedProjectileCount = 0;
+	UpdateEnemyCount();
+}
+
+void AOSMKGameState::UpdateEnemyCount()
+{
+	EnemyCount = RegisteredEnemies.Num();
 	OnEnemyCountChanged.Broadcast();
 }
 
 void AOSMKGameState::NotifyEnemyKilled(AOSMKCharacterBase* KilledEnemy)
 {
-	if (CurrentStageState != EOSMKStageState::InProgress)
+	AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(KilledEnemy);
+	if (!Enemy || RegisteredEnemies.Remove(Enemy) == 0)
 	{
 		return;
 	}
 
-	EnemyCount = FMath::Max(0, EnemyCount - 1);
-	OnEnemyCountChanged.Broadcast();
+	UpdateEnemyCount();
+
+	if (CurrentStageState != EOSMKStageState::InProgress)
+	{
+		return;
+	}
 
 	if (EnemyCount > 0)
 	{
@@ -168,7 +207,6 @@ AEnemyCharacter* AOSMKGameState::FindNearestEnemy(const FVector& FromLocation) c
 void AOSMKGameState::ResetStageState()
 {
 	CurrentStageState = EOSMKStageState::Scouting;
-	EnemyCount = 0;
 	DestroyedProjectileCount = 0;
 	LastGimmickTriggerTime = -1.0f;
 	GetWorldTimerManager().ClearTimer(OutOfAmmoTimerHandle);

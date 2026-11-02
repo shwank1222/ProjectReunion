@@ -30,8 +30,10 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void EndScoutingPhase();
 
-	UFUNCTION(BlueprintCallable)
-	void SetEnemyCount(int32 Count);
+	void RegisterEnemy(AEnemyCharacter* Enemy);
+	void UnregisterEnemy(AEnemyCharacter* Enemy);
+	void ClearRegisteredEnemies();
+	void ResetStageCounters();
 
 	UFUNCTION(BlueprintCallable)
 	void NotifyEnemyKilled(AOSMKCharacterBase* KilledEnemy);
@@ -66,6 +68,7 @@ private:
 	bool TryLockOutcome();
 
 	void TryOutOfAmmoFail();
+	void UpdateEnemyCount();
 
 	AEnemyCharacter* FindNearestEnemy(const FVector& FromLocation) const;
 
@@ -126,6 +129,8 @@ private:
 	TObjectPtr<AReplayCameraActor> SpawnedReplayCameraActor = nullptr;
 
 	int32 DestroyedProjectileCount = 0;
+
+	TSet<TWeakObjectPtr<AEnemyCharacter>> RegisteredEnemies;
 
 	float LastGimmickTriggerTime = -1.0f;
 

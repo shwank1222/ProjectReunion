@@ -23,11 +23,29 @@ AEnemyCharacter::AEnemyCharacter()
 void AEnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
+	{
+		GS->RegisterEnemy(this);
+	}
 	
 	if (bAutoActivate)
 	{
 		ActivateEnemy();
 	}
+}
+
+void AEnemyCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	if (const UWorld* World = GetWorld())
+	{
+		if (AOSMKGameState* GS = World->GetGameState<AOSMKGameState>())
+		{
+			GS->UnregisterEnemy(this);
+		}
+	}
+
+	Super::EndPlay(EndPlayReason);
 }
 
 void AEnemyCharacter::EquipPistol()

@@ -120,7 +120,7 @@ void AOSMKInGameGameMode::AdvanceRules()
 				return;
 			}
 			SpawnedLevelStreamings.Add(Streaming);
-			Streaming->OnLevelLoaded.AddDynamic(this, &AOSMKInGameGameMode::OnLevelInstanceLoaded);
+			Streaming->OnLevelShown.AddDynamic(this, &AOSMKInGameGameMode::OnLevelInstanceLoaded);
 		};
 
 		Ctx.SetPlayerStart = [this](const FTransform& T)
@@ -175,7 +175,7 @@ void AOSMKInGameGameMode::OnAllRulesFinished()
 
 	if (AOSMKGameState* GS = GetGameState<AOSMKGameState>())
 	{
-		GS->SetEnemyCount(CountStageEnemies());
+		GS->ResetStageCounters();
 		GS->NotifyStageSpawned(CurrentStageIndex, CurrentLevelName);
 	}
 
@@ -188,40 +188,6 @@ void AOSMKInGameGameMode::OnAllRulesFinished()
 
 		AssignEnemyGroups();
 	});
-}
-
-int32 AOSMKInGameGameMode::CountStageEnemies() const
-{
-	UWorld* World = GetWorld();
-	if (!World)
-	{
-		return 0;
-	}
-
-	TSet<const ULevel*> StageLevels;
-	StageLevels.Add(World->PersistentLevel);
-	for (const ULevelStreamingDynamic* Streaming : SpawnedLevelStreamings)
-	{
-		if (IsValid(Streaming) && Streaming->GetLoadedLevel())
-		{
-			StageLevels.Add(Streaming->GetLoadedLevel());
-		}
-	}
-
-	TArray<AActor*> Enemies;
-	UGameplayStatics::GetAllActorsOfClass(World, AEnemyCharacter::StaticClass(), Enemies);
-
-	int32 Count = 0;
-	for (const AActor* Actor : Enemies)
-	{
-		const AEnemyCharacter* Enemy = Cast<AEnemyCharacter>(Actor);
-		if (IsValid(Enemy) && !Enemy->IsDead() && StageLevels.Contains(Enemy->GetLevel()))
-		{
-			Count++;
-		}
-	}
-
-	return Count;
 }
 
 void AOSMKInGameGameMode::SetupScoutCamera(AActor* CameraActor)
@@ -250,6 +216,7 @@ void AOSMKInGameGameMode::ClearStage()
 	if (AOSMKGameState* GS = GetGameState<AOSMKGameState>())
 	{
 		GS->DestroyReplayCameraActor();
+		GS->ClearRegisteredEnemies();
 	}
 
 	for (AActor* Actor : SpawnedActors)

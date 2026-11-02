@@ -57,7 +57,7 @@ void AOSMKIngameHUD::HandleEnemyCountChanged()
 {
 	if (AOSMKGameState* GS = GetWorld()->GetGameState<AOSMKGameState>())
 	{
-			if (GS->EnemyCount < CachedEnemyCount)
+			if (GS->EnemyCount < CachedEnemyCount && GS->CurrentStageState == EOSMKStageState::InProgress)
 		{
 			ShowKillFeedback();
 		}
