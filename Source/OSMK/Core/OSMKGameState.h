@@ -33,6 +33,7 @@ public:
 	void RegisterEnemy(AEnemyCharacter* Enemy);
 	void UnregisterEnemy(AEnemyCharacter* Enemy);
 	void ClearRegisteredEnemies();
+	TArray<AEnemyCharacter*> GetRegisteredEnemies() const;
 	void ResetStageCounters();
 
 	UFUNCTION(BlueprintCallable)

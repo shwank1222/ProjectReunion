@@ -80,6 +80,19 @@ void AOSMKGameState::ClearRegisteredEnemies()
 	UpdateEnemyCount();
 }
 
+TArray<AEnemyCharacter*> AOSMKGameState::GetRegisteredEnemies() const
+{
+	TArray<AEnemyCharacter*> Result;
+	for (const TWeakObjectPtr<AEnemyCharacter>& Enemy : RegisteredEnemies)
+	{
+		if (Enemy.IsValid())
+		{
+			Result.Add(Enemy.Get());
+		}
+	}
+	return Result;
+}
+
 void AOSMKGameState::ResetStageCounters()
 {
 	DestroyedProjectileCount = 0;

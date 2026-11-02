@@ -113,6 +113,8 @@ private:
 public:
 	static constexpr int32 MaxBulletSlots = AOSMKGameState::MaxBulletSlots;
 
+	void DebugAutoFillSlots();
+
 protected:
 	UPROPERTY(meta = (BindWidget))
 	class UScrollBox* List_Bullets = nullptr;

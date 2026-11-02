@@ -16,6 +16,8 @@
 #include "UI/StageResult/StageClearWidget.h"
 #include "UI/Credits/CreditsWidget.h"
 #include "Kismet/GameplayStatics.h"
+#include "Blueprint/WidgetBlueprintLibrary.h"
+#include "UI/Scouting/BulletSelectionWidget.h"
 #include "Core/OSMKBGMSubsystem.h"
 
 void AOSMKInGameGameMode::BeginPlay()
@@ -188,6 +190,41 @@ void AOSMKInGameGameMode::OnAllRulesFinished()
 
 		AssignEnemyGroups();
 	});
+}
+
+void AOSMKInGameGameMode::KillAllEnemies()
+{
+	AOSMKGameState* GS = GetGameState<AOSMKGameState>();
+	if (!GS)
+	{
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("[KillAllEnemies] Stage %d (%s) EnemyCount=%d"),
+		CurrentStageIndex, *CurrentLevelName.ToString(), GS->EnemyCount);
+
+	for (AEnemyCharacter* Enemy : GS->GetRegisteredEnemies())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[KillAllEnemies] %s Level=%s Loc=%s"),
+			*Enemy->GetName(), *GetNameSafe(Enemy->GetLevel() ? Enemy->GetLevel()->GetOuter() : nullptr),
+			*Enemy->GetActorLocation().ToCompactString());
+
+		Enemy->ApplyDamage();
+	}
+}
+
+void AOSMKInGameGameMode::AutoFillBullets()
+{
+	TArray<UUserWidget*> Widgets;
+	UWidgetBlueprintLibrary::GetAllWidgetsOfClass(this, Widgets, UBulletSelectionWidget::StaticClass(), false);
+
+	for (UUserWidget* Widget : Widgets)
+	{
+		if (UBulletSelectionWidget* Selection = Cast<UBulletSelectionWidget>(Widget))
+		{
+			Selection->DebugAutoFillSlots();
+		}
+	}
 }
 
 void AOSMKInGameGameMode::SetupScoutCamera(AActor* CameraActor)

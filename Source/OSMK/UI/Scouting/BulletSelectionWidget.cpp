@@ -167,6 +167,41 @@ int32 UBulletSelectionWidget::GetAvailableCount(FName RowName) const
 	return 0;
 }
 
+void UBulletSelectionWidget::DebugAutoFillSlots()
+{
+	if (IsBusy() || !BulletDataTable)
+	{
+		return;
+	}
+
+	const TArray<FName> RowNames = BulletDataTable->GetRowNames();
+
+	for (int32 i = 0; i < MaxBulletSlots; i++)
+	{
+		if (!SlotBullets[i].IsNone())
+		{
+			continue;
+		}
+
+		for (const FName& RowName : RowNames)
+		{
+			if (GetAvailableCount(RowName) - GetSelectedCount(RowName) > 0)
+			{
+				SlotBullets[i] = RowName;
+				TargetRotationAngle += 60.0f;
+				break;
+			}
+		}
+	}
+
+	UpdateSlotImages();
+	for (const FName& RowName : RowNames)
+	{
+		UpdateListItemCount(RowName);
+	}
+	RefreshConfirmButton();
+}
+
 int32 UBulletSelectionWidget::GetSelectedCount(FName RowName) const
 {
 	int32 Count = 0;

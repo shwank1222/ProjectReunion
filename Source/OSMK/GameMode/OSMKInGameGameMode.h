@@ -52,6 +52,12 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void RetryStage();
 
+	UFUNCTION(Exec)
+	void KillAllEnemies();
+
+	UFUNCTION(Exec)
+	void AutoFillBullets();
+
 protected:
 	virtual void BeginPlay() override;
 
